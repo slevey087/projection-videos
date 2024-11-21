@@ -25,7 +25,68 @@ def color_tex_standard(equation):
     return color_tex(equation,(r"\mathbf{v}", VCOLOR), (r"\mathbf{x}",XCOLOR),(r"\mathbf{y}",YCOLOR), (r"\mathbf{p}",PCOLOR),("p_x",PCOLOR),("p_y",PCOLOR), (r"\mathbf{u}", UCOLOR),(r"\hat{\mathbf{u}}", PUCOLOR),(r"\hat{\mathbf{v}}", PVCOLOR))
 
 
+class Introduction(MovingCameraScene):
+    def construct(self):
+        xcoords = np.array([2,1])
+        vcoords = np.array([0.5,2])
+        pcoords = xcoords * np.dot(xcoords,vcoords) / np.dot(xcoords,xcoords)
+        
+        # initial frame stuff
+        frame = self.camera.frame
+        frame.save_state()
 
+        # draw vectors and labels
+        axes = Axes(x_range=[-2,2], x_length=4,y_range=[-2,2],y_length=4)
+        x = Arrow(axes.c2p(0,0), axes.c2p(*xcoords), buff=0, color=XCOLOR)
+        v = Arrow(axes.c2p(0,0), axes.c2p(*vcoords), buff=0, color=VCOLOR)
+        vhat = Arrow(axes.c2p(0,0), axes.c2p(*pcoords), buff=0, color=PCOLOR)
+        xl = MathTex(r"\mathbf{x}", font_size=60, color=XCOLOR).next_to(x.get_tip(), RIGHT)
+        vl = MathTex(r"\mathbf{v}", font_size=60, color=VCOLOR).next_to(v.get_tip(), UP)
+        vhatl = MathTex(r"\hat{\mathbf{v}}", font_size=60, color=PCOLOR).next_to(vhat.get_tip(), DOWN,buff=0.1)
+        r = DashedLine(axes.c2p(*vcoords),axes.c2p(*pcoords), dash_length=0.12).set_opacity(0.5)
+        ra = RightAngle(vhat,r,length=0.25,quadrant=(-1,-1))
+        rl = MathTex(r"\mathbf{v}-\mathbf{p}", font_size=60, color=RCOLOR).next_to(r).shift(UP*0.2+LEFT*0.3)
+        diagram = VGroup(axes,x,v,xl,vl,r,vhat,vhatl,ra).shift(-VGroup(v,x).get_center()).shift(LEFT*2.25)
+        diagram.remove(axes)        
+
+        frame.scale(0.5).move_to(VGroup(x,v))
+
+        # draw x and v
+        self.play(GrowArrow(x))
+        self.play(Write(xl))
+        self.play(GrowArrow(v))
+        self.play(Write(vl))        
+        self.wait(w)
+
+        # drop projection
+        self.play(
+            TransformFromCopy(v,vhat),
+            Write(r)
+        ,run_time=2)
+        self.play(Write(vhatl))        
+        self.wait(w)
+
+        # write title
+        title = Tex("Orthogonal Projection", font_size=50).next_to(diagram,UP,buff=0.5)
+        ul = Line(title.get_corner(DL)+DL*0.1, title.get_corner(DR)+DR*0.1, color=BLUE)        
+        self.play(Write(ra))
+        self.play(frame.animate.scale(1.3).shift(UP*0.3),run_time=1.5)
+        self.play(Write(title))
+        self.play(Write(ul))
+        self.wait(w)
+
+        # shift diagram, write equation
+        eq = MathTex(r"\hat{\mathbf{v}}","=","P",r"\mathbf{v}",font_size=70).move_to(diagram).shift(RIGHT*1.5).shift(UP*0.5)
+        color_tex_standard(eq)
+        self.play(diagram.animate.shift(LEFT*1.5))
+        self.play(TransformFromCopy(vl[0],eq[3]),run_time=1.5)
+        self.play(FadeIn(eq[2],shift=RIGHT),run_time=1.5)
+        self.play(Write(eq[1]),run_time=1.25)
+        self.play(TransformFromCopy(vhatl[0],eq[0]),run_time=1.25)
+        
+        self.wait(w)
+        
+        
 
 
 class Idempotent(MovingCameraScene):
