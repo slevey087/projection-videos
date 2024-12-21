@@ -947,7 +947,7 @@ class NSDemo(Scene):
             x_length = 10,
             y_range = [-3.6,3.6,1],
             y_length = 6)        
-        line = DoubleArrow(start=axes.c2p(3,3), end=axes.c2p(-3,-3))
+        line = DoubleArrow(start=axes.c2p(3,3), end=axes.c2p(-3,-3)).set_opacity(0.5)
         self.add(axes, line)
         self.wait()
 
@@ -1001,8 +1001,135 @@ class NSDemo(Scene):
         self.play(Write(ns))
         self.wait()
 
+        # rank one caption
+        r1 = Tex(r"Rank 1\\Projection", font_size=60).next_to(line.get_start())
+        self.play(Write(r1))
+        self.wait(w)
+
+        # cut here, to Eigs01
+        # then cut back
+
+        # remove prior captions
+        self.play(FadeOut(ns,r1))
+
+        # eigen equation
+        ee = MathTex(r"\mathbf{P}x =", r"\lambda x",font_size=75).next_to(nsline.get_start(),LEFT).shift(LEFT*0.75)
+        self.play(Write(ee))
+        self.wait()
+        ee1 = AlignBaseline(MathTex(r"\mathbf{P}x =", "0 x",font_size=75).move_to(ee),ee)
+        self.play(*TransformBuilder(
+            ee, ee1,
+            [
+                (0,0), # px=
+                ([1,0],None,FadeOut,{"shift":DOWN}), # lambda
+                (None, [1,0],FadeIn,{"shift":DOWN}), # 0
+                ([1,1],[1,1]), # x
+            ]
+        ))
+        eigs0 = Tex("Eigenvalue of 0",font_size=55).next_to(ee1,DOWN,aligned_edge=LEFT)
+        self.play(Write(eigs0))
+        self.wait()
+        ee2 = AlignBaseline(MathTex(r"\mathbf{P}x =", "0",font_size=75).move_to(ee1).align_to(ee1,LEFT),ee1)
+        self.play(*TransformBuilder(
+            ee1,ee2,
+            [
+                (0,0), # px=
+                ([1,0],[1,0]), # 0
+                ([1,1],None) # x
+            ]
+        ))
+        ee = ee2
+
+        """
+        # rank caption
+        rank = Tex(r"Rank of", r"\\a matrix").shift(DOWN*2).add_background_rectangle()
+        eq = Tex("=").next_to(rank,RIGHT).add_background_rectangle()
+        dim = Tex("How many dimensions",r"\\ its output can span").next_to(eq).align_to(rank,UP).add_background_rectangle()
+        #self.play(FadeOut(nsline, zerov))
+        self.play(Write(rank))
+        self.play(Write(eq))
+        self.play(Write(dim))
+        self.wait()
+
+        # fade out stuff
+        self.play(FadeOut(rank, eq, dim, ee))"""
+        
+        # repeat ns demo
+        # vectors in nullspace
+        vectors = [
+            Vector(axes.c2p(i,-i), color=BLUE_B)
+        for i in range(-3,4)]        
+        self.wait()
+        self.play(
+            *[GrowArrow(vector) for vector in vectors],             
+        )
+        self.wait()
+
+        # do transform
+        zerov = Dot(color=BLUE_E)
+        self.play(*[
+            Transform(vector, zerov)
+        for vector in vectors])        
+        self.wait()
+
+        # equation stuff for eig 1
+        ee1 = MathTex(r"\mathbf{P}x =", r"\lambda x",font_size=75).next_to(line.get_start()).shift(RIGHT*0.75)
+        self.play(Write(ee1))
+        self.wait()
+        ee2 = AlignBaseline(MathTex(r"\mathbf{P}x =", "1 x",font_size=75).move_to(ee1),ee1)
+        self.play(*TransformBuilder(
+            ee1, ee2,
+            [
+                (0,0), # px=
+                ([1,0],None,FadeOut,{"shift":DOWN}), # lambda
+                (None, [1,0],FadeIn,{"shift":DOWN}), # 1
+                ([1,1],[1,1]), # x
+            ]
+        ))
+        eigs1 = Tex("Eigenvalue of 1",font_size=55).next_to(ee2,DOWN,aligned_edge=RIGHT)
+        self.play(Write(eigs1))
+        self.wait()
+        ee3 = AlignBaseline(MathTex(r"\mathbf{P}x =", "x",font_size=75).move_to(ee2).align_to(ee2,RIGHT),ee2)
+        self.play(*TransformBuilder(
+            ee2,ee3,
+            [
+                (0,0), # px=
+                ([1,0],None), # 1
+                ([1,1],[1,0]), # x
+            ]
+        ))
+        ee1 = ee3
+        
+
+        # vectors on projected
+        vectors = [
+            Vector(axes.c2p(i,i), color=BLUE_B)
+        for i in range(-3,4)]        
+        self.play(
+            *[GrowArrow(vector) for vector in vectors],            
+        )
+        self.wait()
+
+        # do transform        
+        self.play(*[
+            Indicate(vector, color=BLUE_E)
+        for vector in vectors])
+        self.wait()
+        
 
 
+class Eigs01(Scene):
+    def construct(self):
+        # write title
+        title = Tex("Projection Matrix Properties", font_size=75).to_edge(UP)
+        ul = Line(title.get_corner(DL)+DL*0.2, title.get_corner(DR)+DR*0.2, color=BLUE)        
+        self.add(title, ul)
+        self.wait()
+
+        # text property
+        text1 = Tex(r"Eigenvalues of projections are 0's and 1's", font_size=55)
+        self.play(Write(text1))
+        self.wait()                
 
 
 """
