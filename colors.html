@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blue Colors in XKCD</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .color-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .color-box {
+            border: 1px solid #000;
+            padding: 10px;
+            text-align: center;
+            width: 150px;
+        }
+        .color-swatch {
+            height: 50px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Blue Colors in XKCD</h1>
+    <div id="colorContainer" class="color-container"></div>
+
+    <script>
+        // Array of colors with "blue" in the name
+        blueColors = [{"name":"BABYBLUE","hex":"#A2CFFE"},{"name":"BLUEBERRY","hex":"#464196"},{"name":"BLUEGREEN","hex":"#0F9B8E"},{"name":"BLUEPURPLE","hex":"#5A06EF"},{"name":"BLUEWITHAHINTOFPURPLE","hex":"#533CC6"},{"name":"BLUEYGREY","hex":"#89A0B0"},{"name":"BRIGHTBLUE","hex":"#0165FC"},{"name":"BRIGHTLIGHTBLUE","hex":"#26F7FD"},{"name":"BRIGHTSKYBLUE","hex":"#02CCFE"},{"name":"CLEARBLUE","hex":"#247AFD"},{"name":"COBALTBLUE","hex":"#030AA7"},{"name":"CORNFLOWERBLUE","hex":"#5170D7"},{"name":"DARKBLUE","hex":"#030764"},{"name":"DARKBLUEGREY","hex":"#1F3B4D"},{"name":"DARKGREENBLUE","hex":"#1F6357"},{"name":"DARKGREYBLUE","hex":"#29465B"},{"name":"DARKNAVYBLUE","hex":"#00022E"},{"name":"DARKROYALBLUE","hex":"#02066F"},{"name":"DARKSLATEBLUE","hex":"#214761"},{"name":"DEEPSEABLUE","hex":"#015482"},{"name":"DENIMBLUE","hex":"#3B5B92"},{"name":"DULLBLUE","hex":"#49759C"},{"name":"DUSKBLUE","hex":"#26538D"},{"name":"DUSTYBLUE","hex":"#5A86AD"},{"name":"EGGSHELLBLUE","hex":"#C4FFF7"},{"name":"FLATBLUE","hex":"#3C73A8"},{"name":"FRENCHBLUE","hex":"#436BAD"},{"name":"GREENISHBLUE","hex":"#0B8B87"},{"name":"LIGHTBLUE","hex":"#7BC8F6"},{"name":"LIGHTBLUEGREY","hex":"#B7C9E2"},{"name":"LIGHTGREENISHBLUE","hex":"#63F7B4"},{"name":"LIGHTGREYBLUE","hex":"#9DBCD4"},{"name":"LIGHTLIGHTBLUE","hex":"#CAFFFB"},{"name":"MEDIUMBLUE","hex":"#2C6FBB"},{"name":"METALLICBLUE","hex":"#4F738E"},{"name":"MIDNIGHTBLUE","hex":"#020035"},{"name":"MUTEDBLUE","hex":"#3B719F"},{"name":"NAVYBLUE","hex":"#001146"},{"name":"NEONBLUE","hex":"#04D9FF"},{"name":"NICEBLUE","hex":"#107AB0"},{"name":"OFFBLUE","hex":"#5684AE"},{"name":"PALEBLUE","hex":"#D0FEFE"},{"name":"PALESKYBLUE","hex":"#BDF6FE"},{"name":"PASTELBLUE","hex":"#A2BFFE"},{"name":"PEACOCKBLUE","hex":"#016795"},{"name":"PERIWINKLEBLUE","hex":"#8F99FB"},{"name":"PRUSSIANBLUE","hex":"#004577"},{"name":"PUREBLUE","hex":"#0203E2"},{"name":"PURPLEBLUE","hex":"#5D21D0"},{"name":"PURPLEISHBLUE","hex":"#6140EF"},{"name":"RICHBLUE","hex":"#021BF9"},{"name":"ROBINEGGBLUE","hex":"#8AF1FE"},{"name":"ROBINSEGGBLUE","hex":"#98EFF9"},{"name":"ROYALBLUE","hex":"#0504AA"},{"name":"SEABLUE","hex":"#047495"},{"name":"SEAFOAMBLUE","hex":"#78D1B6"},{"name":"SKYBLUE","hex":"#75BBFD"},{"name":"SLATEBLUE","hex":"#5B7C99"},{"name":"SOFTBLUE","hex":"#6488EA"},{"name":"STORMYBLUE","hex":"#507B9C"},{"name":"TEALBLUE","hex":"#01889F"},{"name":"TIFFANYBLUE","hex":"#7BF2DA"},{"name":"TURQUOISEBLUE","hex":"#06B1C4"},{"name":"TWILIGHTBLUE","hex":"#0A437A"},{"name":"ULTRAMARINEBLUE","hex":"#1805DB"},{"name":"VERYDARKBLUE","hex":"#000133"},{"name":"VERYLIGHTBLUE","hex":"#D5FFFF"},{"name":"WINDOWSBLUE","hex":"#3778BF"}]
+        blueColors = blueColors.concat([{"name":"AQUA","hex":"#13EAC9"},{"name":"AQUAGREEN","hex":"#12E193"},{"name":"DARKAQUAMARINE","hex":"#017371"},{"name":"DEEPAQUA","hex":"#08787F"},{"name":"LIGHTAQUAMARINE","hex":"#7BFDC7"}])
+
+        // Function to generate color elements
+        function generateColorElements() {
+            const container = document.getElementById('colorContainer');
+            blueColors.forEach(color => {
+                const colorBox = document.createElement('div');
+                colorBox.className = 'color-box';
+
+                const colorSwatch = document.createElement('div');
+                colorSwatch.className = 'color-swatch';
+                colorSwatch.style.backgroundColor = color.hex;
+
+                const colorName = document.createElement('p');
+                colorName.textContent = color.name;
+
+                colorBox.appendChild(colorSwatch);
+                colorBox.appendChild(colorName);
+                container.appendChild(colorBox);
+            });
+        }
+
+        // Generate colors on page load
+        generateColorElements();
+    </script>
+</body>
+</html>

@@ -6,17 +6,15 @@ from utils import *
 
 w=1
 
-
+config.renderer="opengl"
 class test(Scene):
-    def construct(self):
-        v = Arrow(ORIGIN,RIGHT,buff=0,color=TEAL)
-        n= always_redraw(lambda: Arrow(v.get_start(),v.get_start()+v.get_normal_vector(),buff=0))
-        def dot():
-            theta, phi, _ = self.camera.euler_angles
-            x = np.cos(theta-90*DEGREES) * np.sin(phi)
-            y = np.sin(theta-90*DEGREES) * np.sin(phi)
-            z = np.cos(phi)
-            return Dot([x,y,z])
-        d = always_redraw(dot)
-        self.add(n,v,d)
-        self.interactive_embed()
+    def construct(self):        
+        light = SVGMobject("flashlight-svgrepo-com.svg")
+        light.data["stroke_width"]=np.array([0])
+        light.get_top
+        t = MathTex("t")
+        self.play(FadeIn(light))
+
+with tempconfig({"quality": "medium_quality", "preview": True}):
+    scene = test()
+    scene.render()
