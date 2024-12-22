@@ -549,7 +549,7 @@ class DashedLine3D(OpenGLGroup):
 
 
 class RightAngle3D(OpenGLGroup):
-    def __init__(self, line1, line2, length = 0.2, **kwargs):
+    def __init__(self, line1, line2, length = 0.2, threeD=True, **kwargs):
         # Assumes that line 2 starts where line 1 ends
         
         line1_start = line1.get_start()
@@ -567,4 +567,33 @@ class RightAngle3D(OpenGLGroup):
         
         middle = 2*project(to_intersection,direct)-to_intersection + start                
 
-        super().__init__(Line3D(start,middle, **kwargs), Line3D(middle,end, **kwargs))
+        if threeD:
+            parts = [Line3D(start,middle, **kwargs), Line3D(middle,end, **kwargs)]
+        else:
+            parts = [Line(start,middle, **kwargs).set_flat_stroke(False), Line(middle,end, **kwargs).set_flat_stroke(False)]                        
+        super().__init__(*parts)
+
+
+class RightAngleIn3D(OpenGLVMobject):
+    def __init__(self, line1, line2, length = 0.2, **kwargs):
+        # Assumes that line 2 starts where line 1 ends
+        
+        line1_start = line1.get_start()
+        line1_end = line1.get_end()
+        line2_start = line2.get_start()
+        line2_end = line2.get_end()
+
+        unit1 = (line1_end-line1_start)/np.linalg.norm(line1_end-line1_start)
+        start = line1_end - unit1 * length
+        unit2 = (line2_end - line2_start)/np.linalg.norm(line2_end - line2_start)
+        end = line2_start + unit2 * length
+
+        direct = end - start
+        to_intersection = line1_end-start
+        
+        middle = 2*project(to_intersection,direct)-to_intersection + start                
+        middle1 = start + (middle-start)/2
+        middle2 = middle + (end - middle)/2
+        
+        super().__init__(**kwargs)
+        self.points=np.array([start,middle1,middle,middle, middle2,end])

@@ -572,7 +572,7 @@ class SymmetricGeom2d(ThreeDScene):
             Group(pu,pul).animate.set_opacity(0.2),            
         )
         # self.play(Merge([pv,v.copy()],pv),run_time=1.5)
-        dot3 = MathTex(r"\hat{\mathbf{u}}",r"\cdot",r"\hat{\mathbf{v}}","=",r"\hat{\mathbf{u}}","\cdot",r"\mathbf{v}","=",r"\mathbf{u}","\cdot",r"\hat{\mathbf{v}}", font_size=45).move_to(dot2,aligned_edge=LEFT)
+        dot3 = MathTex(r"\hat{\mathbf{u}}",r"\cdot",r"\hat{\mathbf{v}}","=",r"\hat{\mathbf{u}}",r"\cdot",r"\mathbf{v}","=",r"\mathbf{u}",r"\cdot",r"\hat{\mathbf{v}}", font_size=45).move_to(dot2,aligned_edge=LEFT)
         color_tex_standard(dot3)
         AlignBaseline(dot3,dot2)
         self.play(
@@ -1130,6 +1130,384 @@ class Eigs01(Scene):
         text1 = Tex(r"Eigenvalues of projections are 0's and 1's", font_size=55)
         self.play(Write(text1))
         self.wait()                
+
+
+
+class MultiplyProperty(Scene):
+    def construct(self):
+        # write title
+        title = Tex("Projection Matrix Properties", font_size=75).to_edge(UP)
+        ul = Line(title.get_corner(DL)+DL*0.2, title.get_corner(DR)+DR*0.2, color=BLUE)        
+        self.add(title, ul)
+        self.wait()
+
+        # text property
+        text1 = Tex(r"Orthogonal or overlapping projections commute", font_size=55)
+        self.play(Write(text1))
+        self.wait()  
+
+
+
+# config.renderer="opengl"
+class Commute(Scene):
+    def construct(self):
+        h = 0.6
+        ucoords = np.array([0.75,0.5,h])
+        pucoords = ucoords - np.array([0,0,h])
+        pxucoords = np.array([ucoords[0],0,0])
+        pyucoords = np.array([0,ucoords[1],0])
+        vcoords = np.array([0.25,0.7,h])
+        pvcoords = vcoords - np.array([0,0,h])
+        
+
+        # set up frame
+        frame = self.camera
+        original_frame = frame.copy()
+
+        # define diagram
+        axes = ThreeDAxes(
+            x_range=[-0.5,1],x_length=5,
+            y_range=[-0.5,1],y_length=5,
+            z_range=[0,1],z_length=1.9,
+            x_axis_config={"include_ticks":False},
+            y_axis_config={"include_ticks":False},
+            z_axis_config={"include_ticks":False},            
+        ).set_flat_stroke(False)
+        
+        u = Arrow3D(axes.c2p(*ORIGIN), axes.c2p(*ucoords), buff=0, color=UCOLOR)                
+        pu = Arrow3D(axes.c2p(*ORIGIN), axes.c2p(*pucoords), buff=0, color=PUCOLOR)     
+        pxu = Arrow3D(axes.c2p(*ORIGIN), axes.c2p(*pxucoords), buff=0, color=VCOLOR)                   
+        pyu = Arrow3D(axes.c2p(*ORIGIN), axes.c2p(*pyucoords), buff=0, color=VCOLOR)                   
+        plane = OpenGLSurface(lambda u,v:axes.c2p(*[u,v,0]),u_range=[-0.5,1],v_range=[-0.5,1]).set_opacity(0.4)
+        grid = NumberPlane(
+            x_range=[-0.5,1,0.25],x_length=5,
+            y_range=[-0.5,1,0.25],y_length=5
+        ).set_color(GRAY).set_flat_stroke(False).set_opacity(0.1)
+
+        diagram = Group(axes, plane, grid)
+        diagram.add(u,pu,pxu,pyu)       
+
+        # dashed lines and right angles
+        dxy = DashedLine(pu.get_end(),u.get_end(),dash_length=0.1).set_flat_stroke(True).set_opacity(0.5)
+        rxy = RightAngleIn3D(pu,dxy,length=0.2).set_flat_stroke(False).set_stroke(width=1, opacity=0.5)
+        dx = DashedLine(pxu.get_end(),u.get_end(),dash_length=0.15).set_flat_stroke(True).set_opacity(0.3)
+        rx = RightAngleIn3D(pxu,dx,length=0.2).set_flat_stroke(False).set_stroke(width=1, opacity=0.5)
+        dxp = DashedLine(pxu.get_end(),pu.get_end(),dash_length=0.15).set_flat_stroke(True).set_opacity(0.3)
+        rxp = RightAngleIn3D(pxu,dxp,length=0.2).set_flat_stroke(False).set_stroke(width=1, opacity=0.5)        
+        # for dash in [dxy,dx,dxp]: dash.reverse_points()
+        diagram.add(dxy,rxy,dx,rx,dxp,rxp) 
+        
+        # rotate/shift the diagram instead of rotating the camera, since fixed-in-frame mobjects don't work so great for text
+        diagram.rotate(-45*DEGREES).rotate(-80*DEGREES,RIGHT)
+        diagram.shift(ORIGIN-pu.get_center()).shift(DOWN*0.5+LEFT*0.25)             
+
+        # vector labels
+        ul = MathTex(r"u", color=UCOLOR, font_size=45).next_to(u.get_end(),buff=0.15)        
+        pul = MathTex(r"\mathbf{P_{xy}},","u", color=PUCOLOR, font_size=45).next_to(pu.get_end(),RIGHT,buff=0.05)
+        pxul = MathTex(r"\mathbf{P_{x}}",r"\mathbf{P_{xy}}","u", color=VCOLOR, font_size=40).next_to(pxu.get_end(),DL,buff=0.05)        
+        diagram.add(ul,pul,pxul)   
+        
+        # scale the camera                
+        frame.save_state()
+        frame.scale(0.4)
+
+        # add axes etc., draw vector and label it
+        self.play(FadeIn(axes,plane,grid,shift=UR))
+        self.play(ReplacementTransform(u.copy().scale(0.05,u.points[0]),u))        
+        self.play(Write(ul))
+        self.wait()
+
+        # project to x-y plane
+        self.play(
+            TransformFromCopy(u,pu),
+            Create(dxy),
+            run_time=1.25,
+        )
+        self.play(Write(rxy))                
+        
+        # project to x axis
+        self.play(
+            TransformFromCopy(pu,pxu),
+            Create(dxp),
+            run_time=1.25,
+        )
+        self.play(Write(rxp)) 
+
+        # add labels
+        self.play(Write(pul),run_time=1.25)
+        self.play(Write(pxul),run_time=1.25)
+        self.wait()
+
+        # zoom out
+        self.play(frame.animate.scale(1.25).shift(UP*0.5),run_time=1.5)
+        commute = MathTex(r"\mathbf{P_{x}}",r"\mathbf{P_{xy}}","u",r"\stackrel{?}{=}",r"\mathbf{P_{xy}}",r"\mathbf{P_{x}}","u", color=VCOLOR, font_size=45).next_to(diagram,UP).shift(DOWN*0.25+RIGHT*1.5)
+        self.play(TransformFromCopy(pxul[:],commute[:3]),run_time=1.5)
+        self.play(Write(commute[3]))
+        self.play(
+            TransformFromCopy(commute[0],commute[5], path_arc=90*DEGREES), # px
+            TransformFromCopy(commute[1],commute[4], path_arc=-90*DEGREES), # pxy
+            TransformFromCopy(commute[2],commute[6], path_arc=90*DEGREES), # u
+            run_time=2 
+        )
+        self.wait()
+
+        # project straight to x axis
+        pxu2 = pxu.copy()
+        self.play(
+            FadeOut(pxu),
+            TransformFromCopy(u,pxu2),
+            Create(dx),
+            run_time=1.75,
+        )
+        self.play(Write(rx)) 
+
+        # they do commute        
+        commute1 = AlignBaseline(MathTex(r"\mathbf{P_{x}}",r"\mathbf{P_{xy}}","u",r"=",r"\mathbf{P_{xy}}",r"\mathbf{P_{x}}","u", color=VCOLOR, font_size=45).next_to(diagram,UP).shift(DOWN*0.25+RIGHT*1.25).move_to(commute),commute)
+        check = Tex(r'\checkmark', color=GREEN).next_to(commute1)
+        self.play(ReplacementTransform(commute,commute1))
+        self.play(Write(check))
+        self.wait()
+
+        # clear the canvas to just u
+        self.play(FadeOut(commute1, pu,pul,pxu,pxul,dx,rx,dxy,rxy,dxp,rxp,check),run_time=1.5)
+        self.wait()
+
+        # expression with px and py
+        ncommute = MathTex(r"\mathbf{P_{y}}",r"\mathbf{P_{x}}","u","=","0","=",r"\mathbf{P_{x}}",r"\mathbf{P_{y}}","u", color=VCOLOR, font_size=45).move_to(commute)
+        self.play(TransformFromCopy(ul[0],ncommute[2]),run_time=1.25)
+        self.play(Write(ncommute[1]),run_time=1.25)
+        self.play(Write(ncommute[0]),run_time=1.25)
+        self.wait()
+
+        # equals question
+        qm = Tex(r"?").next_to(ncommute[3])
+        self.play(Write(ncommute[3]))
+        self.play(Write(qm))
+
+        # project to x axis, then to zero
+        self.play(TransformFromCopy(u,pxu2),run_time=1.75)
+        self.wait()        
+        self.play(pxu2.animate.scale(0.01,pxu2.points[0]),run_time=1.75)
+        self.remove(pxu2)
+
+        # replace question mark with zero        
+        self.play(
+            FadeOut(qm,shift=DOWN),
+            FadeIn(ncommute[4],shift=DOWN)
+        )
+        self.wait()
+
+        # project to y axis then zero
+        self.play(TransformFromCopy(u,pyu),run_time=1.75)
+        self.wait()        
+        self.play(pyu.animate.scale(0.01,pyu.points[0]),run_time=1.75)
+        self.remove(pyu)
+
+        # add second formula
+        self.play(Write(ncommute[5]))
+        self.play(
+            TransformFromCopy(ncommute[0],ncommute[7], path_arc=90*DEGREES), # py
+            TransformFromCopy(ncommute[1],ncommute[6], path_arc=-90*DEGREES), # px
+            TransformFromCopy(ncommute[2],ncommute[8], path_arc=90*DEGREES), # u
+            run_time=2 
+        )
+        self.wait()
+
+        self.interactive_embed()
+
+
+class NotCommute(MovingCameraScene):
+    def construct(self):
+        l1coords = np.array([2,0.5])*2        
+        l2coords = np.array([0.5,2])*2                
+        ucoords = np.array([1.5,1.5])*2
+        p1coords = l1coords * np.dot(l1coords,ucoords) / np.dot(l1coords,l1coords)
+        p12coords = l2coords * np.dot(l2coords,p1coords) / np.dot(l2coords,l2coords)
+        p2coords = l2coords * np.dot(l2coords,ucoords) / np.dot(l2coords,l2coords)
+        p21coords = l1coords * np.dot(l1coords,p2coords) / np.dot(l1coords,l1coords)
+        
+        # initial frame stuff
+        frame = self.camera.frame
+        frame.save_state()
+
+        # draw vectors and labels
+        axes = Axes(x_range=[-2,2], x_length=4,y_range=[-2,2],y_length=4)#.rotate(-15*DEGREES)
+        line1 = Line(axes.c2p(*(-l1coords)), axes.c2p(*l1coords), buff=0, color=XCOLOR).set_opacity(0.4)
+        line2 = Line(axes.c2p(*(-l2coords)), axes.c2p(*l2coords), buff=0, color=XCOLOR).set_opacity(0.4)
+        u = Arrow(axes.c2p(0,0), axes.c2p(*ucoords), buff=0, color=UCOLOR)
+        diagram = VGroup(axes,line1,line2,u)
+
+        # projections
+        p1 = Arrow(axes.c2p(0,0), axes.c2p(*p1coords), buff=0, color=PUCOLOR)
+        p21 = Arrow(axes.c2p(0,0), axes.c2p(*p21coords), buff=0, color=PUCOLOR)
+        p2 = Arrow(axes.c2p(0,0), axes.c2p(*p2coords), buff=0, color=PVCOLOR)
+        p12 = Arrow(axes.c2p(0,0), axes.c2p(*p12coords), buff=0, color=PVCOLOR)
+        diagram.add(p1,p12,p21,p2)
+
+        # labels
+        ul = MathTex(r"u", font_size=60, color=UCOLOR).next_to(u.get_tip(), UP)
+        p1l = MathTex(r"\mathbf{P_1}","u", font_size=60, color=PUCOLOR).next_to(p1.get_tip(), DOWN)        
+        p21l = MathTex(r"\mathbf{P_1}",r"\mathbf{P_2}", "u", font_size=60, color=PUCOLOR).next_to(p21.get_tip(), DOWN)        
+        p2l = MathTex(r"\mathbf{P_2}","u", font_size=60, color=PVCOLOR).next_to(p2.get_tip(), LEFT)        
+        p12l = MathTex(r"\mathbf{P_2}",r"\mathbf{P_1}", "u", font_size=60, color=PVCOLOR).next_to(p12.get_tip(), LEFT)        
+        for label in [ul,p1l,p21l,p2l,p12l]:
+            color_tex(label,("u",UCOLOR),(r"\mathbf{P_1}",PUCOLOR),(r"\mathbf{P_2}",PVCOLOR))
+        diagram.add(ul,p1l,p12l,p21l,p2l)
+
+        # dashes and right angles
+        d1 = DashedLine(u.get_end(),p1.get_end(),dash_length=0.2).set_opacity(0.4)
+        r1 = RightAngle(d1,p1,length=0.2,quadrant=(-1,-1)).set_stroke(opacity=0.4)
+        d2 = DashedLine(u.get_end(),p2.get_end(),dash_length=0.2).set_opacity(0.4)
+        r2 = RightAngle(d2,p2,length=0.2,quadrant=(-1,-1)).set_stroke(opacity=0.4)
+        d12 = DashedLine(p1.get_end(),p12.get_end(),dash_length=0.2).set_opacity(0.4)
+        r12 = RightAngle(d12,p12,length=0.2,quadrant=(-1,-1)).set_stroke(opacity=0.4)
+        d21 = DashedLine(p2.get_end(),p21.get_end(),dash_length=0.2).set_opacity(0.4)
+        r21 = RightAngle(d21,p21,length=0.2,quadrant=(-1,-1)).set_stroke(opacity=0.4)
+        diagram.add(d1,r1,d2,r2,d12,r12,d21,r21)
+
+        diagram.shift(-u.get_center())
+        frame.scale(0.65)
+
+        # draw lines and vector
+        self.play(Create(line1), Create(line2),run_time=1.25)
+        self.play(GrowArrow(u))
+        self.play(Write(ul))
+        self.wait()
+
+        # project 1...
+        self.play(
+            TransformFromCopy(u,p1),
+            Write(d1),
+            TransformFromCopy(ul[0],p1l[1],path_arc=60*DEGREES),
+            run_time=1.25
+        )
+        self.play(            
+            Write(p1l[0]),
+            Write(r1),
+            run_time=1.25
+        )
+        
+        # ...then 2
+        self.play(
+            TransformFromCopy(p1,p12),
+            Write(d12),
+            TransformFromCopy(p1l[:],p12l[1:],path_arc=120*DEGREES),
+            run_time=1.5
+        )
+        self.play(
+            Write(p12l[0]),
+            Write(r12),
+            run_time=1.25
+        )
+        self.wait()
+
+        # project 2...
+        self.play(
+            TransformFromCopy(u,p2),
+            Write(d2),
+            TransformFromCopy(ul[0],p2l[1],path_arc=-60*DEGREES),
+            run_time=1.25
+        )
+        self.play(            
+            Write(p2l[0]),
+            Write(r2),
+            run_time=1.25
+        )
+
+        # ...then 1
+        self.play(
+            TransformFromCopy(p2,p21),
+            Write(d21),
+            TransformFromCopy(p2l[:],p21l[1:],path_arc=120*DEGREES),
+            run_time=1.5
+        )
+        self.play(
+            Write(p21l[0]),
+            Write(r21),
+            run_time=1.25
+        )
+        self.wait()
+
+        # zoom out
+        self.play(frame.animate.scale(1.2).shift(DOWN*0.5+RIGHT), run_time=1.25)        
+
+        # write equation
+        ncommute = MathTex(r"\mathbf{P_1}",r"\mathbf{P_2}",r"\neq",r"\mathbf{P_2}",r"\mathbf{P_1}", font_size=70).next_to(p21l,DR,buff=0.4)
+        color_tex(ncommute,("u",UCOLOR),(r"\mathbf{P_1}",PUCOLOR),(r"\mathbf{P_2}",PVCOLOR))
+        self.play(TransformFromCopy(p21l[:2],ncommute[:2]),run_time=1.25)
+        self.play(Write(ncommute[2]))
+        self.play(TransformFromCopy(p12l[:2],ncommute[3:],path_arc=120*DEGREES),run_time=1.75)        
+        self.wait()
+
+        # fade to black
+        self.play(FadeOut(*self.mobjects))
+
+
+
+class AddingMatrices(Scene):
+    def construct(self):
+        # p1 + p2
+        f1 = MathTex(r"\mathbf{P_1}+\mathbf{P_2}",font_size=75)
+        color_tex(f1,("u",UCOLOR),(r"\mathbf{P_1}",PUCOLOR),(r"\mathbf{P_2}",PVCOLOR))
+        self.play(Write(f1[0][0:2]))
+        self.play(Write(f1[0][2]))
+        self.play(Write(f1[0][3:]))
+        self.wait()
+
+        # add parentheses and u
+        f2 = AlignBaseline(MathTex(r"\left(",r"\mathbf{P_1}+\mathbf{P_2}",r"\right)","u",font_size=75).move_to(f1),f1)
+        color_tex(f2,("u",UCOLOR),(r"\mathbf{P_1}",PUCOLOR),(r"\mathbf{P_2}",PVCOLOR))
+        self.play(*TransformBuilder(
+            f1,f2,
+            [
+                (None,0), # (
+                (0,1), # p1+p2
+                (None, 2), # )
+                (None,3), # u
+            ]
+        ),run_time=1.25)
+        self.wait()
+
+        # = and distribute
+        f3 = AlignBaseline(MathTex(r"\left(",r"\mathbf{P_1}+\mathbf{P_2}",r"\right)","u","=",r"\mathbf{P_1} u+\mathbf{P_2} u",font_size=75).move_to(f2),f2)
+        color_tex(f3,("u",UCOLOR),(r"\mathbf{P_1}",PUCOLOR),(r"\mathbf{P_2}",PVCOLOR))
+        self.play(ReplacementTransform(f2[0:4],f3[0:4]))
+        self.play(Write(f3[4]))
+        self.play(*TransformBuilder(
+            f3,f3,
+            [
+                ([1,[0,1]],[5,[0,1]],None,{"path_arc":120*DEGREES}), # p1
+                ([1,2],[5,3],None,{"path_arc":120*DEGREES}), # +
+                ([1,[3,4]],[5,[4,5]],None,{"path_arc":120*DEGREES}), # p2
+                ([3,0],[5,2],None,{"path_arc":-120*DEGREES}), # u
+                ([3,0],[5,6],None,{"path_arc":-120*DEGREES}), # u
+            ],TransformFromCopy
+        ),run_time=1.5)
+        self.wait()
+
+        # write title
+        title = Tex("Projection Matrix Properties", font_size=75).to_edge(UP)
+        ul = Line(title.get_corner(DL)+DL*0.2, title.get_corner(DR)+DR*0.2, color=BLUE)        
+        self.play(Write(title), FadeOut(f3))
+        self.play(Write(ul))
+        self.wait()
+
+        # text property 1
+        text1 = Tex(r"Orthogonal and non-overlapping projections \\ add to another projection", font_size=55)
+        self.play(Write(text1))
+        self.wait()  
+
+        # text property 2
+        text2 = Tex(r"A complete set of such projections \\ adds to the Identity Matrix", font_size=55).shift(DOWN*1.25)
+        self.play(text1.animate.shift(UP*1.25))
+        self.play(Write(text2))
+        self.wait()  
+
+
+
+class AddingExamples(Scene):
+    def construct(self):
+        pass
 
 
 """
