@@ -7,6 +7,15 @@ from utils import *
 
 w=1
 
+
+# new colors
+COLOR_V1 =  XKCD.LIGHTBLUE
+COLOR_V1P = XKCD.WINDOWSBLUE # pureblue and cobaltblue is good too
+COLOR_V2 = XKCD.LIGHTAQUA
+COLOR_V2P = XKCD.BLUEGREEN
+
+"""
+# old colors
 XCOLOR = XKCD.LIGHTVIOLET
 YCOLOR = XKCD.LIGHTYELLOW
 VCOLOR = XKCD.LIGHTAQUA
@@ -18,6 +27,7 @@ UCOLOR = XKCD.LIGHTBLUE
 PUCOLOR = XKCD.WINDOWSBLUE # pureblue and cobaltblue is good too
 PVCOLOR = XKCD.BLUEGREEN
 
+"""
 
 def color_tex_standard(equation):
     if isinstance(equation,Matrix):
@@ -50,8 +60,8 @@ class ProjectionIntuition2d(MovingCameraScene):
             y_length = 6,
             x_axis_config={"include_ticks":False},
             y_axis_config={"include_ticks":False})
-        v1 = Vector(axes.c2p(2,2), color=BLUE_B)
-        vp = Vector(axes.c2p(2,0), color=BLUE_E)#.set_opacity(0.8)
+        v1 = Vector(axes.c2p(2,2), color=COLOR_V1)
+        vp = Vector(axes.c2p(2,0), color=COLOR_V1P)#.set_opacity(0.8)
 
         self.play(FadeIn(axes, shift=UR), run_time=1.3)
         self.play(camera.animate.move_to(v1).scale(0.4),run_time=2)
@@ -95,8 +105,8 @@ class ProjectionIntution3d(ThreeDScene):
         )
         plane = OpenGLSurface(lambda u,v:[u,v,0], u_range=[-grid_blocks*axes.get_x_unit_size(),grid_blocks*axes.get_x_unit_size()], v_range=[-grid_blocks*axes.get_y_unit_size(),grid_blocks*axes.get_x_unit_size()], color=GREY).set_opacity(0.6)
         
-        v1 = Arrow3D(start = ORIGIN, end=axes.c2p(*vcoords), color=BLUE_B)
-        vp = Vector(axes.c2p(*project(vcoords, [vcoords[0],vcoords[1],0])), color=BLUE_E)        
+        v1 = Arrow3D(start = ORIGIN, end=axes.c2p(*vcoords), color=COLOR_V1)
+        vp = Vector(axes.c2p(*project(vcoords, [vcoords[0],vcoords[1],0])), color=COLOR_V1P)        
         cone = Cone(color=YELLOW).shift(OUT*3.25 + UP*2.75 + RIGHT*2.73).set_opacity(0)                
         self.add(cone)
         light = SVGMobject("flashlight-svgrepo-com.svg").set_opacity(0)        
@@ -109,39 +119,9 @@ class ProjectionIntution3d(ThreeDScene):
         self.play(light.animate.set_opacity(1),run_time=1.5)
         self.play(cone.set_opacity(0.4).animate(reverse_rate_function=True).scale(0,about_point=cone.get_zenith()),run_time=1.5)
         self.play(self.camera.animate.move_to(v1).scale(0.4),run_time=2)
-        self.play(ReplacementTransform(Vector(axes.c2p(*vcoords), color=BLUE_B).set_opacity(0),vp), run_time=1.5)
+        self.play(ReplacementTransform(Vector(axes.c2p(*vcoords), color=COLOR_V1).set_opacity(0),vp), run_time=1.5)
         self.wait()                       
 
-
-
-"""class ProjectionIntution3d(ThreeDScene):
-    def construct(self):
-        vcoords = [1,2.5,2]
-        grid_blocks = 4
-
-        self.set_camera_orientation(theta=0.3, phi=1.3)
-        axes = ThreeDAxes(
-            x_axis_config={"include_ticks":False},
-            y_axis_config={"include_ticks":False},
-            z_axis_config={"include_ticks":False},
-        )
-        plane = Surface(lambda u,v:[u,v,0], u_range=[-grid_blocks*axes.get_x_unit_size(),grid_blocks*axes.get_x_unit_size()], v_range=[-grid_blocks*axes.get_y_unit_size(),grid_blocks*axes.get_x_unit_size()], resolution=grid_blocks*2, checkerboard_colors=[RED_E, RED_D]).set_z_index(-1)
-        
-        v1 = Arrow3D(start = ORIGIN, end=axes.c2p(*vcoords), color=BLUE_B)
-        vp = Vector(axes.c2p(*project(vcoords, [vcoords[0],vcoords[1],0])), color=BLUE_E)
-        light = SVGMobject("flashlight-svgrepo-com.svg")
-        light.rotate(TAU/8).rotate(TAU/4,axis=[0,1,0]).rotate(TAU/4, axis=[1,0,0]).rotate(TAU/12, axis=[0,0,1]).scale(0.6).move_to(axes.c2p(4.75,2.75,4.25))
-        cone = Cone(fill_color=YELLOW).set_z_index(-1).shift(OUT*3.25, UP*2.75, RIGHT*3.25).set_opacity(0.4)
-        
-        self.play(Create(axes))
-        self.play(Create(v1))
-        self.play(FadeIn(plane))
-        self.play(FadeIn(light))
-        self.play(Create(cone))
-        self.play(FadeIn(vp, shift=IN))
-        self.wait()                       
-
-"""
 
 
 class OrthogonalProjection(MovingCameraScene):
@@ -154,8 +134,8 @@ class OrthogonalProjection(MovingCameraScene):
             x_axis_config={"include_ticks":False},
             y_axis_config={"include_ticks":False})
         v = [ValueTracker(1), ValueTracker(4)]
-        v1 = always_redraw(lambda: Vector(axes.c2p(v[0].get_value(), v[1].get_value()), color=BLUE_B))
-        vp = always_redraw(lambda: Vector(axes.c2p((v[0].get_value()*4/5+v[1].get_value()*2/5),(v[0].get_value()*2/5+v[1].get_value()*1/5)), color=BLUE_E))
+        v1 = always_redraw(lambda: Vector(axes.c2p(v[0].get_value(), v[1].get_value()), color=COLOR_V1))
+        vp = always_redraw(lambda: Vector(axes.c2p((v[0].get_value()*4/5+v[1].get_value()*2/5),(v[0].get_value()*2/5+v[1].get_value()*1/5)), color=COLOR_V1P))
         dash = always_redraw(lambda: DashedLine(start=v1.get_end(), end=vp.get_end(), dash_length=0.2))
         ra = always_redraw(lambda: RightAngle(vp, dash, quadrant=(-1,-1), length=0.4))        
         line = DoubleArrow(start=axes.c2p(*np.array([2,1])*2), end=axes.c2p(*np.array([2,1])*-2)).set_opacity(0.3).set_z_index(-1)
@@ -198,14 +178,14 @@ class DotProduct(MovingCameraScene):
 
         # draw vectors and labels
         axes = Axes(x_range=[-2,2], x_length=4,y_range=[-2,2],y_length=4)
-        x = Arrow(axes.c2p(0,0), axes.c2p(*xcoords), buff=0, color=XCOLOR)
-        v = Arrow(axes.c2p(0,0), axes.c2p(*vcoords), buff=0, color=VCOLOR)
-        vhat = Arrow(axes.c2p(0,0), axes.c2p(*pcoords), buff=0, color=PCOLOR)
-        xl = MathTex(r"\mathbf{x}", font_size=60, color=XCOLOR).next_to(x.get_tip(), RIGHT)
-        vl = MathTex(r"\mathbf{v}", font_size=60, color=VCOLOR).next_to(v.get_tip(), UP)
-        vhatl = MathTex(r"\hat{\mathbf{v}}", font_size=60, color=PCOLOR).next_to(vhat.get_tip(), DOWN,buff=0.1)
+        x = Arrow(axes.c2p(0,0), axes.c2p(*xcoords), buff=0, color=COLOR_V2)
+        v = Arrow(axes.c2p(0,0), axes.c2p(*vcoords), buff=0, color=COLOR_V1)
+        vhat = Arrow(axes.c2p(0,0), axes.c2p(*pcoords), buff=0, color=COLOR_V1P)
+        xl = MathTex(r"\mathbf{x}", font_size=60, color=COLOR_V2).next_to(x.get_tip(), RIGHT)
+        vl = MathTex(r"\mathbf{v}", font_size=60, color=COLOR_V1).next_to(v.get_tip(), UP)
+        vhatl = MathTex(r"\hat{\mathbf{v}}", font_size=60, color=COLOR_V1P).next_to(vhat.get_tip(), DOWN,buff=0.1)
         r = DashedLine(axes.c2p(*vcoords),axes.c2p(*pcoords), dash_length=0.12).set_opacity(0.5)
-        ra = RightAngle(vhat,r,length=0.25,quadrant=(-1,-1))        
+        ra = RightAngle(vhat,r,length=0.25,quadrant=(-1,-1)).set_stroke(opacity=0.5)        
         diagram = VGroup(axes,x,v,xl,vl,r,vhat,vhatl,ra).shift(-VGroup(v,x).get_center()).shift(LEFT*2.25)
         diagram.remove(axes)        
 
@@ -221,12 +201,12 @@ class DotProduct(MovingCameraScene):
         # move figure left, write dot product
         self.play(frame.animate.shift(RIGHT*1.5))
         dot = MathTex(r"\mathbf{x} \cdot \mathbf{v}",font_size=60).next_to(diagram).shift(UP)
-        color_tex_standard(dot)
+        color_tex(dot,(r"\mathbf{x}",COLOR_V2),(r"\mathbf{v}",COLOR_V1),(r"\hat{\mathbf{v}}",COLOR_V1P))
         self.play(
-            TransformFromCopy(xl[0][0],dot[0][0]), # x
-            Write(dot[0][1]), # dot
+            TransformFromCopy(xl[0][0],dot[0][0]), # x            
             TransformFromCopy(vl[0][0],dot[0][2]) # v
         ,run_time=1.5)
+        self.play(FadeIn(dot[0][1],shift=UP)) # dot
         self.wait()
 
         # drop projection
@@ -234,12 +214,13 @@ class DotProduct(MovingCameraScene):
             TransformFromCopy(v,vhat),
             Write(r)
         ,run_time=2)
+        self.play(Write(ra))
         self.play(Write(vhatl))        
         self.wait(w)
 
         # dot product equation
         dot2 = AlignBaseline(MathTex(r"\mathbf{x} \cdot \mathbf{v}","=",r"|\mathbf{x}|\times |\hat{\mathbf{v}} |",font_size=60).move_to(dot),dot)
-        color_tex_standard(dot2)
+        color_tex(dot2,(r"\mathbf{x}",COLOR_V2),(r"\mathbf{v}",COLOR_V1),(r"\hat{\mathbf{v}}",COLOR_V1P))
         self.play(
             ReplacementTransform(dot[0],dot2[0],path_arc=45*DEGREES),
             Write(dot2[1]), # =
@@ -248,6 +229,9 @@ class DotProduct(MovingCameraScene):
             Write(VGroup(*[dot2[2][i] for i in [0,2,3,4,7]]))
         ,run_time=2)
         self.wait()
+
+        # clear out
+        self.play(FadeOut(*self.mobjects,shift=DOWN))
 
         
 
@@ -260,24 +244,17 @@ class PMatrix(Scene):
             y_range = [-3.6,3.6,1],
             y_length = 6,
             x_axis_config={"include_ticks":False},
-            y_axis_config={"include_ticks":False})
-        self.add(axes)      
-        self.wait()
-
-        # shift axes over
-        self.play(
-            Transform(axes, axes.copy().shift(LEFT*2.5).scale(0.75))
-        )
-        self.wait()
+            y_axis_config={"include_ticks":False}).shift(LEFT*2.5).scale(0.75)
+        
 
         # add vector, arrow and text
         pm = Matrix([
             [1,0],
             [0,0]
         ]).move_to([2,2,0])
-        vm = Matrix([[2],[2]]).set_color(BLUE_B).next_to(pm,RIGHT)
-        va = Arrow(axes.c2p(0,0), axes.c2p(2,2), color=BLUE_B, buff=0)
-        self.play(GrowArrow(va))
+        vm = Matrix([[2],[2]]).set_color(COLOR_V1).next_to(pm,RIGHT)
+        va = Arrow(axes.c2p(0,0), axes.c2p(2,2), color=COLOR_V1, buff=0)
+        self.play(FadeIn(axes,va,shift=DOWN))
         self.play(Write(vm))
         self.wait()
 
@@ -286,23 +263,23 @@ class PMatrix(Scene):
         self.wait()
 
         # project
-        vp = Arrow(axes.c2p(0,0), axes.c2p(2,0), color=BLUE_E, buff=0)
+        vp = Arrow(axes.c2p(0,0), axes.c2p(2,0), color=COLOR_V1P, buff=0)
         self.play(TransformFromCopy(va, vp))
         eq = MathTex("=", font_size=55).next_to(vm)
-        vpm = Matrix([[2],[0]]).set_color(BLUE_E).next_to(eq)
+        vpm = Matrix([[2],[0]]).set_color(COLOR_V1P).next_to(eq)
         self.play(Write(eq), Write(vpm))
         self.wait()
 
         # write formula
-        xl = MathTex("x",font_size=60,color=BLUE_B).next_to(va.get_end(),UP)
+        xl = MathTex("x",font_size=60,color=COLOR_V1).next_to(va.get_end(),UP)
         self.play(FadeIn(xl,shift=DOWN))
-        xe = MathTex("x",font_size=65,color=BLUE_B).next_to(vm,DOWN,buff=0.3)
+        xe = MathTex("x",font_size=65,color=COLOR_V1).next_to(vm,DOWN,buff=0.3)
         self.play(TransformFromCopy(xl,xe),run_time=1.5)
         pe = AlignBaseline(MathTex(r"\mathbf{P}",font_size=60).next_to(pm,DOWN),xe)
         self.play(TransformFromCopy(pm,pe),run_time=1.5)
-        xpl = MathTex(r"\hat{x}",font_size=60,color=BLUE_E).next_to(vp.get_end(),DOWN)
+        xpl = MathTex(r"\hat{x}",font_size=60,color=COLOR_V1P).next_to(vp.get_end(),DOWN)
         self.play(FadeIn(xpl,shift=UP))
-        xpe = AlignBaseline(MathTex(r"\hat{x}",font_size=65,color=BLUE_E).next_to(vpm,DOWN),xe)
+        xpe = AlignBaseline(MathTex(r"\hat{x}",font_size=65,color=COLOR_V1P).next_to(vpm,DOWN),xe)
         eq2 = AlignBaseline(MathTex("=", font_size=65).next_to(eq,DOWN),xpe)        
         self.play(TransformFromCopy(xpl,xpe), Write(eq2),run_time=1.5)
         self.wait()
@@ -317,7 +294,7 @@ class PMatrix(Scene):
 
         # add vectors in space
         vectors = [[
-            Arrow(axes.c2p(0,0), axes.c2p(i,j), buff=0, color=BLUE_B)
+            Arrow(axes.c2p(0,0), axes.c2p(i,j), buff=0, color=COLOR_V1)
         for j in range(-3,4)] for i in range(-6,6)]
         import itertools
         self.play(
@@ -327,7 +304,7 @@ class PMatrix(Scene):
 
         # project them down
         projected_vectors = [[
-            Arrow(axes.c2p(0,0), axes.c2p(i,0), buff=0, color=BLUE_E)
+            Arrow(axes.c2p(0,0), axes.c2p(i,0), buff=0, color=COLOR_V1P)
         for j in range(-3,4)] for i in range(-6,6)]        
         self.play(
             *[Transform(vector, projected_vector) for vector, projected_vector in zip(itertools.chain(*vectors), itertools.chain(*projected_vectors))]
@@ -499,19 +476,19 @@ class SymmetricGeom2d(ThreeDScene):
             y_range=[-2,2],y_length=10,
             z_range=[-2,2],z_length=10,
         )                
-        u = Arrow3D(axes.c2p(*ORIGIN), axes.c2p(*ucoords), buff=0, color=UCOLOR)        
-        v = Arrow3D(axes.c2p(*ORIGIN), axes.c2p(*vcoords), buff=0, color=VCOLOR)                
-        pu = Arrow3D(axes.c2p(*ORIGIN), axes.c2p(*pucoords), buff=0, color=PUCOLOR)        
-        pv = Arrow3D(axes.c2p(*ORIGIN), axes.c2p(*pvcoords), buff=0, color=PVCOLOR)        
+        u = Arrow3D(axes.c2p(*ORIGIN), axes.c2p(*ucoords), buff=0, color=COLOR_V1)        
+        v = Arrow3D(axes.c2p(*ORIGIN), axes.c2p(*vcoords), buff=0, color=COLOR_V2)                
+        pu = Arrow3D(axes.c2p(*ORIGIN), axes.c2p(*pucoords), buff=0, color=COLOR_V1P)        
+        pv = Arrow3D(axes.c2p(*ORIGIN), axes.c2p(*pvcoords), buff=0, color=COLOR_V2P)        
         plane = OpenGLSurface(lambda u,v:[u,v,0],u_range=[-0.75,2.5],v_range=[-0.75,2.5]).set_opacity(0.4)
         # plane = Surface(lambda u,v:[u,v,0],u_range=[-0.75,2.5],v_range=[-0.75,2.5])
         diagram = Group(plane,u,v,pu,pv)
         diagram.rotate(-125*DEGREES).rotate(-70*DEGREES,RIGHT)
         diagram.shift(LEFT*2.25)
-        ul = MathTex(r"\mathbf{u}", color=UCOLOR, font_size=50).next_to(u.get_end(),buff=0.15)
-        vl = MathTex(r"\mathbf{v}", color=VCOLOR, font_size=50).next_to(v.get_end(),buff=0.15)        
-        pul = MathTex(r"\hat{\mathbf{u}}", color=PUCOLOR, font_size=50).next_to(pu.get_end(),DR,buff=0.05)
-        pvl = MathTex(r"\hat{\mathbf{v}}", color=PVCOLOR, font_size=50).next_to(pv.get_end(),DR,buff=0.05)        
+        ul = MathTex(r"\mathbf{u}", color=COLOR_V1, font_size=50).next_to(u.get_end(),buff=0.15)
+        vl = MathTex(r"\mathbf{v}", color=COLOR_V2, font_size=50).next_to(v.get_end(),buff=0.15)        
+        pul = MathTex(r"\hat{\mathbf{u}}", color=COLOR_V1P, font_size=50).next_to(pu.get_end(),DR,buff=0.05)
+        pvl = MathTex(r"\hat{\mathbf{v}}", color=COLOR_V2P, font_size=50).next_to(pv.get_end(),DR,buff=0.05)        
         diagram.add(ul,vl,pul,pvl)        
         frame.scale(0.425).move_to(diagram).shift(DOWN*0.25)
         frame.save_state()
@@ -540,7 +517,7 @@ class SymmetricGeom2d(ThreeDScene):
 
         # dot product
         dot1 = MathTex(r"\hat{\mathbf{u}}",r"\cdot",r"\hat{\mathbf{v}}", font_size=45).next_to(plane,DOWN).shift(LEFT*2+DOWN*0.1)
-        color_tex_standard(dot1)
+        color_tex(dot1,(r"\mathbf{u}",COLOR_V1),(r"\mathbf{v}",COLOR_V2),(r"\hat{\mathbf{u}}",COLOR_V1P),(r"\hat{\mathbf{v}}",COLOR_V2P))
         self.play(TransformFromCopy(pul[0],dot1[0]),run_time=1.25)
         self.play(FadeIn(dot1[1],shift=DOWN),run_time=1.25)
         self.play(TransformFromCopy(pvl[0],dot1[2]),run_time=1.5)
@@ -553,7 +530,7 @@ class SymmetricGeom2d(ThreeDScene):
         )
         # self.play(Merge([pu,u.copy()],pu),run_time=1.5)
         dot2 = MathTex(r"\hat{\mathbf{u}}",r"\cdot",r"\hat{\mathbf{v}}","=",r"\hat{\mathbf{u}}","\cdot",r"\mathbf{v}", font_size=45).move_to(dot1,aligned_edge=LEFT)
-        color_tex_standard(dot2)
+        color_tex(dot2,(r"\mathbf{u}",COLOR_V1),(r"\mathbf{v}",COLOR_V2),(r"\hat{\mathbf{u}}",COLOR_V1P),(r"\hat{\mathbf{v}}",COLOR_V2P))
         AlignBaseline(dot2,dot1)
         self.play(
             ReplacementTransform(dot1[:3],dot2[:3]), # first dot product
@@ -573,7 +550,7 @@ class SymmetricGeom2d(ThreeDScene):
         )
         # self.play(Merge([pv,v.copy()],pv),run_time=1.5)
         dot3 = MathTex(r"\hat{\mathbf{u}}",r"\cdot",r"\hat{\mathbf{v}}","=",r"\hat{\mathbf{u}}",r"\cdot",r"\mathbf{v}","=",r"\mathbf{u}",r"\cdot",r"\hat{\mathbf{v}}", font_size=45).move_to(dot2,aligned_edge=LEFT)
-        color_tex_standard(dot3)
+        color_tex(dot3,(r"\mathbf{u}",COLOR_V1),(r"\mathbf{v}",COLOR_V2),(r"\hat{\mathbf{u}}",COLOR_V1P),(r"\hat{\mathbf{v}}",COLOR_V2P))
         AlignBaseline(dot3,dot2)
         self.play(
             ReplacementTransform(dot2[:7],dot3[:7]), # first two dot products
@@ -601,15 +578,15 @@ class SymmetricGeom1d(MovingCameraScene):
 
         # draw vectors and labels
         axes = Axes(x_range=[-2,2], x_length=4,y_range=[-2,2],y_length=4).rotate(-15*DEGREES)
-        line = Line(axes.c2p(*(-xcoords)), axes.c2p(*xcoords), buff=0, color=XCOLOR).set_opacity(0.4)
-        u = Arrow(axes.c2p(0,0), axes.c2p(*ucoords), buff=0, color=UCOLOR)
-        v = Arrow(axes.c2p(0,0), axes.c2p(*vcoords), buff=0, color=VCOLOR)
-        pu = Arrow(axes.c2p(0,0), axes.c2p(*pucoords), buff=0, color=PUCOLOR)
-        pv = Arrow(axes.c2p(0,0), axes.c2p(*pvcoords), buff=0, color=PVCOLOR)
-        ul = MathTex(r"\mathbf{u}", font_size=60, color=UCOLOR).next_to(u.get_tip(), UP)
-        vl = MathTex(r"\mathbf{v}", font_size=60, color=VCOLOR).next_to(v.get_tip(), UP)        
-        pul = MathTex(r"\hat{\mathbf{u}}", font_size=60, color=PUCOLOR).next_to(pu.get_tip(), UL,buff=0.05)
-        pvl = MathTex(r"\hat{\mathbf{v}}", font_size=60, color=PVCOLOR).next_to(pv.get_tip(), DOWN,buff=0.15)        
+        line = Line(axes.c2p(*(-xcoords)), axes.c2p(*xcoords), buff=0, color=GREY).set_opacity(0.5)
+        u = Arrow(axes.c2p(0,0), axes.c2p(*ucoords), buff=0, color=COLOR_V1)
+        v = Arrow(axes.c2p(0,0), axes.c2p(*vcoords), buff=0, color=COLOR_V2)
+        pu = Arrow(axes.c2p(0,0), axes.c2p(*pucoords), buff=0, color=COLOR_V1P)
+        pv = Arrow(axes.c2p(0,0), axes.c2p(*pvcoords), buff=0, color=COLOR_V2P)
+        ul = MathTex(r"\mathbf{u}", font_size=60, color=COLOR_V1).next_to(u.get_tip(), UP)
+        vl = MathTex(r"\mathbf{v}", font_size=60, color=COLOR_V2).next_to(v.get_tip(), UP)        
+        pul = MathTex(r"\hat{\mathbf{u}}", font_size=60, color=COLOR_V1P).next_to(pu.get_tip(), UL,buff=0).shift(UP*0.05+LEFT*0.1)
+        pvl = MathTex(r"\hat{\mathbf{v}}", font_size=60, color=COLOR_V2P).next_to(pv.get_tip(), UR,buff=0.08)        
         diagram = VGroup(axes,line,u,v,pu,pv,ul,vl,pul,pvl).shift(-VGroup(u,v,line).get_center()).shift(UP)
         diagram.remove(axes)
         frame.scale(0.5).move_to(VGroup(line,u,v))
@@ -634,7 +611,7 @@ class SymmetricGeom1d(MovingCameraScene):
 
         # dot product
         dot1 = MathTex(r"\hat{\mathbf{u}}",r"\cdot",r"\hat{\mathbf{v}}", font_size=65).next_to(diagram,DOWN,buff=0.3)
-        color_tex_standard(dot1)
+        color_tex(dot1,(r"\mathbf{u}",COLOR_V1),(r"\mathbf{v}",COLOR_V2),(r"\hat{\mathbf{u}}",COLOR_V1P),(r"\hat{\mathbf{v}}",COLOR_V2P))
         self.play(
             FadeOut(dash_u,dash_v),
             VGroup(v,vl).animate.set_opacity(0.2),            
@@ -649,8 +626,8 @@ class SymmetricGeom1d(MovingCameraScene):
         self.wait(w)
 
         # dim vbar and add next dot product           
-        dot2 = MathTex(r"\hat{\mathbf{u}}",r"\cdot",r"\hat{\mathbf{v}}","=",r"\hat{\mathbf{u}}","\cdot",r"\mathbf{v}", font_size=65).move_to(dot1)
-        color_tex_standard(dot2)
+        dot2 = MathTex(r"\hat{\mathbf{u}}",r"\cdot",r"\hat{\mathbf{v}}","=",r"\hat{\mathbf{u}}",r"\cdot",r"\mathbf{v}", font_size=65).move_to(dot1)
+        color_tex(dot2,(r"\mathbf{u}",COLOR_V1),(r"\mathbf{v}",COLOR_V2),(r"\hat{\mathbf{u}}",COLOR_V1P),(r"\hat{\mathbf{v}}",COLOR_V2P))
         AlignBaseline(dot2,dot1)
         self.play(ReplacementTransform(dot1[:3],dot2[:3])) # first dot product            
         self.play(Write(dot2[3])) # =
@@ -665,8 +642,8 @@ class SymmetricGeom1d(MovingCameraScene):
         self.wait(w)
 
         # to other pair                
-        dot3 = MathTex(r"\hat{\mathbf{u}}",r"\cdot",r"\hat{\mathbf{v}}","=",r"\hat{\mathbf{u}}","\cdot",r"\mathbf{v}","=",r"\mathbf{u}","\cdot",r"\hat{\mathbf{v}}", font_size=65).move_to(dot2)
-        color_tex_standard(dot3)
+        dot3 = MathTex(r"\hat{\mathbf{u}}",r"\cdot",r"\hat{\mathbf{v}}","=",r"\hat{\mathbf{u}}",r"\cdot",r"\mathbf{v}","=",r"\mathbf{u}",r"\cdot",r"\hat{\mathbf{v}}", font_size=65).move_to(dot2)
+        color_tex(dot3,(r"\mathbf{u}",COLOR_V1),(r"\mathbf{v}",COLOR_V2),(r"\hat{\mathbf{u}}",COLOR_V1P),(r"\hat{\mathbf{v}}",COLOR_V2P))
         AlignBaseline(dot3,dot2)
         self.play(ReplacementTransform(dot2[:7],dot3[:7])) # first two dot products            
         self.play(Write(dot3[7])) # =
@@ -760,6 +737,7 @@ class SymmetricAlgebra(Scene):
         # terms to zero
         zerol = MathTex("0", font_size=65).move_to(udistr[0][8])
         AlignBaseline(zerol, udistr)        
+        self.play(Indicate(udistr[0][6:]))
         self.play(
             FadeOut(udistr[0][6:], shift=DOWN),
             FadeIn(zerol, shift=DOWN)
@@ -770,8 +748,16 @@ class SymmetricAlgebra(Scene):
         puve = AlignBaseline(MathTex(r"\mathbf{P}u\cdot v = \mathbf{P}u \cdot \mathbf{P}v", font_size=65).align_to(pudotv, LEFT), pudotv)        
         self.play(
             FadeOut(zerol, udistr[0][5]),
-            TransformMatchingShapes(VGroup(pudotv, udistr[0][:5], eql), puve)
-        ,run_time=1.5)
+            *TransformBuilder(
+                [pudotv, udistr[0],eql], puve,
+                [
+                    ([0,0,slice(None,None)],[0,slice(0,4)]), # pudot v
+                    ([2,0,0],[0,4]), # =
+                    ([1,slice(None,5)],[0,slice(5,None)]), # rest
+                ]
+            ),            
+            run_time=1.5
+        )
         self.wait()
         
 
@@ -825,6 +811,7 @@ class SymmetricAlgebra(Scene):
         # term to zero
         zeror = MathTex("0", font_size=65).move_to(vdistr[0][8])
         AlignBaseline(zeror, vdistr)
+        self.play(Indicate(vdistr[0][6:]))
         self.play(
             FadeOut(vdistr[0][6:], shift=DOWN),
             FadeIn(zeror, shift=DOWN)
@@ -835,13 +822,21 @@ class SymmetricAlgebra(Scene):
         upve = AlignBaseline(MathTex(r"u\cdot \mathbf{P}v = \mathbf{P}u \cdot \mathbf{P}v", font_size=65).align_to(udotpv, LEFT).shift(RIGHT*1.5), udotpv)        
         self.play(
             FadeOut(zeror, vdistr[0][5]),
-            TransformMatchingShapes(VGroup(udotpv, vdistr[0][:5], eqr), upve),
+            *TransformBuilder(
+                [udotpv, vdistr[0], eqr],upve,
+                [
+                    ([0,0,slice(None,None)],[0,slice(0,4)]), # u dot pv
+                    ([2,0,0],[0,4]), # =
+                    ([1,slice(None,5)],[0,slice(5,None)]), # rest
+                ]
+            ),
+            # TransformMatchingShapes(VGroup(udotpv, vdistr[0][:5], eqr), upve),
             puve.animate.shift(RIGHT*1.5)
         ,run_time=1.25)
         self.wait()
 
         # triple equality
-        dotse = MathTex(r"\mathbf{P}u \cdot v", "=",r"\mathbf{P}u \cdot \mathbf{P}v","=",r"u\cdot \mathbf{P}v", font_size=75)
+        dotse = MathTex(r"\mathbf{P}u \cdot v", "=",r"\mathbf{P}u \cdot \mathbf{P}v","=",r"u\cdot \mathbf{P}v", font_size=85)
         self.play(
             ReplacementTransform(puve[0][:4], dotse[0][:]), # pu.v
             ReplacementTransform(puve[0][4], dotse[1][0]), # =
@@ -853,7 +848,7 @@ class SymmetricAlgebra(Scene):
         self.wait()
 
         # remove middle equality
-        dotse1 = AlignBaseline(MathTex(r"\mathbf{P}u \cdot v","=",r"u\cdot \mathbf{P}v", font_size=75),dotse)
+        dotse1 = AlignBaseline(MathTex(r"\mathbf{P}u \cdot v","=",r"u\cdot \mathbf{P}v", font_size=85),dotse)
         self.play(*TransformBuilder(
             dotse,dotse1,
             [
@@ -865,7 +860,7 @@ class SymmetricAlgebra(Scene):
         self.wait()
 
         # to transpose form
-        dotst = AlignBaseline(MathTex(r"(\mathbf{P}u)^T v", "=",r"u^T \mathbf{P}v", font_size=75),dotse1)
+        dotst = AlignBaseline(MathTex(r"(\mathbf{P}u)^T v", "=",r"u^T \mathbf{P}v", font_size=85),dotse1)
         self.play(*TransformBuilder(
             dotse1, dotst,
             [
@@ -883,7 +878,7 @@ class SymmetricAlgebra(Scene):
         self.wait()
 
         # distribute transpose
-        dotstd = AlignBaseline(MathTex(r"u^T \mathbf{P}^T v", "=",r"u^T \mathbf{P}v", font_size=75), dotst)
+        dotstd = AlignBaseline(MathTex(r"u^T \mathbf{P}^T v", "=",r"u^T \mathbf{P}v", font_size=85), dotst)
         self.play(*TransformBuilder(
             dotst, dotstd,
             [
@@ -905,7 +900,7 @@ class SymmetricAlgebra(Scene):
         self.wait()
 
         # down to pt = p
-        ptp = AlignBaseline(MathTex(r"\mathbf{P}^T", "=",r"\mathbf{P}", font_size=75), dotst)
+        ptp = AlignBaseline(MathTex(r"\mathbf{P}^T", "=",r"\mathbf{P}", font_size=85), dotst)
         self.play(*TransformBuilder(
             dotstd, ptp,
             [
@@ -954,7 +949,7 @@ class NSDemo(Scene):
 
         # add vectors in space
         vectors = [[
-            Arrow(axes.c2p(0,0), axes.c2p(i,j), buff=0, color=BLUE_B).set_z_index(-1)
+            Arrow(axes.c2p(0,0), axes.c2p(i,j), buff=0, color=COLOR_V1).set_z_index(-1)
         for j in range(-3,4)] for i in range(-3,4)]
         import itertools
         self.play(
@@ -964,7 +959,7 @@ class NSDemo(Scene):
 
         # project them down
         projected_vectors = [[
-            Arrow(axes.c2p(0,0), axes.c2p(*project([i,j], [1,1])), buff=0, color=BLUE_E)
+            Arrow(axes.c2p(0,0), axes.c2p(*project([i,j], [1,1])), buff=0, color=COLOR_V1P)
         for j in range(-3,4)] for i in range(-3,4)]        
         self.play(
             *[Transform(vector, projected_vector) for vector, projected_vector in zip(itertools.chain(*vectors), itertools.chain(*projected_vectors))]
@@ -990,7 +985,7 @@ class NSDemo(Scene):
         self.wait()
 
         # do transform
-        zerov = Dot(color=BLUE_E)
+        zerov = Dot(color=COLOR_V1P)
         self.play(*[
             Transform(vector, zerov)
         for vector in vectors])
@@ -1057,7 +1052,7 @@ class NSDemo(Scene):
         # repeat ns demo
         # vectors in nullspace
         vectors = [
-            Vector(axes.c2p(i,-i), color=BLUE_B)
+            Vector(axes.c2p(i,-i), color=COLOR_V1)
         for i in range(-3,4)]        
         self.wait()
         self.play(
@@ -1066,7 +1061,7 @@ class NSDemo(Scene):
         self.wait()
 
         # do transform
-        zerov = Dot(color=BLUE_E)
+        zerov = Dot(color=COLOR_V1P)
         self.play(*[
             Transform(vector, zerov)
         for vector in vectors])        
@@ -1103,7 +1098,7 @@ class NSDemo(Scene):
 
         # vectors on projected
         vectors = [
-            Vector(axes.c2p(i,i), color=BLUE_B)
+            Vector(axes.c2p(i,i), color=COLOR_V1)
         for i in range(-3,4)]        
         self.play(
             *[GrowArrow(vector) for vector in vectors],            
@@ -1112,7 +1107,7 @@ class NSDemo(Scene):
 
         # do transform        
         self.play(*[
-            Indicate(vector, color=BLUE_E)
+            Indicate(vector, color=COLOR_V1P)
         for vector in vectors])
         self.wait()
         
@@ -1148,7 +1143,7 @@ class MultiplyProperty(Scene):
 
 
 
-# config.renderer="opengl"
+config.renderer="opengl"
 class Commute(Scene):
     def construct(self):
         h = 0.6
@@ -1174,10 +1169,10 @@ class Commute(Scene):
             z_axis_config={"include_ticks":False},            
         ).set_flat_stroke(False)
         
-        u = Arrow3D(axes.c2p(*ORIGIN), axes.c2p(*ucoords), buff=0, color=UCOLOR)                
-        pu = Arrow3D(axes.c2p(*ORIGIN), axes.c2p(*pucoords), buff=0, color=PUCOLOR)     
-        pxu = Arrow3D(axes.c2p(*ORIGIN), axes.c2p(*pxucoords), buff=0, color=VCOLOR)                   
-        pyu = Arrow3D(axes.c2p(*ORIGIN), axes.c2p(*pyucoords), buff=0, color=VCOLOR)                   
+        u = Arrow3D(axes.c2p(*ORIGIN), axes.c2p(*ucoords), buff=0, color=COLOR_V1)                
+        pu = Arrow3D(axes.c2p(*ORIGIN), axes.c2p(*pucoords), buff=0, color=COLOR_V1P)     
+        pxu = Arrow3D(axes.c2p(*ORIGIN), axes.c2p(*pxucoords), buff=0, color=COLOR_V2P)                   
+        pyu = Arrow3D(axes.c2p(*ORIGIN), axes.c2p(*pyucoords), buff=0, color=COLOR_V2P)                   
         plane = OpenGLSurface(lambda u,v:axes.c2p(*[u,v,0]),u_range=[-0.5,1],v_range=[-0.5,1]).set_opacity(0.4)
         grid = NumberPlane(
             x_range=[-0.5,1,0.25],x_length=5,
@@ -1202,9 +1197,11 @@ class Commute(Scene):
         diagram.shift(ORIGIN-pu.get_center()).shift(DOWN*0.5+LEFT*0.25)             
 
         # vector labels
-        ul = MathTex(r"u", color=UCOLOR, font_size=45).next_to(u.get_end(),buff=0.15)        
-        pul = MathTex(r"\mathbf{P_{xy}},","u", color=PUCOLOR, font_size=45).next_to(pu.get_end(),RIGHT,buff=0.05)
-        pxul = MathTex(r"\mathbf{P_{x}}",r"\mathbf{P_{xy}}","u", color=VCOLOR, font_size=40).next_to(pxu.get_end(),DL,buff=0.05)        
+        ul = MathTex(r"u", color=COLOR_V1, font_size=45).next_to(u.get_end(),buff=0.15)        
+        pul = MathTex(r"\mathbf{P_{xy}}","u", font_size=45).next_to(pu.get_end(),RIGHT,buff=0.05)
+        pul[0].set_color(COLOR_V1P), pul[1].set_color(COLOR_V1)
+        pxul = MathTex(r"\mathbf{P_{x}}",r"\mathbf{P_{xy}}","u", font_size=40).next_to(pxu.get_end(),DL,buff=0.05)        
+        pxul[0].set_color(COLOR_V2P), pxul[1].set_color(COLOR_V1P), pxul[2].set_color(COLOR_V1)
         diagram.add(ul,pul,pxul)   
         
         # scale the camera                
@@ -1240,7 +1237,8 @@ class Commute(Scene):
 
         # zoom out
         self.play(frame.animate.scale(1.25).shift(UP*0.5),run_time=1.5)
-        commute = MathTex(r"\mathbf{P_{x}}",r"\mathbf{P_{xy}}","u",r"\stackrel{?}{=}",r"\mathbf{P_{xy}}",r"\mathbf{P_{x}}","u", color=VCOLOR, font_size=45).next_to(diagram,UP).shift(DOWN*0.25+RIGHT*1.5)
+        commute = MathTex(r"\mathbf{P_{x}}",r"\mathbf{P_{xy}}","u",r"\stackrel{?}{=}",r"\mathbf{P_{xy}}",r"\mathbf{P_{x}}","u", font_size=45).next_to(diagram,UP).shift(DOWN*0.25+RIGHT*1.5)
+        commute[0].set_color(COLOR_V2P), commute[1].set_color(COLOR_V1P), commute[2].set_color(COLOR_V1), commute[4].set_color(COLOR_V1P), commute[5].set_color(COLOR_V2P), commute[6].set_color(COLOR_V1)
         self.play(TransformFromCopy(pxul[:],commute[:3]),run_time=1.5)
         self.play(Write(commute[3]))
         self.play(
@@ -1262,8 +1260,9 @@ class Commute(Scene):
         self.play(Write(rx)) 
 
         # they do commute        
-        commute1 = AlignBaseline(MathTex(r"\mathbf{P_{x}}",r"\mathbf{P_{xy}}","u",r"=",r"\mathbf{P_{xy}}",r"\mathbf{P_{x}}","u", color=VCOLOR, font_size=45).next_to(diagram,UP).shift(DOWN*0.25+RIGHT*1.25).move_to(commute),commute)
-        check = Tex(r'\checkmark', color=GREEN).next_to(commute1)
+        commute1 = AlignBaseline(MathTex(r"\mathbf{P_{x}}",r"\mathbf{P_{xy}}","u",r"=",r"\mathbf{P_{xy}}",r"\mathbf{P_{x}}","u", font_size=45).next_to(diagram,UP).shift(DOWN*0.25+RIGHT*1.25).move_to(commute),commute)
+        commute1[0].set_color(COLOR_V2P),commute1[1].set_color(COLOR_V1P), commute1[2].set_color(COLOR_V1), commute1[5].set_color(COLOR_V2P),commute1[4].set_color(COLOR_V1P), commute1[6].set_color(COLOR_V1)
+        check = Tex(r'\checkmark', color=XKCD.LIGHTGREEN).next_to(commute1)
         self.play(ReplacementTransform(commute,commute1))
         self.play(Write(check))
         self.wait()
@@ -1273,7 +1272,8 @@ class Commute(Scene):
         self.wait()
 
         # expression with px and py
-        ncommute = MathTex(r"\mathbf{P_{y}}",r"\mathbf{P_{x}}","u","=","0","=",r"\mathbf{P_{x}}",r"\mathbf{P_{y}}","u", color=VCOLOR, font_size=45).move_to(commute)
+        ncommute = MathTex(r"\mathbf{P_{y}}",r"\mathbf{P_{x}}","u","=","0","=",r"\mathbf{P_{x}}",r"\mathbf{P_{y}}","u", font_size=45).move_to(commute)
+        ncommute[0].set_color(COLOR_V2P), ncommute[1].set_color(COLOR_V2P), ncommute[2].set_color(COLOR_V1), ncommute[6].set_color(COLOR_V2P), ncommute[7].set_color(COLOR_V2P), ncommute[8].set_color(COLOR_V1), 
         self.play(TransformFromCopy(ul[0],ncommute[2]),run_time=1.25)
         self.play(Write(ncommute[1]),run_time=1.25)
         self.play(Write(ncommute[0]),run_time=1.25)
@@ -1862,11 +1862,11 @@ class TraceIsRank(Scene):
                 (None,3,FadeIn,{"shift":UP}), # rank(p)
                 (slice(3,None),slice(4,None)), # 1's to end
             ]
-        ))
+        ),run_time=1.5)
         self.wait()
 
         # add rank(p) before 1's
-        proje2 = Tex(r"For projection,\\","$\lambda$'s"," = ",r"rank$(\mathbf{P})$ ","1's" ," and ",r"$n-\text{rank}(\mathbf{P})$ ","0's",font_size=65).move_to(proje1)
+        proje2 = Tex(r"For projection,\\","$\lambda$'s"," = ",r"rank$(\mathbf{P})$ ","1's" ," and ",r"$\left(n-\text{rank}(\mathbf{P})\right)$ ","0's",font_size=65).move_to(proje1)
         self.play(*TransformBuilder(
             proje1,proje2,
             [
@@ -1874,13 +1874,64 @@ class TraceIsRank(Scene):
                 (None,6,FadeIn,{"shift":UP}), # n-rank(p)
                 (6,7), # 0s
             ]
-        ))
+        ),run_time=1.5)
         self.wait()
 
         # substitue in for trace, to read trace = rank(p)\cdot 1 + (n-rank(p))\cdot0 = rank(p)
-        
+        trse2 = Tex("trace"," = ",r"rank($\mathbf{P}$)",r"$\cdot$", "$1$","$+$",r"$\left(n-\text{rank}(\mathbf{P}) \right)$",r"$\cdot$","$0$",font_size=65).move_to(trse)
+        self.play(*TransformBuilder(
+            [trse,proje2],trse2,
+            [
+                ([0,slice(0,2)],slice(0,2)), # trace =
+                ([0,2],5), # l1+l2..+ln to +
+                ([1,slice(0,3)],None), # for projection ls = 
+                ([1,5],None), # and
+                ([1,3],2), # rank p
+                (None,3), # cdot
+                ([1,4],4), # 1s to 1
+                ([1,6],6), # n-rankp
+                (None,7), # cdot
+                ([1,7],8), # 0s to 0
+            ]
+        ),run_time=2)
+        self.wait()
+
+        # down to just rank p
+        trse3 = Tex("trace"," = ",r"rank($\mathbf{P}$)",font_size=65).move_to(trse2)
+        self.play(
+            ReplacementTransform(trse2[:2],trse3[:2]), # trace=
+            Merge([trse2[2],trse2[3:]],trse3[2]) # rankp
+            ,run_time=1.5)
+        self.wait()
+
+        # down to the title
+        self.play(FadeOut(trse3,text1))
+        self.wait()
 
 
+
+class ProjectionPropsRecap(Scene):
+    def construct(self):
+        # write title
+        title = Tex("Projection Matrix Properties", font_size=75).to_edge(UP)
+        ul = Line(title.get_corner(DL)+DL*0.2, title.get_corner(DR)+DR*0.2, color=BLUE)        
+        self.add(title, ul)
+        self.wait()
+
+        # properties
+        props = VGroup(*[Tex(message, font_size=55).next_to(ul, DOWN) for message in [
+            r"Idempotent: $P^2=P$",
+            r"Symmetric: $P^T=P$",
+            r"Less-than-full rank: $\text{rank}(\mathbf{P})<n$",
+            r"Eigenvalues are 0's and 1's",
+            r"$\mathbf{P_2}\mathbf{P_1}=\mathbf{P_1}\mathbf{P_2}$ if orthogonal/overlapping",
+            r"Orthogonal \& Non-overlapping projections add"
+        ]])        
+        for i in range(1,len(props)): AlignBaseline(props[i].align_to(props[0], LEFT), props[0]).shift(DOWN*i)
+        props.next_to(ul,DOWN)
+        for prop in props:
+            self.play(Write(prop))
+            self.wait()
 
 
         
