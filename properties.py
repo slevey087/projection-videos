@@ -330,7 +330,7 @@ class Idempotent(Scene):
         self.wait()
 
         # x -> Px
-        formula1 = MathTex("x",r"\longrightarrow","Px", font_size=75).shift(DOWN)
+        formula1 = MathTex("x",r"\longrightarrow",r"\mathbf{P}x", font_size=75).shift(DOWN)
         self.play(Write(formula1[0]))
         self.wait()
         self.play(FadeIn(formula1[1], shift=UP))
@@ -341,7 +341,7 @@ class Idempotent(Scene):
         self.wait()
 
         # Px -> P(Px)
-        formula2 = MathTex("Px",r"\longrightarrow","P(Px)", font_size=75)
+        formula2 = MathTex(r"\mathbf{P}x",r"\longrightarrow",r"\mathbf{P}(\mathbf{P}x)", font_size=75)
         formula2.shift(formula1[1].get_center()-formula2[1].get_center())
         self.play(*TransformBuilder(
             formula1, formula2,
@@ -360,7 +360,7 @@ class Idempotent(Scene):
         self.wait()
 
         # P(Px) to P^2 x
-        formula3 = MathTex("Px",r"\longrightarrow","P^2x", font_size=75)
+        formula3 = MathTex(r"\mathbf{P}x",r"\longrightarrow",r"\mathbf{P}^2 x", font_size=75)
         formula3.shift(formula2[1].get_center()-formula3[1].get_center())
         self.play(*TransformBuilder(
             formula2, formula3,
@@ -375,12 +375,12 @@ class Idempotent(Scene):
         self.wait()
 
         # replace arrow with =
-        formula4 = MathTex("Px",r"=","P^2x", font_size=75).move_to(formula3)
+        formula4 = MathTex(r"\mathbf{P}x",r"=",r"\mathbf{P}^2 x", font_size=75).move_to(formula3)
         self.play(TransformMatchingTex(formula3, formula4, transform_mismatches=True),run_time=1.5)
         self.wait()
 
         # swap sides
-        formula45 = MathTex("P^2x",r"=","Px", font_size=75).move_to(formula4)
+        formula45 = MathTex(r"\mathbf{P}^2 x",r"=",r"\mathbf{P}x", font_size=75).move_to(formula4)
         self.play(*TransformBuilder(
             formula4, formula45,
             [
@@ -392,7 +392,7 @@ class Idempotent(Scene):
         self.wait()
 
         # P = P^2
-        formula5 = MathTex("P^2",r"=","P", font_size=75).move_to(formula45)
+        formula5 = MathTex(r"\mathbf{P}^2",r"=",r"\mathbf{P}", font_size=75).move_to(formula45)
         self.play(*TransformBuilder(
             formula45, formula5,
             [
@@ -412,7 +412,7 @@ class Idempotent(Scene):
         self.wait()
 
         # increment the exponent
-        forms = [formula5,*[AlignBaseline(MathTex("P^"+k,r"=","P", font_size=75).move_to(formula5),formula5) for k in ["3","4","5","n"]]]
+        forms = [formula5,*[AlignBaseline(MathTex(r"\mathbf{P}^"+k,r"=",r"\mathbf{P}", font_size=75).move_to(formula5),formula5) for k in ["3","4","5","n"]]]
         for k in range(1,len(forms)): 
             self.play(
                 *[ReplacementTransform(forms[k-1][i],forms[k][i]) for i in [1,2]], # =P
@@ -443,7 +443,7 @@ class Symmetric(Scene):
         self.wait()
 
         # p=pt, symmetric
-        text2 = MathTex("P^T=P", font_size=75)
+        text2 = MathTex(r"\mathbf{P}^T=\mathbf{P}", font_size=75)
         self.play(Write(text2))
         sym = Tex("Symmetric", font_size=55).next_to(text2, DOWN)
         self.play(FadeIn(sym, shift=DOWN))
@@ -529,7 +529,7 @@ class SymmetricGeom2d(ThreeDScene):
             Group(u,ul).animate.set_opacity(0.2),            
         )
         # self.play(Merge([pu,u.copy()],pu),run_time=1.5)
-        dot2 = MathTex(r"\hat{\mathbf{u}}",r"\cdot",r"\hat{\mathbf{v}}","=",r"\hat{\mathbf{u}}","\cdot",r"\mathbf{v}", font_size=45).move_to(dot1,aligned_edge=LEFT)
+        dot2 = MathTex(r"\hat{\mathbf{u}}",r"\cdot",r"\hat{\mathbf{v}}","=",r"\hat{\mathbf{u}}",r"\cdot",r"\mathbf{v}", font_size=45).move_to(dot1,aligned_edge=LEFT)
         color_tex(dot2,(r"\mathbf{u}",COLOR_V1),(r"\mathbf{v}",COLOR_V2),(r"\hat{\mathbf{u}}",COLOR_V1P),(r"\hat{\mathbf{v}}",COLOR_V2P))
         AlignBaseline(dot2,dot1)
         self.play(
@@ -1143,7 +1143,7 @@ class MultiplyProperty(Scene):
 
 
 
-config.renderer="opengl"
+# config.renderer="opengl"
 class Commute(Scene):
     def construct(self):
         h = 0.6
@@ -1183,12 +1183,12 @@ class Commute(Scene):
         diagram.add(u,pu,pxu,pyu)       
 
         # dashed lines and right angles
-        dxy = DashedLine(pu.get_end(),u.get_end(),dash_length=0.1).set_flat_stroke(True).set_opacity(0.5)
-        rxy = RightAngleIn3D(pu,dxy,length=0.2).set_flat_stroke(False).set_stroke(width=1, opacity=0.5)
-        dx = DashedLine(pxu.get_end(),u.get_end(),dash_length=0.15).set_flat_stroke(True).set_opacity(0.3)
-        rx = RightAngleIn3D(pxu,dx,length=0.2).set_flat_stroke(False).set_stroke(width=1, opacity=0.5)
-        dxp = DashedLine(pxu.get_end(),pu.get_end(),dash_length=0.15).set_flat_stroke(True).set_opacity(0.3)
-        rxp = RightAngleIn3D(pxu,dxp,length=0.2).set_flat_stroke(False).set_stroke(width=1, opacity=0.5)        
+        dxy = DashedLine(u.get_end(),pu.get_end(),dash_length=0.1).set_flat_stroke(True).set_opacity(0.5)
+        rxy = RightAngleIn3D(pu,Line(pu.get_end(),u.get_end()),length=0.2).set_flat_stroke(False).set_stroke(width=1, opacity=0.5)
+        dx = DashedLine(u.get_end(),pxu.get_end(),dash_length=0.15).set_flat_stroke(True).set_opacity(0.3)
+        rx = RightAngleIn3D(pxu,Line(pxu.get_end(),u.get_end()),length=0.2).set_flat_stroke(False).set_stroke(width=1, opacity=0.5)
+        dxp = DashedLine(pu.get_end(),pxu.get_end(),dash_length=0.15).set_flat_stroke(True).set_opacity(0.3)
+        rxp = RightAngleIn3D(pxu,Line(pxu.get_end(),pu.get_end()),length=0.2).set_flat_stroke(False).set_stroke(width=1, opacity=0.5)        
         # for dash in [dxy,dx,dxp]: dash.reverse_points()
         diagram.add(dxy,rxy,dx,rx,dxp,rxp) 
         
@@ -1268,7 +1268,7 @@ class Commute(Scene):
         self.wait()
 
         # clear the canvas to just u
-        self.play(FadeOut(commute1, pu,pul,pxu,pxul,dx,rx,dxy,rxy,dxp,rxp,check),run_time=1.5)
+        self.play(FadeOut(commute1, pu,pul,pxu2,pxul,dx,rx,dxy,rxy,dxp,rxp,check),run_time=1.5)
         self.wait()
 
         # expression with px and py
@@ -1285,9 +1285,18 @@ class Commute(Scene):
         self.play(Write(qm))
 
         # project to x axis, then to zero
-        self.play(TransformFromCopy(u,pxu2),run_time=1.75)
+        self.play(
+            TransformFromCopy(u,pxu2),
+            Create(dx),
+            Write(rx),
+            run_time=1.75
+        )
         self.wait()        
-        self.play(pxu2.animate.scale(0.01,pxu2.points[0]),run_time=1.75)
+        self.play(
+            pxu2.animate.scale(0.01,pxu2.points[0]),
+            Transform(VGroup(dx,rx),Dot(axes.get_origin(),color=GREY,fill_opacity=0)),
+            run_time=1.75
+        )
         self.remove(pxu2)
 
         # replace question mark with zero        
@@ -1297,7 +1306,15 @@ class Commute(Scene):
         )
         self.wait()
 
-        # project to y axis then zero
+        # rotate diagram, project to y axis then zero
+        pyu.set_opacity(0)
+        self.play(
+            Group(axes,plane,grid,u,pyu).animate.rotate(-130*DEGREES,axes.z_axis.get_unit_vector()),
+            ul.animate.next_to(Group(axes,plane,grid,u,pyu).copy().rotate(-130*DEGREES,axes.z_axis.get_unit_vector())[3].points[-1],LEFT,buff=0.25),
+            run_time=2
+        )
+        self.remove(pyu)
+        pyu.set_opacity(1)
         self.play(TransformFromCopy(u,pyu),run_time=1.75)
         self.wait()        
         self.play(pyu.animate.scale(0.01,pyu.points[0]),run_time=1.75)
@@ -1332,26 +1349,26 @@ class NotCommute(MovingCameraScene):
 
         # draw vectors and labels
         axes = Axes(x_range=[-2,2], x_length=4,y_range=[-2,2],y_length=4)#.rotate(-15*DEGREES)
-        line1 = Line(axes.c2p(*(-l1coords)), axes.c2p(*l1coords), buff=0, color=XCOLOR).set_opacity(0.4)
-        line2 = Line(axes.c2p(*(-l2coords)), axes.c2p(*l2coords), buff=0, color=XCOLOR).set_opacity(0.4)
-        u = Arrow(axes.c2p(0,0), axes.c2p(*ucoords), buff=0, color=UCOLOR)
+        line1 = Line(axes.c2p(*(-l1coords)), axes.c2p(*l1coords), buff=0, color=GREY).set_opacity(0.4)
+        line2 = Line(axes.c2p(*(-l2coords)), axes.c2p(*l2coords), buff=0, color=GREY).set_opacity(0.4)
+        u = Arrow(axes.c2p(0,0), axes.c2p(*ucoords), buff=0, color=COLOR_V1)
         diagram = VGroup(axes,line1,line2,u)
 
         # projections
-        p1 = Arrow(axes.c2p(0,0), axes.c2p(*p1coords), buff=0, color=PUCOLOR)
-        p21 = Arrow(axes.c2p(0,0), axes.c2p(*p21coords), buff=0, color=PUCOLOR)
-        p2 = Arrow(axes.c2p(0,0), axes.c2p(*p2coords), buff=0, color=PVCOLOR)
-        p12 = Arrow(axes.c2p(0,0), axes.c2p(*p12coords), buff=0, color=PVCOLOR)
+        p1 = Arrow(axes.c2p(0,0), axes.c2p(*p1coords), buff=0, color=COLOR_V1P)
+        p21 = Arrow(axes.c2p(0,0), axes.c2p(*p21coords), buff=0, color=COLOR_V1P)
+        p2 = Arrow(axes.c2p(0,0), axes.c2p(*p2coords), buff=0, color=COLOR_V2P)
+        p12 = Arrow(axes.c2p(0,0), axes.c2p(*p12coords), buff=0, color=COLOR_V2P)
         diagram.add(p1,p12,p21,p2)
 
         # labels
-        ul = MathTex(r"u", font_size=60, color=UCOLOR).next_to(u.get_tip(), UP)
-        p1l = MathTex(r"\mathbf{P_1}","u", font_size=60, color=PUCOLOR).next_to(p1.get_tip(), DOWN)        
-        p21l = MathTex(r"\mathbf{P_1}",r"\mathbf{P_2}", "u", font_size=60, color=PUCOLOR).next_to(p21.get_tip(), DOWN)        
-        p2l = MathTex(r"\mathbf{P_2}","u", font_size=60, color=PVCOLOR).next_to(p2.get_tip(), LEFT)        
-        p12l = MathTex(r"\mathbf{P_2}",r"\mathbf{P_1}", "u", font_size=60, color=PVCOLOR).next_to(p12.get_tip(), LEFT)        
+        ul = MathTex(r"u", font_size=60, color=COLOR_V1).next_to(u.get_tip(), UP)
+        p1l = MathTex(r"\mathbf{P_1}","u", font_size=60, color=COLOR_V1P).next_to(p1.get_tip(), DOWN)        
+        p21l = MathTex(r"\mathbf{P_1}",r"\mathbf{P_2}", "u", font_size=60, color=COLOR_V1P).next_to(p21.get_tip(), DOWN)        
+        p2l = MathTex(r"\mathbf{P_2}","u", font_size=60, color=COLOR_V2P).next_to(p2.get_tip(), LEFT)        
+        p12l = MathTex(r"\mathbf{P_2}",r"\mathbf{P_1}", "u", font_size=60, color=COLOR_V2P).next_to(p12.get_tip(), LEFT)        
         for label in [ul,p1l,p21l,p2l,p12l]:
-            color_tex(label,("u",UCOLOR),(r"\mathbf{P_1}",PUCOLOR),(r"\mathbf{P_2}",PVCOLOR))
+            color_tex(label,("u",COLOR_V1),(r"\mathbf{P_1}",COLOR_V1P),(r"\mathbf{P_2}",COLOR_V2P))
         diagram.add(ul,p1l,p12l,p21l,p2l)
 
         # dashes and right angles
@@ -1433,7 +1450,7 @@ class NotCommute(MovingCameraScene):
 
         # write equation
         ncommute = MathTex(r"\mathbf{P_1}",r"\mathbf{P_2}",r"\neq",r"\mathbf{P_2}",r"\mathbf{P_1}", font_size=70).next_to(p21l,DR,buff=0.4)
-        color_tex(ncommute,("u",UCOLOR),(r"\mathbf{P_1}",PUCOLOR),(r"\mathbf{P_2}",PVCOLOR))
+        color_tex(ncommute,("u",COLOR_V1),(r"\mathbf{P_1}",COLOR_V1P),(r"\mathbf{P_2}",COLOR_V2P))
         self.play(TransformFromCopy(p21l[:2],ncommute[:2]),run_time=1.25)
         self.play(Write(ncommute[2]))
         self.play(TransformFromCopy(p12l[:2],ncommute[3:],path_arc=120*DEGREES),run_time=1.75)        
@@ -1448,7 +1465,7 @@ class AddingMatrices(Scene):
     def construct(self):
         # p1 + p2
         f1 = MathTex(r"\mathbf{P_1}+\mathbf{P_2}",font_size=75)
-        color_tex(f1,("u",UCOLOR),(r"\mathbf{P_1}",PUCOLOR),(r"\mathbf{P_2}",PVCOLOR))
+        color_tex(f1,("u",COLOR_V1),(r"\mathbf{P_1}",COLOR_V1P),(r"\mathbf{P_2}",COLOR_V2P))
         self.play(Write(f1[0][0:2]))
         self.play(Write(f1[0][2]))
         self.play(Write(f1[0][3:]))
@@ -1456,7 +1473,7 @@ class AddingMatrices(Scene):
 
         # add parentheses and u
         f2 = AlignBaseline(MathTex(r"\left(",r"\mathbf{P_1}+\mathbf{P_2}",r"\right)","u",font_size=75).move_to(f1),f1)
-        color_tex(f2,("u",UCOLOR),(r"\mathbf{P_1}",PUCOLOR),(r"\mathbf{P_2}",PVCOLOR))
+        color_tex(f2,("u",COLOR_V1),(r"\mathbf{P_1}",COLOR_V1P),(r"\mathbf{P_2}",COLOR_V2P))
         self.play(*TransformBuilder(
             f1,f2,
             [
@@ -1470,7 +1487,7 @@ class AddingMatrices(Scene):
 
         # = and distribute
         f3 = AlignBaseline(MathTex(r"\left(",r"\mathbf{P_1}+\mathbf{P_2}",r"\right)","u","=",r"\mathbf{P_1} u+\mathbf{P_2} u",font_size=75).move_to(f2),f2)
-        color_tex(f3,("u",UCOLOR),(r"\mathbf{P_1}",PUCOLOR),(r"\mathbf{P_2}",PVCOLOR))
+        color_tex(f3,("u",COLOR_V1),(r"\mathbf{P_1}",COLOR_V1P),(r"\mathbf{P_2}",COLOR_V2P))
         self.play(ReplacementTransform(f2[0:4],f3[0:4]))
         self.play(Write(f3[4]))
         self.play(*TransformBuilder(
@@ -1531,12 +1548,12 @@ class AddingExamples(Scene):
             z_axis_config={"include_ticks":False},            
         ).set_flat_stroke(False)
         
-        u = Arrow3D(axes.c2p(*ORIGIN), axes.c2p(*ucoords), buff=0, color=UCOLOR)                
-        pu = Arrow3D(axes.c2p(*ORIGIN), axes.c2p(*pucoords), buff=0, color=PUCOLOR)     
-        pxu = Arrow3D(axes.c2p(*ORIGIN), axes.c2p(*pxucoords), buff=0, color=VCOLOR)                   
-        pyu = Arrow3D(axes.c2p(*ORIGIN), axes.c2p(*pyucoords), buff=0, color=VCOLOR)                   
-        pzu = Arrow3D(axes.c2p(*ORIGIN), axes.c2p(*pzucoords), buff=0, color=VCOLOR)                   
-        yforadd = Arrow3D(axes.c2p(*pxucoords), axes.c2p(*pucoords), buff=0, color=VCOLOR)                   
+        u = Arrow3D(axes.c2p(*ORIGIN), axes.c2p(*ucoords), buff=0, color=COLOR_V1)                
+        pu = Arrow3D(axes.c2p(*ORIGIN), axes.c2p(*pucoords), buff=0, color=COLOR_V1P)     
+        pxu = Arrow3D(axes.c2p(*ORIGIN), axes.c2p(*pxucoords), buff=0, color=COLOR_V2P)                   
+        pyu = Arrow3D(axes.c2p(*ORIGIN), axes.c2p(*pyucoords), buff=0, color=COLOR_V2P)                   
+        pzu = Arrow3D(axes.c2p(*ORIGIN), axes.c2p(*pzucoords), buff=0, color=COLOR_V2P)                   
+        yforadd = Arrow3D(axes.c2p(*pxucoords), axes.c2p(*pucoords), buff=0, color=COLOR_V2P)                   
         plane = OpenGLSurface(lambda u,v:axes.c2p(*[u,v,0]),u_range=[-0.5,1],v_range=[-0.5,1]).set_opacity(0.4)
         grid = NumberPlane(
             x_range=[-0.5,1,0.25],x_length=5,
@@ -1547,16 +1564,16 @@ class AddingExamples(Scene):
         diagram.add(u,pu,pxu,pyu,yforadd,pzu)       
 
         # dashed lines and right angles
-        dxy = DashedLine(pu.get_end(),u.get_end(),dash_length=0.1).set_flat_stroke(True).set_opacity(0.5)
-        rxy = RightAngleIn3D(pu,dxy,length=0.2).set_flat_stroke(False).set_stroke(width=1, opacity=0.5)
-        dx = DashedLine(pxu.get_end(),u.get_end(),dash_length=0.15).set_flat_stroke(True).set_opacity(0.3)
-        rx = RightAngleIn3D(pxu,dx,length=0.2).set_flat_stroke(False).set_stroke(width=1, opacity=0.5)
-        dy = DashedLine(pyu.get_end(),u.get_end(),dash_length=0.15).set_flat_stroke(True).set_opacity(0.7)
-        ry = RightAngleIn3D(pyu,dy,length=0.2).set_flat_stroke(False).set_stroke(width=1, opacity=0.5)
-        dz = DashedLine(pzu.get_end(),u.get_end(),dash_length=0.15).set_flat_stroke(True).set_opacity(0.3)
-        rz = RightAngleIn3D(pzu,dz,length=0.2).set_flat_stroke(False).set_stroke(width=1, opacity=0.5)
-        dxp = DashedLine(pxu.get_end(),pu.get_end(),dash_length=0.15).set_flat_stroke(True).set_opacity(0.3)
-        rxp = RightAngleIn3D(pxu,dxp,length=0.2).set_flat_stroke(False).set_stroke(width=1, opacity=0.5)        
+        dxy = DashedLine(u.get_end(),pu.get_end(),dash_length=0.1).set_flat_stroke(True).set_opacity(0.5)
+        rxy = RightAngleIn3D(pu,Line(pu.get_end(),u.get_end()),length=0.2).set_flat_stroke(False).set_stroke(width=1, opacity=0.5)
+        dx = DashedLine(u.get_end(),pxu.get_end(),dash_length=0.15).set_flat_stroke(True).set_opacity(0.3)
+        rx = RightAngleIn3D(pxu,Line(pxu.get_end(),u.get_end()),length=0.2).set_flat_stroke(False).set_stroke(width=1, opacity=0.5)
+        dy = DashedLine(u.get_end(),pyu.get_end(),dash_length=0.15).set_flat_stroke(True).set_opacity(0.7)
+        ry = RightAngleIn3D(pyu,Line(pyu.get_end(),u.get_end()),length=0.2).set_flat_stroke(False).set_stroke(width=1, opacity=0.5)
+        dz = DashedLine(u.get_end(),pzu.get_end(),dash_length=0.15).set_flat_stroke(True).set_opacity(0.3)
+        rz = RightAngleIn3D(pzu,Line(pzu.get_end(),u.get_end()),length=0.2).set_flat_stroke(False).set_stroke(width=1, opacity=0.5)
+        dxp = DashedLine(pu.get_end(),pxu.get_end(),dash_length=0.15).set_flat_stroke(True).set_opacity(0.3)
+        rxp = RightAngleIn3D(pxu,Line(pxu.get_end(),pu.get_end()),length=0.2).set_flat_stroke(False).set_stroke(width=1, opacity=0.5)        
         # for dash in [dxy,dx,dxp]: dash.reverse_points()
         diagram.add(dxy,rxy,dx,rx,dy,ry,dz,rz) 
         
@@ -1565,13 +1582,14 @@ class AddingExamples(Scene):
         diagram.shift(ORIGIN-pu.get_center()).shift(DOWN*0.5+LEFT*0.25)             
 
         # vector labels
-        ul = MathTex(r"u", color=UCOLOR, font_size=45).next_to(u.get_end(),UP,buff=0.15)        
-        pul = MathTex(r"\mathbf{P_{xy}}","u", color=PUCOLOR, font_size=45).next_to(pu.get_end(),UR,buff=0.05).shift(RIGHT*0.5)
-        pxul = MathTex(r"\mathbf{P_{x}}","u", color=VCOLOR, font_size=40).next_to(pxu.get_end(),UP,buff=0.05)        
-        pyul = MathTex(r"\mathbf{P_{y}}","u", color=VCOLOR, font_size=40).next_to(pyu.get_end(),RIGHT,buff=0.05)        
-        pzul = MathTex(r"\mathbf{P_{z}}","u", color=VCOLOR, font_size=40).next_to(pzu.get_end(),RIGHT,buff=0.05)        
-        for label in [ul,pul,pxul,pyul,pzul]:
-            color_tex(label,("u",UCOLOR),(r"\mathbf{P_x}",VCOLOR),(r"\mathbf{P_y}",VCOLOR),(r"\mathbf{P_z}",VCOLOR),(r"\mathbf{P_{xy}}",PUCOLOR))
+        ul = MathTex(r"u", color=COLOR_V1, font_size=45).next_to(u.get_end(),UP,buff=0.15)        
+        pul = MathTex(r"\mathbf{P_{xy}}","u", font_size=45).next_to(pu.get_end(),UR,buff=0.05).shift(RIGHT*0.5)
+        pul[0].set_color(COLOR_V1P),pul[1].set_color(COLOR_V1)
+        pxul = MathTex(r"\mathbf{P_{x}}","u", font_size=40).next_to(pxu.get_end(),UP,buff=0.05)        
+        pyul = MathTex(r"\mathbf{P_{y}}","u", font_size=40).next_to(pyu.get_end(),RIGHT,buff=0.05)        
+        pzul = MathTex(r"\mathbf{P_{z}}","u", font_size=40).next_to(pzu.get_end(),RIGHT,buff=0.05)        
+        for label in [pxul,pyul,pzul]:
+            label[0].set_color(COLOR_V2P), label[1].set_color(COLOR_V1)
         diagram.add(ul,pul,pxul,pyul,pzul)   
 
         
@@ -1632,7 +1650,7 @@ class AddingExamples(Scene):
         # zoom out, show formula
         self.play(frame.animate.scale(1.15).move_to([0,.702,0]),run_time=1.5)
         f1 = MathTex(r"\mathbf{P_x}","u","+",r"\mathbf{P_y}","u","=",r"\mathbf{P_{xy}}","u").next_to(diagram,UP).shift(DOWN*0.1)        
-        color_tex(f1,("u",UCOLOR),(r"\mathbf{P_x}",VCOLOR),(r"\mathbf{P_y}",VCOLOR),(r"\mathbf{P_z}",VCOLOR),(r"\mathbf{P_{xy}}",PUCOLOR))
+        f1[0].set_color(COLOR_V2P), f1[1].set_color(COLOR_V1), f1[3].set_color(COLOR_V2P), f1[4].set_color(COLOR_V1), f1[6].set_color(COLOR_V1P), f1[7].set_color(COLOR_V1)
         self.play(
             TransformFromCopy(pxul[:],f1[:2]), # pxu
             Write(f1[2]), #+
@@ -1645,7 +1663,7 @@ class AddingExamples(Scene):
 
         # drop u from formula
         f2 = AlignBaseline(MathTex(r"\mathbf{P_x}","+",r"\mathbf{P_y}","=",r"\mathbf{P_{xy}}").move_to(f1),f1)
-        color_tex(f2,("u",UCOLOR),(r"\mathbf{P_x}",VCOLOR),(r"\mathbf{P_y}",VCOLOR),(r"\mathbf{P_z}",VCOLOR),(r"\mathbf{P_{xy}}",PUCOLOR))
+        f2[0].set_color(COLOR_V2P), f2[2].set_color(COLOR_V2P),f2[4].set_color(COLOR_V1P),
         self.play(*TransformBuilder(
             f1,f2,
             [
@@ -1675,7 +1693,7 @@ class AddingExamples(Scene):
 
         # add z projection to formula, to I
         f3 = AlignBaseline(MathTex(r"\mathbf{P_x}","+",r"\mathbf{P_y}","+",r"\mathbf{P_z}","=",r"I").move_to(f2),f2)
-        color_tex(f3,("u",UCOLOR),(r"\mathbf{P_x}",VCOLOR),(r"\mathbf{P_y}",VCOLOR),(r"\mathbf{P_z}",VCOLOR),(r"\mathbf{P_{xy}}",PUCOLOR))
+        f3[0].set_color(COLOR_V2P), f3[2].set_color(COLOR_V2P), f3[4].set_color(COLOR_V2P)
         self.play(*TransformBuilder(
             f2,f3,
             [
@@ -1711,24 +1729,24 @@ class NotAdd(MovingCameraScene):
 
         # draw vectors and labels
         axes = Axes(x_range=[-2,2], x_length=4,y_range=[-2,2],y_length=4)#.rotate(-15*DEGREES)
-        line1 = Line(axes.c2p(*(-l1coords)), axes.c2p(*l1coords), buff=0, color=XCOLOR).set_opacity(0.4)
-        line2 = Line(axes.c2p(*(-l2coords)), axes.c2p(*l2coords), buff=0, color=XCOLOR).set_opacity(0.4)
-        u = Arrow(axes.c2p(0,0), axes.c2p(*ucoords), buff=0, color=UCOLOR)
+        line1 = Line(axes.c2p(*(-l1coords)), axes.c2p(*l1coords), buff=0, color=GREY).set_opacity(0.4)
+        line2 = Line(axes.c2p(*(-l2coords)), axes.c2p(*l2coords), buff=0, color=GREY).set_opacity(0.4)
+        u = Arrow(axes.c2p(0,0), axes.c2p(*ucoords), buff=0, color=COLOR_V1)
         diagram = VGroup(axes,line1,line2,u)
 
         # projections
-        p1 = Arrow(axes.c2p(0,0), axes.c2p(*p1coords), buff=0, color=PUCOLOR)        
-        p2 = Arrow(axes.c2p(0,0), axes.c2p(*p2coords), buff=0, color=PVCOLOR)
-        padd = Arrow(axes.c2p(0,0), axes.c2p(*sumcoords), buff=0, color=PCOLOR)
+        p1 = Arrow(axes.c2p(0,0), axes.c2p(*p1coords), buff=0, color=COLOR_V1P)        
+        p2 = Arrow(axes.c2p(0,0), axes.c2p(*p2coords), buff=0, color=COLOR_V2P)
+        padd = Arrow(axes.c2p(0,0), axes.c2p(*sumcoords), buff=0, color=COLOR_V2)
         diagram.add(p1,p2,padd)
 
         # labels
-        ul = MathTex(r"u", font_size=55, color=UCOLOR).next_to(u.get_tip(), UP)
-        p1l = MathTex(r"\mathbf{P_1}","u", font_size=55, color=PUCOLOR).next_to(p1.get_tip(), DOWN)                
-        p2l = MathTex(r"\mathbf{P_2}","u", font_size=55, color=PVCOLOR).next_to(p2.get_tip(), LEFT)        
-        paddl = MathTex(r"\left(",r"\mathbf{P_1}","+",r"\mathbf{P_2}",r"\right)", "u", font_size=60, color=PUCOLOR).next_to(padd.get_tip())        
+        ul = MathTex(r"u", font_size=55).next_to(u.get_tip(), UP)
+        p1l = MathTex(r"\mathbf{P_1}","u", font_size=55).next_to(p1.get_tip(), DOWN)                
+        p2l = MathTex(r"\mathbf{P_2}","u", font_size=55).next_to(p2.get_tip(), LEFT)        
+        paddl = MathTex(r"\left(",r"\mathbf{P_1}","+",r"\mathbf{P_2}",r"\right)", "u", font_size=60).next_to(padd.get_tip())        
         for label in [ul,p1l,p2l,paddl]:
-            color_tex(label,("u",UCOLOR),(r"\mathbf{P_1}",PUCOLOR),(r"\mathbf{P_2}",PVCOLOR))
+            color_tex(label,("u",COLOR_V1),(r"\mathbf{P_1}",COLOR_V1P),(r"\mathbf{P_2}",COLOR_V2P))
         diagram.add(ul,p1l,p2l,paddl)
 
         # dashes and right angles
@@ -1829,7 +1847,7 @@ class TraceIsRank(Scene):
         self.play(MoveToTarget(trace),MoveToTarget(mo))
         self.play(Write(sum[0]))
         self.play(
-            *[Indicate(m.get_entries()[i],scale_factor=1.4) for i in [0,4,8]],
+            *[Indicate(m.get_entries()[i],scale_factor=1.6,color=COLOR_V1) for i in [0,4,8]],
             TransformFromCopy(m.get_entries()[0],sum[1]), # 0.5
             TransformFromCopy(m.get_entries()[4],sum[3]), # -0.5
             TransformFromCopy(m.get_entries()[8],sum[5]), # 1
@@ -1849,12 +1867,14 @@ class TraceIsRank(Scene):
         self.wait()
 
         # eigs are 0 and 1
-        proje = Tex(r"For projection,\\","$\lambda$'s"," = ","1's" ," and ","0's",font_size=65).next_to(trse,DOWN).shift(DOWN)
+        proje = Tex(r"For projection,\\",r"$\lambda$'s"," = ","1's" ," and ","0's",font_size=65).next_to(trse,DOWN).shift(DOWN)
+        color_tex(proje,("1",COLOR_V1),("0",RED))
         for part in proje: self.play(Write(part))
         self.wait()
 
         # add rank(p) before 1's
-        proje1 = Tex(r"For projection,\\","$\lambda$'s"," = ",r"rank$(\mathbf{P})$ ","1's" ," and ","0's",font_size=65).move_to(proje)
+        proje1 = Tex(r"For projection,\\",r"$\lambda$'s"," = ",r"rank$(\mathbf{P})$ ","1's" ," and ","0's",font_size=65).move_to(proje)
+        color_tex(proje1,("1",COLOR_V1),("0",RED))
         self.play(*TransformBuilder(
             proje,proje1,
             [
@@ -1866,7 +1886,8 @@ class TraceIsRank(Scene):
         self.wait()
 
         # add rank(p) before 1's
-        proje2 = Tex(r"For projection,\\","$\lambda$'s"," = ",r"rank$(\mathbf{P})$ ","1's" ," and ",r"$\left(n-\text{rank}(\mathbf{P})\right)$ ","0's",font_size=65).move_to(proje1)
+        proje2 = Tex(r"For projection,\\",r"$\lambda$'s"," = ",r"rank$(\mathbf{P})$ ","1's" ," and ",r"$\left(n-\text{rank}(\mathbf{P})\right)$ ","0's",font_size=65).move_to(proje1)
+        color_tex(proje2,("1",COLOR_V1),("0",RED))
         self.play(*TransformBuilder(
             proje1,proje2,
             [
@@ -1879,6 +1900,7 @@ class TraceIsRank(Scene):
 
         # substitue in for trace, to read trace = rank(p)\cdot 1 + (n-rank(p))\cdot0 = rank(p)
         trse2 = Tex("trace"," = ",r"rank($\mathbf{P}$)",r"$\cdot$", "$1$","$+$",r"$\left(n-\text{rank}(\mathbf{P}) \right)$",r"$\cdot$","$0$",font_size=65).move_to(trse)
+        color_tex(trse2,("$1$",COLOR_V1),("$0$",RED))
         self.play(*TransformBuilder(
             [trse,proje2],trse2,
             [
@@ -1920,16 +1942,17 @@ class ProjectionPropsRecap(Scene):
 
         # properties
         props = VGroup(*[Tex(message, font_size=55).next_to(ul, DOWN) for message in [
-            r"Idempotent: $P^2=P$",
-            r"Symmetric: $P^T=P$",
+            r"Idempotent: $\mathbf{P}^2=\mathbf{P}$",
+            r"Symmetric: $\mathbf{P}^T=\mathbf{P}$",
             r"Less-than-full rank: $\text{rank}(\mathbf{P})<n$",
             r"Eigenvalues are 0's and 1's",
-            r"$\mathbf{P_2}\mathbf{P_1}=\mathbf{P_1}\mathbf{P_2}$ if orthogonal/overlapping",
+            r"$\mathbf{P_2}\mathbf{P_1}=\mathbf{P_1}\mathbf{P_2}$ if orthogonal or overlapping",
             r"Orthogonal \& Non-overlapping projections add"
-        ]])        
+        ]])                
         for i in range(1,len(props)): AlignBaseline(props[i].align_to(props[0], LEFT), props[0]).shift(DOWN*i)
         props.next_to(ul,DOWN)
         for prop in props:
+            color_tex(prop,(r"$\mathbf{P_1}$",COLOR_V1P),(r"$\mathbf{P_2}$",COLOR_V2P),("0",RED),("1",COLOR_V1))
             self.play(Write(prop))
             self.wait()
 
