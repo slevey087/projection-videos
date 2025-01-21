@@ -7,6 +7,8 @@ from utils import *
 
 w=1
 
+from sklearn.linear_model import LinearRegression
+
 
 # new colors
 COLOR_V1 =  XKCD.LIGHTBLUE
@@ -29,11 +31,330 @@ PVCOLOR = XKCD.BLUEGREEN
 
 """
 
-def color_tex_standard(equation):
-    if isinstance(equation,Matrix):
-        for entry in equation.get_entries(): color_tex_standard(entry)
-        return equation
-    return color_tex(equation,(r"\mathbf{v}", VCOLOR), (r"\mathbf{x}",XCOLOR),(r"\mathbf{y}",YCOLOR), (r"\mathbf{p}",PCOLOR),("p_x",PCOLOR),("p_y",PCOLOR), (r"\mathbf{u}", UCOLOR),(r"\hat{\mathbf{u}}", PUCOLOR),(r"\hat{\mathbf{v}}", PVCOLOR))
+
+class Opening(MovingCameraScene):
+    def construct(self):
+        l1coords = np.array([2,0.5])*2        
+        l2coords = np.array([0.5,2])*1.9                
+        ucoords = np.array([1.5,1.5])*2
+        p1coords = l1coords * np.dot(l1coords,ucoords) / np.dot(l1coords,l1coords)
+        p12coords = l2coords * np.dot(l2coords,p1coords) / np.dot(l2coords,l2coords)
+        p2coords = l2coords * np.dot(l2coords,ucoords) / np.dot(l2coords,l2coords)
+        p21coords = l1coords * np.dot(l1coords,p2coords) / np.dot(l1coords,l1coords)
+        
+        # initial frame stuff
+        frame = self.camera.frame        
+
+        # draw vectors and labels
+        axes = Axes(x_range=[-2,2], x_length=4,y_range=[-2,2],y_length=4)#.rotate(-15*DEGREES)
+        line1 = Line(axes.c2p(*(-l1coords)), axes.c2p(*l1coords), buff=0, color=GREY).set_opacity(0.4)
+        line2 = Line(axes.c2p(*(-l2coords)), axes.c2p(*l2coords), buff=0, color=GREY).set_opacity(0.4)
+        u = Arrow(axes.c2p(0,0), axes.c2p(*ucoords), buff=0, color=COLOR_V1)
+        diagram = VGroup(axes,line1,line2,u)
+
+        # projections
+        p1 = Arrow(axes.c2p(0,0), axes.c2p(*p1coords), buff=0, color=COLOR_V1P)
+        p21 = Arrow(axes.c2p(0,0), axes.c2p(*p21coords), buff=0, color=COLOR_V1P)
+        p2 = Arrow(axes.c2p(0,0), axes.c2p(*p2coords), buff=0, color=COLOR_V2P)
+        p12 = Arrow(axes.c2p(0,0), axes.c2p(*p12coords), buff=0, color=COLOR_V2P)
+        diagram.add(p1,p12,p21,p2)        
+
+        # dashes and right angles
+        d1 = DashedLine(u.get_end(),p1.get_end(),dash_length=0.2).set_opacity(0.4)
+        r1 = RightAngle(d1,p1,length=0.2,quadrant=(-1,-1)).set_stroke(opacity=0.4)
+        d2 = DashedLine(u.get_end(),p2.get_end(),dash_length=0.2).set_opacity(0.4)
+        r2 = RightAngle(d2,p2,length=0.2,quadrant=(-1,-1)).set_stroke(opacity=0.4)
+        d12 = DashedLine(p1.get_end(),p12.get_end(),dash_length=0.2).set_opacity(0.4)
+        r12 = RightAngle(d12,p12,length=0.2,quadrant=(-1,-1)).set_stroke(opacity=0.4)
+        d21 = DashedLine(p2.get_end(),p21.get_end(),dash_length=0.2).set_opacity(0.4)
+        r21 = RightAngle(d21,p21,length=0.2,quadrant=(-1,-1)).set_stroke(opacity=0.4)
+        diagram.add(d1,r1,d2,r2,d12,r12,d21,r21)
+
+        diagram.shift(-u.get_center())
+        diagram.remove(axes)
+        frame.scale(0.65)
+        frame.save_state()
+
+        # draw lines and vector
+        self.play(            
+            frame.animate(run_time=1.5).move_to(u).scale(0.75),
+            Create(line1,run_time=1.5), 
+            Create(line2,run_time=1.5),
+            GrowArrow(u,run_time=1.5),
+            )
+
+        # project 1...
+        self.play(
+            frame.animate.move_to(p1.get_end()+LEFT*0.65).scale(2/3),
+            TransformFromCopy(u,p1),
+            Write(d1),            
+            Write(r1),
+            run_time=1.75
+        )
+        
+        
+        # ...then 2
+        self.play(
+            frame.animate.move_to(p12.get_end()+DOWN*0.6),
+            TransformFromCopy(p1,p12),
+            Write(d12),
+            Write(r12),
+            run_time=1.7
+        )        
+        
+
+        # project 2...        
+        self.play(            
+            frame.animate.move_to(p2.get_end()+DOWN*0.7),
+            TransformFromCopy(u,p2),
+            Write(d2),
+            Write(r2),
+            run_time=1.5
+        )
+        
+
+        # ...then 1
+        self.play(
+            frame.animate.move_to(p21.get_end()+UL*0.5),
+            TransformFromCopy(p2,p21),
+            Write(d21),
+            Write(r21),
+            run_time=1.75
+        )
+
+        # zoom out        
+        title = Tex("Projection Matrix Properties", font_size=50).next_to(VGroup(u,p1,p2),UP).shift(UP*0.3+RIGHT*0.1)
+        ul = Line(title.get_corner(DL)+DL*0.1, title.get_corner(DR)+DR*0.1, color=COLOR_V1)        
+        self.play(frame.animate.scale(2).move_to(title).align_to(title,UP).shift(UP*0.35),run_time=1.75)
+        self.play(
+            Write(title),
+            Write(ul)
+        )        
+        self.wait()
+
+        self.play(
+            VGroup(title,ul).animate.move_to(frame),
+            FadeOut(diagram),
+            run_time=1.5
+        )
+        self.wait()
+        
+
+
+
+
+
+class OLSdemo(Scene):
+    def construct(self):
+        # Create the axes
+        axes = Axes(
+            x_range=[-1, 6],
+            y_range=[-1, 6],
+            axis_config={"include_tip": True},
+            x_length=6,
+            y_length=6
+        )
+        
+        # Add labels
+        x_label = axes.get_x_axis_label("x")
+        y_label = axes.get_y_axis_label("y")
+        
+        # Generate random data points
+        np.random.seed(42)  # For reproducibility
+        X = np.random.uniform(0, 5, 20).reshape(-1, 1)
+        y = 1 + 0.8 * X + np.random.normal(0, 0.4, (20, 1))
+        
+        # Fit linear regression
+        reg = LinearRegression().fit(X, y)
+        
+        # Create dots for data points
+        dots = VGroup(*[
+            Dot(axes.c2p(X[i, 0], y[i, 0]), radius=0.05)
+            for i in range(len(X))
+        ])
+        
+        # Create regression line
+        x_range = np.array([0, 5]).reshape(-1, 1)
+        y_pred = reg.predict(x_range)
+        line = Line(
+            start=axes.c2p(x_range[0, 0], y_pred[0,0]),
+            end=axes.c2p(x_range[1, 0], y_pred[1,0]),
+            color=COLOR_V1
+        )
+        
+        # Animate
+        self.play(Create(axes), Create(x_label), Create(y_label))
+        
+        self.play(AnimationGroup(
+            *[GrowFromCenter(dot) for dot in dots],
+            lag_ratio=0.05
+        ))
+        
+        self.play(Create(line))
+        self.wait()
+
+
+
+
+class PerspectiveProjection(ThreeDScene):
+    def construct(self):
+        # Configure the scene
+        self.set_camera_orientation(phi=75 * DEGREES, theta=30 * DEGREES)
+        self.camera.frame_center = np.array([0, 0, 0])
+        
+        # Create a cube
+        cube = Cube(side_length=2, fill_opacity=0.7, fill_color=BLUE)
+        cube.move_to(np.array([0, 0, 0]))
+        
+        # Create camera point (represented as a small sphere)
+        camera_point = Sphere(radius=0.1, fill_color=RED)
+        camera_point.move_to(np.array([4, 4, 4]))
+        
+        # Create viewing plane (semi-transparent rectangle)
+        viewing_plane = Rectangle(
+            height=4, width=4,
+            fill_color=GREEN,
+            fill_opacity=0.2,
+            stroke_width=1
+        ).rotate(angle=PI/4, axis=UP)
+        viewing_plane.move_to(np.array([2, 2, 2]))
+        
+        # Animation sequence
+        self.begin_ambient_camera_rotation(rate=0.2)
+        
+        # Step 1: Show the cube
+        self.play(Create(cube))
+        self.wait(0.5)
+        
+        # Step 2: Add camera point
+        self.play(Create(camera_point))
+        self.wait(0.5)
+        
+        # Step 3: Add viewing plane
+        self.play(Create(viewing_plane))
+        self.wait(0.5)
+        
+        # Step 4: Add projection lines
+        projection_lines = VGroup()
+        vertices = [
+            np.array([x, y, z]) 
+            for x in [-1, 1] 
+            for y in [-1, 1] 
+            for z in [-1, 1]
+        ]
+
+        for vertex in vertices:
+            start_point = vertex
+            end_point = camera_point.get_center()
+            line = Line(
+                start=start_point,
+                end=end_point,
+                color=YELLOW                
+            ).set_opacity(0.4)
+            projection_lines.add(line)
+                
+        self.play(Create(projection_lines))
+        self.wait(1)
+        
+        # Step 5: Rotate cube to show perspective changes
+        self.play(
+            Rotate(cube, angle=PI/2, axis=UP),
+            run_time=2
+        )
+        self.wait(1)
+        
+        self.stop_ambient_camera_rotation()
+
+
+
+class PCADemo(ThreeDScene):
+    def construct(self):
+        # Set up 3D axes
+        axes = ThreeDAxes(
+            x_range=[-3, 3], y_range=[-3, 3], z_range=[-3, 3],
+            x_length=6, y_length=6, z_length=6
+        )
+        self.set_camera_orientation(phi=75 * DEGREES, theta=45 * DEGREES)
+        self.add(axes)
+
+        # Scatter random points
+        data_points = [
+            np.array([np.random.uniform(-1.5, 1.5),
+                      np.random.uniform(-1.5, 1.5),
+                      np.random.uniform(-1.5, 1.5)]) for _ in range(60)
+        ]
+        points = VGroup(*[
+            Dot(radius=0.05, color=BLUE).move_to(axes.c2p(*point)).rotate(45*DEGREES,axis=(-1,1,0))
+            for point in data_points
+        ])
+        self.add(points)
+
+        # Principal component vectors
+        pc1 = Arrow(start=axes.c2p(0, 0, 0), end=axes.c2p(2, 1, 1),
+                    color=RED, stroke_width=4,buff=0)
+        pc1.rotate(30*DEGREES,axis=pc1.get_unit_vector())
+        pc2 = Arrow(start=axes.c2p(0, 0, 0), end=axes.c2p(-1, 2, 0.5),
+                    color=GREEN, stroke_width=4,buff=0)
+        pc2.rotate(45*DEGREES,axis=pc2.get_unit_vector())
+        pc3 = Arrow(start=axes.c2p(0, 0, 0), end=axes.c2p(0.5, -0.5, 2),
+                    color=YELLOW, stroke_width=4,buff=0)
+        pc3.rotate(75*DEGREES,axis=pc3.get_unit_vector())
+
+        # Animate
+        self.add(pc1, pc2, pc3)
+        self.begin_ambient_camera_rotation(rate=0.2)
+        self.wait(5)
+
+
+
+class OLSdemo(Scene):
+    def construct(self):
+        # Create the axes
+        axes = Axes(
+            x_range=[-1, 6],
+            y_range=[-1, 6],
+            axis_config={"include_tip": True},
+            x_length=6,
+            y_length=6
+        )
+        
+        # Add labels
+        x_label = axes.get_x_axis_label("x")
+        y_label = axes.get_y_axis_label("y")
+        
+        # Generate random data points
+        np.random.seed(42)  # For reproducibility
+        X = np.random.uniform(0, 5, 20).reshape(-1, 1)
+        y = 1 + 0.8 * X + np.random.normal(0, 0.4, (20, 1))
+        
+        # Fit linear regression
+        reg = LinearRegression().fit(X, y)
+        
+        # Create dots for data points
+        dots = VGroup(*[
+            Dot(axes.c2p(X[i, 0], y[i, 0]), radius=0.05)
+            for i in range(len(X))
+        ])
+        
+        # Create regression line
+        x_range = np.array([0, 5]).reshape(-1, 1)
+        y_pred = reg.predict(x_range)
+        line = Line(
+            start=axes.c2p(x_range[0, 0], y_pred[0,0]),
+            end=axes.c2p(x_range[1, 0], y_pred[1,0]),
+            color=COLOR_V1
+        )
+        
+        # Animate
+        self.play(Create(axes), Create(x_label), Create(y_label))
+        
+        self.play(AnimationGroup(
+            *[GrowFromCenter(dot) for dot in dots],
+            lag_ratio=0.05
+        ))
+        
+        self.play(Create(line))
+        self.wait()
 
 
 
@@ -86,9 +407,9 @@ class ProjectionIntuition2d(MovingCameraScene):
         , run_time=2)
         self.wait()
 
-        # restore camera
-        self.play(Restore(camera), run_time=2)
-        self.wait()
+        # clear out
+        self.play(FadeOut(*self.mobjects, shift=DL))
+        
 
 
 # config.renderer="opengl"
@@ -162,8 +483,8 @@ class OrthogonalProjection(MovingCameraScene):
         , run_time=2)
         self.wait()
 
-        # clear out to axes
-        self.play(FadeOut(line, v1, vp, dash, ra))
+        # clear out
+        self.play(FadeOut(*self.mobjects))
 
 
 class DotProduct(MovingCameraScene):
@@ -440,7 +761,7 @@ class Symmetric(Scene):
         self.play(Write(text1))
         self.wait()
         self.play(text1.animate.next_to(ul, DOWN))
-        self.wait()
+        
 
         # p=pt, symmetric
         text2 = MathTex(r"\mathbf{P}^T=\mathbf{P}", font_size=75)
@@ -660,6 +981,12 @@ class SymmetricGeom1d(MovingCameraScene):
         self.play(TransformFromCopy(pvl[0],dot3[10]),run_time=1.25)
         self.wait(w)
 
+        # un-dim all the things
+        self.play(
+            VGroup(v,vl,pu,pul).animate.set_opacity(1)
+        )
+        self.wait()
+
 
 
 class SymmetricAlgebra(Scene):
@@ -738,6 +1065,7 @@ class SymmetricAlgebra(Scene):
         zerol = MathTex("0", font_size=65).move_to(udistr[0][8])
         AlignBaseline(zerol, udistr)        
         self.play(Indicate(udistr[0][6:]))
+        self.wait()
         self.play(
             FadeOut(udistr[0][6:], shift=DOWN),
             FadeIn(zerol, shift=DOWN)
@@ -812,6 +1140,7 @@ class SymmetricAlgebra(Scene):
         zeror = MathTex("0", font_size=65).move_to(vdistr[0][8])
         AlignBaseline(zeror, vdistr)
         self.play(Indicate(vdistr[0][6:]))
+        self.wait()
         self.play(
             FadeOut(vdistr[0][6:], shift=DOWN),
             FadeIn(zeror, shift=DOWN)
@@ -1137,7 +1466,7 @@ class MultiplyProperty(Scene):
         self.wait()
 
         # text property
-        text1 = Tex(r"Orthogonal or overlapping projections commute", font_size=55)
+        text1 = Tex(r"Orthogonally-overlapping projections commute", font_size=55)
         self.play(Write(text1))
         self.wait()  
 
@@ -1958,171 +2287,3 @@ class ProjectionPropsRecap(Scene):
 
 
         
-
-"""
-
-class Introduction(MovingCameraScene):
-    def construct(self):
-        xcoords = np.array([2,1])
-        vcoords = np.array([0.5,2])
-        pcoords = xcoords * np.dot(xcoords,vcoords) / np.dot(xcoords,xcoords)
-        
-        # initial frame stuff
-        frame = self.camera.frame
-        frame.save_state()
-
-        # draw vectors and labels
-        axes = Axes(x_range=[-2,2], x_length=4,y_range=[-2,2],y_length=4)
-        x = Arrow(axes.c2p(0,0), axes.c2p(*xcoords), buff=0, color=XCOLOR)
-        v = Arrow(axes.c2p(0,0), axes.c2p(*vcoords), buff=0, color=VCOLOR)
-        vhat = Arrow(axes.c2p(0,0), axes.c2p(*pcoords), buff=0, color=PCOLOR)
-        xl = MathTex(r"\mathbf{x}", font_size=60, color=XCOLOR).next_to(x.get_tip(), RIGHT)
-        vl = MathTex(r"\mathbf{v}", font_size=60, color=VCOLOR).next_to(v.get_tip(), UP)
-        vhatl = MathTex(r"\hat{\mathbf{v}}", font_size=60, color=PCOLOR).next_to(vhat.get_tip(), DOWN,buff=0.1)
-        r = DashedLine(axes.c2p(*vcoords),axes.c2p(*pcoords), dash_length=0.12).set_opacity(0.5)
-        ra = RightAngle(vhat,r,length=0.25,quadrant=(-1,-1))
-        rl = MathTex(r"\mathbf{v}-\mathbf{p}", font_size=60, color=RCOLOR).next_to(r).shift(UP*0.2+LEFT*0.3)
-        diagram = VGroup(axes,x,v,xl,vl,r,vhat,vhatl,ra).shift(-VGroup(v,x).get_center()).shift(LEFT*2.25)
-        diagram.remove(axes)        
-
-        frame.scale(0.5).move_to(VGroup(x,v))
-
-        # draw x and v
-        self.play(GrowArrow(x))
-        # self.play(Write(xl))
-        self.play(GrowArrow(v))
-        self.play(Write(vl))        
-        self.wait(w)
-
-        # drop projection
-        self.play(
-            TransformFromCopy(v,vhat),
-            Write(r)
-        ,run_time=2)
-        self.play(Write(vhatl))        
-        self.wait(w)
-
-        # write title
-        title = Tex("Orthogonal Projection", font_size=50).next_to(diagram,UP,buff=0.5)
-        ul = Line(title.get_corner(DL)+DL*0.1, title.get_corner(DR)+DR*0.1, color=BLUE)        
-        self.play(Write(ra))
-        self.play(frame.animate.scale(1.3).shift(UP*0.3),run_time=1.5)
-        self.play(Write(title))
-        self.play(Write(ul))
-        self.wait(w)
-
-        # shift diagram, write equation
-        eq = MathTex(r"\hat{\mathbf{v}}","=","P",r"\mathbf{v}",font_size=70).move_to(diagram).shift(RIGHT*1.5).shift(UP*0.5)
-        color_tex_standard(eq)
-        self.play(diagram.animate.shift(LEFT*1.5))
-        self.play(TransformFromCopy(vl[0],eq[3]),run_time=1.5)
-        self.play(FadeIn(eq[2],shift=RIGHT),run_time=1.5)
-        self.play(Write(eq[1]),run_time=1.25)
-        self.play(TransformFromCopy(vhatl[0],eq[0]),run_time=1.25)
-        
-        self.wait(w)
-        
-        
-
-
-class Idempotent(MovingCameraScene):
-    def construct(self):
-        xcoords = np.array([2,1])
-        vcoords = np.array([0.5,2])
-        pcoords = xcoords * np.dot(xcoords,vcoords) / np.dot(xcoords,xcoords)
-        
-        # initial frame stuff
-        frame = self.camera.frame
-        frame.save_state()
-
-        # draw vectors and labels
-        axes = Axes(x_range=[-2,2], x_length=4,y_range=[-2,2],y_length=4)
-        x = Arrow(axes.c2p(0,0), axes.c2p(*xcoords), buff=0, color=XCOLOR)
-        v = Arrow(axes.c2p(0,0), axes.c2p(*vcoords), buff=0, color=VCOLOR)
-        xl = MathTex(r"\mathbf{x}", font_size=60, color=XCOLOR).next_to(x.get_tip(), RIGHT)
-        vl = MathTex(r"\mathbf{v}", font_size=60, color=VCOLOR).next_to(v.get_tip(), UP)
-        r = Arrow(axes.c2p(*pcoords), axes.c2p(*vcoords), buff=0, color=RCOLOR)        
-        rl = MathTex(r"\mathbf{v}-\mathbf{p}", font_size=60, color=RCOLOR).next_to(r).shift(UP*0.2+LEFT*0.3)
-        diagram = VGroup(axes,x,v,xl,vl).shift(-VGroup(v,x).get_center()).shift(LEFT*2.25)
-        diagram.remove(axes)
-        frame.scale(0.5).move_to(VGroup(x,v))
-        
-        # fade in diagram
-        self.play(FadeIn(diagram),run_time=2)
-        self.wait(w)
-
-        # project
-        p = Arrow(axes.c2p(0,0), axes.c2p(*pcoords), buff=0, color=PCOLOR)
-        self.play(TransformFromCopy(v,p), run_time=2)
-        pl = MathTex(r"\mathbf{p}", font_size=60, color=PCOLOR).next_to(p.get_tip(), DOWN)        
-        diagram.add(p,pl)
-        self.play(Write(pl))
-        self.wait(w)
-
-        # p equation
-        peq = MathTex(r"\mathbf{p}","=","P",r"\mathbf{v}",font_size=70)
-        peq.move_to([-diagram.get_center()[0],diagram.get_center()[1],0])
-        AlignBaseline(peq, xl)
-        color_tex_standard(peq)
-        self.play(frame.animate.move_to(VGroup(diagram,peq).get_center()).scale(1.2), run_time=2)
-        self.play(TransformFromCopy(vl,peq[3]),run_time=2)                
-        self.play(TransformFromCopy(pl, peq[0]), run_time=1.5)
-        self.play(Write(peq[1]))        
-        self.play(Write(peq[2]))
-        self.wait()
-
-        # caption
-        p2 = Tex("Projecting Twice ","=", " Projecting Once").align_to(frame,UP).shift(DOWN*0.25)
-        self.play(Write(p2))
-        self.play(Wiggle(p,scale_value=1.25,rotation_angle=0.05*TAU,run_time=2,n_wiggles=10), Wiggle(pl,scale_value=1.25,rotation_angle=0.05*TAU,run_time=2,n_wiggles=10))
-        self.wait(w)
-
-        # p2 = p
-        p2ep = MathTex("P^2","=","P", font_size=80).next_to(peq,UP)
-        self.play(
-            TransformFromCopy(p2[2],p2ep[2]),
-            peq.animate.shift(DOWN*0.5)
-        ,run_time=1.25)
-        self.play(TransformFromCopy(p2[1],p2ep[1]),run_time=1.25)
-        self.play(TransformFromCopy(p2[0],p2ep[0]),run_time=1.25)
-        self.wait(w)
-
-        # idempotent caption
-        title = Tex("Idempotent", font_size=50).move_to(p2)
-        ul = Line(title.get_corner(DL)+DL*0.1, title.get_corner(DR)+DR*0.1, color=BLUE)        
-        self.play(ReplacementTransform(p2, title))
-        self.play(Write(ul))
-        self.wait()
-
-        # zoom out and fade out diagram
-        self.play(
-            FadeOut(*self.mobjects),
-            Restore(frame)
-        )
-
-        
-class SymmetricIntro(Scene):
-    def construct(self):
-        # title
-        title = Tex("Symmetric", font_size=83).to_edge(UP)
-        ul = Line(title.get_corner(DL)+DL*0.1, title.get_corner(DR)+DR*0.1, color=BLUE)        
-        self.play(Write(title))
-        self.play(Write(ul))
-        self.wait(w)
-
-        # ptp
-        sym = MathTex("P","=","P", font_size=80)
-        sym1 = MathTex("P^T","=","P", font_size=80)
-        AlignBaseline(sym1,sym)
-        self.play(Write(sym))
-        self.play(
-            ReplacementTransform(sym[0][0],sym1[0][0]), # P
-            ReplacementTransform(sym[1],sym1[1]), # =
-            ReplacementTransform(sym[2],sym1[2]),
-            FadeIn(sym1[0][1],shift=DL)
-        )
-        self.wait(w)
-
-        # to black
-        self.play(FadeOut(*self.mobjects))
-"""
