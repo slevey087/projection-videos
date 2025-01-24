@@ -15,6 +15,7 @@ COLOR_V1 =  XKCD.LIGHTBLUE
 COLOR_V1P = XKCD.WINDOWSBLUE # pureblue and cobaltblue is good too
 COLOR_V2 = XKCD.LIGHTAQUA
 COLOR_V2P = XKCD.BLUEGREEN
+COLOR_V3P = XKCD.ELECTRICPURPLE # XKCD.EASTERPURPLE and XKCD.LIGHTISHPURPLE are good too
 
 """
 # old colors
@@ -1466,13 +1467,91 @@ class MultiplyProperty(Scene):
         self.wait()
 
         # text property
-        text1 = Tex(r"Orthogonally-overlapping projections commute", font_size=55)
+        text1 = Tex(r"Orthogonal, nested, and \\  orthogonally-overlapping \\ projections commute", font_size=60)
         self.play(Write(text1))
         self.wait()  
 
+        # fade text
+        # self.play(text1.animate.next_to(ul,DOWN))        
+        self.play(FadeOut(text1))
 
+        # vector multiplication
+        eq = MathTex(r"\mathbf{P_2}",r"\mathbf{P_1}","u", font_size=75)
+        eq[0].set_color(COLOR_V2P), eq[1].set_color(COLOR_V1P), eq[2].set_color(COLOR_V1)
+        self.play(Write(eq[2]))
+        self.play(FadeIn(eq[1],shift=RIGHT))
+        t1 = Tex("Do this projection first").next_to(eq[1][0],UP).shift(UP*1.25)
+        a1 = Arrow(t1.get_bottom(),eq[1][0],color=COLOR_V1P)
+        t2 = Tex("Then this one").next_to(eq[0][0],DOWN).shift(DOWN*1.25)
+        a2 = Arrow(t2.get_top(),eq[0][0], color=COLOR_V2P)
+        self.play(
+            Write(t1),
+            GrowArrow(a1)
+        )
+        self.play(FadeIn(eq[0],shift=RIGHT))
+        self.play(
+            Write(t2),
+            GrowArrow(a2)
+        )
+        self.wait()
 
-# config.renderer="opengl"
+        # other order
+        eq2 = MathTex(r"\mathbf{P_2}",r"\mathbf{P_1}","u","=",r"\mathbf{P_1}",r"\mathbf{P_2}","u", font_size=75)
+        eq2[0].set_color(COLOR_V2P), eq2[1].set_color(COLOR_V1P), eq2[2].set_color(COLOR_V1)
+        eq2[5].set_color(COLOR_V2P), eq2[4].set_color(COLOR_V1P), eq2[6].set_color(COLOR_V1)
+        self.play(
+            *TransformBuilder(
+                eq, eq2,
+                [
+                    (0,0), (1,1), (2,2), # LHS
+                    (None,3, FadeIn,{"shift":RIGHT}), # =
+                    (0,5,TransformFromCopy,{"path_arc":150*DEGREES}), # p2
+                    (1,4,TransformFromCopy,{"path_arc":-250*DEGREES}), # p1
+                    (2,6,TransformFromCopy,{"path_arc":180*DEGREES}), # u
+                ]
+            ),
+            FadeOut(a1,a2,t1,t2),
+            run_time=2.25
+        )
+
+        # remove u
+        eq3 = MathTex(r"\mathbf{P_2}",r"\mathbf{P_1}","=",r"\mathbf{P_1}",r"\mathbf{P_2}", font_size=75)
+        eq3[0].set_color(COLOR_V2P), eq3[1].set_color(COLOR_V1P)
+        eq3[4].set_color(COLOR_V2P), eq3[3].set_color(COLOR_V1P)
+        self.play(*TransformBuilder(
+            eq2,eq3,
+            [
+                (0,0),(1,1), #LHS
+                (2,None,FadeOut,{"shift":DOWN}), #u left
+                (3,2), # =
+                (4,3), (5,4), # rhs
+                (6,None,FadeOut,{"shift":DOWN}), #u right
+            ]
+            ),
+            run_time=1.25
+        )
+
+        # commute
+        com = Tex("Commute", font_size=55).next_to(eq3,DOWN)
+        self.play(FadeIn(com,shift=DOWN))
+        self.wait()
+
+        # exclamation point
+        point = SVGMobject("exclamation-round-svgrepo-com.svg")
+        point.scale(1.5).set_color(XKCD.LIGHTRED).set_opacity(0.9)#.move_to(VGroup(eq3,com))
+        self.play(ReplacementTransform(point.copy().scale(2).set_opacity(0),point))
+        self.wait()
+
+        # to projections commute
+        text2 = Tex(r"Commuting projections will \\ yield another projection", font_size=60)
+        self.play(
+            FadeOut(point, eq3, com),
+            Write(text2)
+        )
+        self.wait()
+        
+
+config.renderer="opengl"
 class Commute(Scene):
     def construct(self):
         h = 0.6
@@ -1481,7 +1560,7 @@ class Commute(Scene):
         pxucoords = np.array([ucoords[0],0,0])
         pyucoords = np.array([0,ucoords[1],0])
         vcoords = np.array([0.25,0.7,h])
-        pvcoords = vcoords - np.array([0,0,h])
+        pxzucoords = np.array([ucoords[0],0,ucoords[2]])
         
 
         # set up frame
@@ -1499,9 +1578,10 @@ class Commute(Scene):
         ).set_flat_stroke(False)
         
         u = Arrow3D(axes.c2p(*ORIGIN), axes.c2p(*ucoords), buff=0, color=COLOR_V1)                
-        pu = Arrow3D(axes.c2p(*ORIGIN), axes.c2p(*pucoords), buff=0, color=COLOR_V1P)     
-        pxu = Arrow3D(axes.c2p(*ORIGIN), axes.c2p(*pxucoords), buff=0, color=COLOR_V2P)                   
+        pu = Arrow3D(axes.c2p(*ORIGIN), axes.c2p(*pucoords), buff=0, color=COLOR_V2P)     
+        pxu = Arrow3D(axes.c2p(*ORIGIN), axes.c2p(*pxucoords), buff=0, color=COLOR_V1P)                   
         pyu = Arrow3D(axes.c2p(*ORIGIN), axes.c2p(*pyucoords), buff=0, color=COLOR_V2P)                   
+        pxzu = Arrow3D(axes.c2p(*ORIGIN), axes.c2p(*pxzucoords), buff=0, color=COLOR_V3P)                   
         plane = OpenGLSurface(lambda u,v:axes.c2p(*[u,v,0]),u_range=[-0.5,1],v_range=[-0.5,1]).set_opacity(0.4)
         grid = NumberPlane(
             x_range=[-0.5,1,0.25],x_length=5,
@@ -1509,17 +1589,23 @@ class Commute(Scene):
         ).set_color(GRAY).set_flat_stroke(False).set_opacity(0.1)
 
         diagram = Group(axes, plane, grid)
-        diagram.add(u,pu,pxu,pyu)       
+        diagram.add(u,pu,pxu,pyu,pxzu)       
 
         # dashed lines and right angles
         dxy = DashedLine(u.get_end(),pu.get_end(),dash_length=0.1).set_flat_stroke(True).set_opacity(0.5)
         rxy = RightAngleIn3D(pu,Line(pu.get_end(),u.get_end()),length=0.2).set_flat_stroke(False).set_stroke(width=1, opacity=0.5)
         dx = DashedLine(u.get_end(),pxu.get_end(),dash_length=0.15).set_flat_stroke(True).set_opacity(0.3)
         rx = RightAngleIn3D(pxu,Line(pxu.get_end(),u.get_end()),length=0.2).set_flat_stroke(False).set_stroke(width=1, opacity=0.5)
+        dy = DashedLine(u.get_end(),pyu.get_end(),dash_length=0.15).set_flat_stroke(True).set_opacity(0.3)
+        ry = RightAngleIn3D(pyu,Line(pyu.get_end(),u.get_end()),length=0.2).set_flat_stroke(False).set_stroke(width=1, opacity=0.5)
         dxp = DashedLine(pu.get_end(),pxu.get_end(),dash_length=0.15).set_flat_stroke(True).set_opacity(0.3)
         rxp = RightAngleIn3D(pxu,Line(pxu.get_end(),pu.get_end()),length=0.2).set_flat_stroke(False).set_stroke(width=1, opacity=0.5)        
+        dxz = DashedLine(u.get_end(),pxzu.get_end(),dash_length=0.15).set_flat_stroke(True).set_opacity(0.3)
+        rxz = RightAngleIn3D(pxzu,Line(pxzu.get_end(),u.get_end()),length=0.2).set_flat_stroke(False).set_stroke(width=1, opacity=0.5)        
+        dxzp = DashedLine(pxzu.get_end(),pxu.get_end(),dash_length=0.15).set_flat_stroke(True).set_opacity(0.3)
+        rxzp = RightAngleIn3D(pxu,Line(pxu.get_end(),pxzu.get_end()),length=0.2).set_flat_stroke(False).set_stroke(width=1, opacity=0.5)        
         # for dash in [dxy,dx,dxp]: dash.reverse_points()
-        diagram.add(dxy,rxy,dx,rx,dxp,rxp) 
+        diagram.add(dxy,rxy,dx,rx,dy,ry,dxp,rxp,dxz,rxz,dxzp,rxzp) 
         
         # rotate/shift the diagram instead of rotating the camera, since fixed-in-frame mobjects don't work so great for text
         diagram.rotate(-45*DEGREES).rotate(-80*DEGREES,RIGHT)
@@ -1535,7 +1621,7 @@ class Commute(Scene):
         
         # scale the camera                
         frame.save_state()
-        frame.scale(0.4)
+        frame.scale(0.4).scale(1.25).shift(UP*0.5) # copied from awkward part elsewhere
 
         # add axes etc., draw vector and label it
         self.play(FadeIn(axes,plane,grid,shift=UR))
@@ -1543,123 +1629,250 @@ class Commute(Scene):
         self.play(Write(ul))
         self.wait()
 
-        # project to x-y plane
+        # project to x axis   
+        pxu.save_state(), dx.save_state(), rx.save_state()   
         self.play(
-            TransformFromCopy(u,pu),
-            Create(dxy),
-            run_time=1.25,
-        )
-        self.play(Write(rxy))                
-        
-        # project to x axis
-        self.play(
-            TransformFromCopy(pu,pxu),
-            Create(dxp),
-            run_time=1.25,
-        )
-        self.play(Write(rxp)) 
-
-        # add labels
-        self.play(Write(pul),run_time=1.25)
-        self.play(Write(pxul),run_time=1.25)
-        self.wait()
-
-        # zoom out
-        self.play(frame.animate.scale(1.25).shift(UP*0.5),run_time=1.5)
-        commute = MathTex(r"\mathbf{P_{x}}",r"\mathbf{P_{xy}}","u",r"\stackrel{?}{=}",r"\mathbf{P_{xy}}",r"\mathbf{P_{x}}","u", font_size=45).next_to(diagram,UP).shift(DOWN*0.25+RIGHT*1.5)
-        commute[0].set_color(COLOR_V2P), commute[1].set_color(COLOR_V1P), commute[2].set_color(COLOR_V1), commute[4].set_color(COLOR_V1P), commute[5].set_color(COLOR_V2P), commute[6].set_color(COLOR_V1)
-        self.play(TransformFromCopy(pxul[:],commute[:3]),run_time=1.5)
-        self.play(Write(commute[3]))
-        self.play(
-            TransformFromCopy(commute[0],commute[5], path_arc=90*DEGREES), # px
-            TransformFromCopy(commute[1],commute[4], path_arc=-90*DEGREES), # pxy
-            TransformFromCopy(commute[2],commute[6], path_arc=90*DEGREES), # u
-            run_time=2 
-        )
-        self.wait()
-
-        # project straight to x axis
-        pxu2 = pxu.copy()
-        self.play(
-            FadeOut(pxu),
-            TransformFromCopy(u,pxu2),
+            TransformFromCopy(u,pxu),
             Create(dx),
             run_time=1.75,
         )
-        self.play(Write(rx)) 
+        self.play(Write(rx))
+        
+        # write px
+        eq1 = MathTex(r"\mathbf{P_y}",r"\mathbf{P_x}","=","0",font_size=45).next_to(diagram,UP).shift(DOWN*0+RIGHT*1.5)
+        eq1[0].set_color(COLOR_V2P), eq1[1].set_color(COLOR_V1P)
+        self.play(Write(eq1[1]))
+        self.wait() 
 
-        # they do commute        
-        commute1 = AlignBaseline(MathTex(r"\mathbf{P_{x}}",r"\mathbf{P_{xy}}","u",r"=",r"\mathbf{P_{xy}}",r"\mathbf{P_{x}}","u", font_size=45).next_to(diagram,UP).shift(DOWN*0.25+RIGHT*1.25).move_to(commute),commute)
-        commute1[0].set_color(COLOR_V2P),commute1[1].set_color(COLOR_V1P), commute1[2].set_color(COLOR_V1), commute1[5].set_color(COLOR_V2P),commute1[4].set_color(COLOR_V1P), commute1[6].set_color(COLOR_V1)
-        check = Tex(r'\checkmark', color=XKCD.LIGHTGREEN).next_to(commute1)
-        self.play(ReplacementTransform(commute,commute1))
-        self.play(Write(check))
-        self.wait()
-
-        # clear the canvas to just u
-        self.play(FadeOut(commute1, pu,pul,pxu2,pxul,dx,rx,dxy,rxy,dxp,rxp,check),run_time=1.5)
-        self.wait()
-
-        # expression with px and py
-        ncommute = MathTex(r"\mathbf{P_{y}}",r"\mathbf{P_{x}}","u","=","0","=",r"\mathbf{P_{x}}",r"\mathbf{P_{y}}","u", font_size=45).move_to(commute)
-        ncommute[0].set_color(COLOR_V2P), ncommute[1].set_color(COLOR_V2P), ncommute[2].set_color(COLOR_V1), ncommute[6].set_color(COLOR_V2P), ncommute[7].set_color(COLOR_V2P), ncommute[8].set_color(COLOR_V1), 
-        self.play(TransformFromCopy(ul[0],ncommute[2]),run_time=1.25)
-        self.play(Write(ncommute[1]),run_time=1.25)
-        self.play(Write(ncommute[0]),run_time=1.25)
-        self.wait()
-
-        # equals question
-        qm = Tex(r"?").next_to(ncommute[3])
-        self.play(Write(ncommute[3]))
-        self.play(Write(qm))
-
-        # project to x axis, then to zero
+        # project to y, write py        
         self.play(
-            TransformFromCopy(u,pxu2),
-            Create(dx),
-            Write(rx),
+            pxu.animate.scale(0.01,pxu.points[0]),
+            Transform(VGroup(dx,rx),Dot(axes.get_origin(),color=GREY).set_opacity(0)),
             run_time=1.75
         )
-        self.wait()        
-        self.play(
-            pxu2.animate.scale(0.01,pxu2.points[0]),
-            Transform(VGroup(dx,rx),Dot(axes.get_origin(),color=GREY,fill_opacity=0)),
-            run_time=1.75
-        )
-        self.remove(pxu2)
-
-        # replace question mark with zero        
-        self.play(
-            FadeOut(qm,shift=DOWN),
-            FadeIn(ncommute[4],shift=DOWN)
-        )
+        self.remove(pxu, dx, rx)
+        pxu.restore(), dx.restore(), rx.restore()
+        self.play(FadeIn(eq1[0],shift=RIGHT))
+        self.play(Write(eq1[2:]))
         self.wait()
 
-        # rotate diagram, project to y axis then zero
-        pyu.set_opacity(0)
+        # rotate diagram
+        ystuff = Group(pyu,dy,ry).set_opacity(0)        
+        base = Group(axes,plane,grid,u,ul).save_state()
         self.play(
-            Group(axes,plane,grid,u,pyu).animate.rotate(-130*DEGREES,axes.z_axis.get_unit_vector()),
+            Group(axes,plane,grid,u,ystuff).animate.rotate(-130*DEGREES,axes.z_axis.get_unit_vector()),
             ul.animate.next_to(Group(axes,plane,grid,u,pyu).copy().rotate(-130*DEGREES,axes.z_axis.get_unit_vector())[3].points[-1],LEFT,buff=0.25),
             run_time=2
         )
-        self.remove(pyu)
-        pyu.set_opacity(1)
-        self.play(TransformFromCopy(u,pyu),run_time=1.75)
-        self.wait()        
-        self.play(pyu.animate.scale(0.01,pyu.points[0]),run_time=1.75)
-        self.remove(pyu)
+        self.remove(ystuff)
+        pyu.set_opacity(1), dy.set_opacity(0.3), ry.set_opacity(0.5)
 
-        # add second formula
-        self.play(Write(ncommute[5]))
+        # project to y axis then zero
         self.play(
-            TransformFromCopy(ncommute[0],ncommute[7], path_arc=90*DEGREES), # py
-            TransformFromCopy(ncommute[1],ncommute[6], path_arc=-90*DEGREES), # px
-            TransformFromCopy(ncommute[2],ncommute[8], path_arc=90*DEGREES), # u
-            run_time=2 
+            TransformFromCopy(u,pyu),
+            Create(dy),
+            run_time=1.75
         )
+        self.play(Write(ry)) 
+        self.play(
+            pyu.animate.scale(0.01,pyu.points[0]),
+            Transform(VGroup(dy,ry),Dot(axes.get_origin(),color=GREY).set_opacity(0)),
+            run_time=1.75
+        )
+        self.remove(pyu)
         self.wait()
 
-        self.interactive_embed()
+        # commuting equation
+        eq2 = AlignBaseline(MathTex(r"\mathbf{P_y}",r"\mathbf{P_x}","=","0","=",r"\mathbf{P_x}",r"\mathbf{P_y}",font_size=45).move_to(eq1),eq1)
+        eq2[0].set_color(COLOR_V2P), eq2[1].set_color(COLOR_V1P)
+        eq2[6].set_color(COLOR_V2P), eq2[5].set_color(COLOR_V1P)
+        self.play(*TransformBuilder(
+            eq1,eq2,
+            [
+                (0,0),(1,1),(2,2),(3,3), # pypx=0
+                (None,4), # =
+                (1,5,TransformFromCopy,{"path_arc":-120*DEGREES}), # px
+                (0,6,TransformFromCopy,{"path_arc":-120*DEGREES}), # py
+            ]
+            ),
+            run_time=1.25
+        )
+        self.remove(eq1)  # symbols are being left behind for no reason?
+        self.wait()
+
+        # rotate diagram back, drop equation
+        ystuff = Group(pyu,dy,ry).set_opacity(0)
+        self.play(
+            Restore(base),
+            # Group(axes,plane,grid,u,ystuff).animate.rotate(130*DEGREES,axes.z_axis.get_unit_vector()),
+            # ul.animate.next_to(Group(axes,plane,grid,u,pyu).copy().rotate(130*DEGREES,axes.z_axis.get_unit_vector())[3].points[-1],RIGHT,buff=0.35),
+            FadeOut(eq2,shift=LEFT),
+            run_time=2
+        )
+        self.remove(ystuff)
+        pyu.set_opacity(1), dy.set_opacity(0.3), ry.set_opacity(0.5)
+
+        # second case
+        # write px pxy equation
+        eq3 = AlignBaseline(MathTex(r"\mathbf{P_x}",r"\mathbf{P_{xy}}","=",r"\mathbf{P_x}",font_size=45).move_to(eq2),eq2)
+        eq3[0].set_color(COLOR_V1P), eq3[1].set_color(COLOR_V2P), eq3[3].set_color(COLOR_V1P)
+        self.play(FadeIn(eq3[1]))
+        self.wait()
+        self.play(FadeIn(eq3[0],shift=RIGHT))
+        self.wait()
+
+        # project to xy        
+        self.play(
+            TransformFromCopy(u,pu),
+            Create(dxy),
+            run_time=1.5,
+        )
+        self.play(Write(rxy))
+
+        # project result to x
+        self.play(
+            TransformFromCopy(pu,pxu),
+            Create(dxp),
+            run_time=1.5,
+        )
+        self.play(Write(rxp)) 
+        self.wait()
+
+        # project straight to x again
+        self.play(
+            Merge([pxu,u.copy()],pxu),
+            Create(dx),
+            run_time=2,
+        )
+        self.play(Write(rx))
+        self.wait()
+
+        # show equation, = px
+        self.play(FadeIn(eq3[2],shift=LEFT),run_time=1.25)
+        self.play(TransformFromCopy(eq3[0],eq3[3],path_arc=-120*DEGREES),run_time=1.5)
+        self.wait()
+
+        # indicate x
+        self.play(Indicate(pxu))
+
+        # rest of equation
+        eq4 = AlignBaseline(MathTex(r"\mathbf{P_x}",r"\mathbf{P_{xy}}","=",r"\mathbf{P_x}","=",r"\mathbf{P_{xy}}",r"\mathbf{P_x}",font_size=45).move_to(eq3),eq3)
+        eq4[0].set_color(COLOR_V1P), eq4[1].set_color(COLOR_V2P), eq4[3].set_color(COLOR_V1P)
+        eq4[6].set_color(COLOR_V1P), eq4[5].set_color(COLOR_V2P)
+        self.play(*TransformBuilder(
+            eq3,eq4,
+            [
+                (slice(0,4),slice(0,4)), # pxpxy=px
+                (None,4), # =
+                (1,5,TransformFromCopy,{"path_arc":-120*DEGREES}), # pxy
+                (0,6,TransformFromCopy,{"path_arc":-120*DEGREES}), # px
+            ]
+        ), run_time=1.5)
+        self.wait()
+
+        # clear to blank diagram
+        self.play(FadeOut(eq4, dx,rx,pxu,dxp,rxp,pu,dxy,rxy))
+        self.wait()
+
+        # third case
+        # rotate diagram
+        vectors = Group(pu,pxu,pxzu).set_opacity(0)        
+        dashes = Group(dxy,dxp,dxz,dxzp).set_opacity(0)
+        ras = Group(rxy,rxp,rxz,rxzp).set_opacity(0)
+        base = Group(axes,plane,grid,u,ul).save_state()
+        self.play(
+            Group(axes,plane,grid,u,vectors,dashes,ras).animate.rotate(-60*DEGREES,axes.z_axis.get_unit_vector()),
+            ul.animate.next_to(Group(axes,plane,grid,u,pyu).copy().rotate(-60*DEGREES,axes.z_axis.get_unit_vector())[3].points[-1],RIGHT,buff=0.25),
+            run_time=2
+        )
+        self.remove(vectors, dashes,ras)
+        vectors.set_opacity(1), dashes.set_opacity(0.3), 
+        for ra in ras: ra.set_stroke(opacity=0.5)
+
+        # write pxy and pxz from equation, and draw planes
+        eq5 = MathTex(r"\mathbf{P_{xz}}",r"\mathbf{P_{xy}}","=",r"\mathbf{P_x}",font_size=45).next_to(diagram,UP).shift(DOWN*0+RIGHT*1.5)
+        eq5[0].set_color(COLOR_V3P), eq5[1].set_color(COLOR_V2P), eq5[3].set_color(COLOR_V1P)
+        xyp = OpenGLSurface(lambda u,v:axes.c2p(*[u,v,0.001]),u_range=[-0.5,1],v_range=[-0.5,1],color=COLOR_V2P).set_opacity(0.3)
+        xzp = OpenGLSurface(lambda u,v:axes.c2p(*[u,0,v]),u_range=[-0.5,1],v_range=[-0.5,1],color=COLOR_V3P).set_opacity(0.3)
+        self.play(FadeIn(eq5[1]))
+        self.play(FadeIn(xyp,shift=DOWN),run_time=1.25)        
+        self.wait()
+        self.play(FadeIn(eq5[0],shift=RIGHT))
+        self.play(FadeIn(xzp,shift=RIGHT),run_time=1.25)
+        self.wait()
+
+        # indicate x axis
+        self.play(Indicate(axes.axes[0]))
+        self.wait()
+        
+        # project to xy        
+        self.play(
+            TransformFromCopy(u,pu),
+            Create(dxy),
+            run_time=1.5,
+        )
+        self.play(Write(rxy))
+
+        # project result to xz
+        # project result to x
+        pxu2 = pxu.copy().set_color(COLOR_V3P)
+        self.play(
+            TransformFromCopy(pu,pxu2),
+            Create(dxp),
+            run_time=1.5,
+        )
+        self.play(Write(rxp)) 
+        self.wait()
+
+        # project original to xz
+        self.play(
+            TransformFromCopy(u,pxzu),
+            Create(dxz),
+            run_time=1.5,
+        )
+        self.play(Write(rxz)) 
+        self.wait()
+
+
+        # project result to xy (merge with prior)
+        self.play(
+            Merge([pxu2,pxzu.copy()],pxu2.copy().set_color(COLOR_V2P)),
+            Create(dxzp),
+            run_time=2,
+        )
+        self.play(Write(rxzp))
+        self.wait()
+
+        # equation commutes
+        eq6 = AlignBaseline(MathTex(r"\mathbf{P_{xz}}",r"\mathbf{P_{xy}}","=",r"\mathbf{P_x}","=",r"\mathbf{P_{xy}}",r"\mathbf{P_{xz}}",font_size=45).move_to(eq5),eq5)
+        eq6[0].set_color(COLOR_V3P), eq6[1].set_color(COLOR_V2P), eq6[3].set_color(COLOR_V1P)
+        eq6[6].set_color(COLOR_V3P), eq6[5].set_color(COLOR_V2P)
+        self.play(*TransformBuilder(
+            eq5,eq6,
+            [
+                (slice(0,2),slice(0,2)), # pxz pxy=px
+                (None,2), # =
+                (slice(0,2),3,TransformFromCopy,{"path_arc":-120*DEGREES}), # merge pxz and pxy in px
+                (None,4), # =
+                (1,5,TransformFromCopy,{"path_arc":-120*DEGREES}), # pxy
+                (0,6,TransformFromCopy,{"path_arc":-120*DEGREES}), # pxz
+            ]
+        ), run_time=2.5)
+        self.wait()
+
+        # indicate Y axis
+        self.play(Indicate(axes.axes[1]))
+        self.wait()
+
+        # indicate z axis
+        self.play(Indicate(axes.axes[2]))
+        self.wait()
+
+
+
+class CommuteIsProjectionProof(Scene):
+    def construct(self):
+        pass
 
 
 class NotCommute(MovingCameraScene):
