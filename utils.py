@@ -320,6 +320,70 @@ def project(vector, projector):
 
 
 
+def cross(v1, v2):
+    return np.array(
+        [
+            v1[1] * v2[2] - v1[2] * v2[1],
+            v1[2] * v2[0] - v1[0] * v2[2],
+            v1[0] * v2[1] - v1[1] * v2[0],
+        ]
+    )            
+
+
+def face_camera(scene, mob,stay_on_axis=True):
+    """
+        Function to make a mobject face the camera in a (Cairo) ThreeDScene or MovingCameraScene.
+        Can be given a mobject once, or attached as an updater (though this makes things run very slowly)
+        stay_on_axis means the object will only rotate along its own vertical axis, rather than completely face the camera
+    """
+    if isinstance(scene,ThreeDScene):
+        phi = scene.camera.get_phi()
+        theta = scene.camera.get_theta()
+        camera = scene.camera.frame_center + [np.cos(theta)*np.sin(phi),np.sin(theta)*np.sin(phi),np.cos(phi)]
+    
+    if isinstance(scene,MovingCameraScene):
+        camera = scene.camera.frame.get_center()+OUT*20
+
+    if isinstance(mob, Arrow):
+        vec = mob.get_vector()
+        normal = mob.get_normal_vector()
+        displacement = camera-mob.get_end()
+    else:
+        vec = mob.get_top() - mob.get_bottom()
+        normal = normalize(cross(vec,mob.get_left()-mob.get_bottom()))
+        displacement = camera-mob.get_center()
+    if stay_on_axis:
+        axis = vec
+        projection = displacement - project(displacement,vec)
+        unsigned_angle = angle_between_vectors(projection,normal)
+        dotcross = np.dot(axis, cross(normal,projection))
+        
+    else:
+        axis = cross(displacement,normal)
+        unsigned_angle = angle_between_vectors(displacement,normal)
+        dotcross = np.dot(axis, cross(normal,displacement))
+
+    if dotcross >= 0:   angle = unsigned_angle
+    else:               angle = -unsigned_angle
+    return mob.rotate(angle,axis=axis, about_point=mob.get_start())        
+
+
+
+def ArrowGradient(arrow, two_colors, interpolation=4):
+    """
+        Used for making an Arrow have a gradient color.
+        two_colors is a list of colors
+        interpolation controls where the break in the gradient is for the arrow. Bigger number = more of the gradient happens in the line segment, before the tip
+    """
+    grad = color_gradient(two_colors,interpolation+2)
+    direction = arrow.get_unit_vector()
+    arrow[0].set_stroke(color=[grad[0],grad[interpolation]]).set_sheen_direction(direction)
+    arrow.get_tip().set_color([grad[interpolation],grad[interpolation+1]]).set_sheen_direction(direction)
+    
+    return arrow
+
+
+
 def fill_space_with_vectors(axes, x_dims=(-6,6,1), y_dims=(-3,4,1), z_dims=(-3,4,1), color=BLUE_B):
     import itertools
     if isinstance(axes, ThreeDAxes):

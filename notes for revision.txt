@@ -1,0 +1,4 @@
+music: 2db louder? or maybe compression for the louder song
+title underline color: make match vectors?
+Seems like 3d parts, opengl, are in lower quality??
+19:30, keep trace is rank on the screen

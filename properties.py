@@ -32,6 +32,87 @@ PVCOLOR = XKCD.BLUEGREEN
 
 """
 
+class Thumbnail(MovingCameraScene):
+    def construct(self):
+        xcoords = np.array([2,1])
+        vcoords = np.array([0.5,2])
+        pcoords = xcoords * np.dot(xcoords,vcoords) / np.dot(xcoords,xcoords)
+        
+        # initial frame stuff
+        frame = self.camera.frame
+        frame.save_state()
+
+        # draw vectors and labels
+        axes = Axes(x_range=[-2,2], x_length=4,y_range=[-2,2],y_length=4)
+        x = Arrow(axes.c2p(0,0), axes.c2p(*xcoords), buff=0, color=COLOR_V2)
+        v = Arrow(axes.c2p(0,0), axes.c2p(*vcoords), buff=0, color=COLOR_V1)
+        vhat = Arrow(axes.c2p(0,0), axes.c2p(*pcoords), buff=0, color=COLOR_V1P)
+        xl = MathTex(r"\mathbf{v}", font_size=60, color=COLOR_V2).next_to(x.get_tip(), RIGHT)
+        vl = MathTex(r"\mathbf{x}", font_size=60, color=COLOR_V1).next_to(v.get_tip(), UP,buff=0.17).shift(0.05*RIGHT)
+        vhatl = MathTex(r"\hat{\mathbf{x}}", font_size=60, color=COLOR_V1P).next_to(vhat.get_tip(), DOWN,buff=0.1)
+        r = DashedLine(axes.c2p(*vcoords),axes.c2p(*pcoords), dash_length=0.12).set_opacity(0.5)
+        ra = RightAngle(vhat,r,length=0.25,quadrant=(-1,-1)).set_stroke(opacity=0.5)        
+        diagram = VGroup(axes,x,v,xl,vl,r,vhat,vhatl,ra).shift(-VGroup(v,x).get_center()).shift(LEFT*2.25)
+
+        diagram.remove(xl)
+        diagram.remove(axes)        
+
+        frame.scale(0.5).move_to(VGroup(x,v)).shift(UP*.4+LEFT*0.3)
+
+        self.add(diagram)
+
+        # write title
+        title = Tex("Projection Matrix Properties", font_size=45).move_to(frame).align_to(frame,UP).shift(DOWN*0.2)
+        ul = Line(title.get_corner(DL)+DL*0.07, title.get_corner(DR)+DR*0.07, color=COLOR_V1)        
+        self.add(title, ul)
+
+
+class Thumbnail2(MovingCameraScene):
+    def construct(self):
+        xcoords = np.array([2,1])
+        vcoords = np.array([0.5,2])
+        pcoords = xcoords * np.dot(xcoords,vcoords) / np.dot(xcoords,xcoords)
+        
+        # initial frame stuff
+        frame = self.camera.frame
+        frame.save_state()
+
+        # draw vectors and labels
+        axes = Axes(x_range=[-2,2], x_length=4,y_range=[-2,2],y_length=4)
+        x = Arrow(axes.c2p(0,0), axes.c2p(*xcoords), buff=0, color=COLOR_V2)
+        v = Arrow(axes.c2p(0,0), axes.c2p(*vcoords), buff=0, color=COLOR_V1)
+        vhat = Arrow(axes.c2p(0,0), axes.c2p(*pcoords), buff=0, color=COLOR_V1P)
+        xl = MathTex(r"\mathbf{v}", font_size=50, color=COLOR_V2).next_to(x.get_tip(), RIGHT)
+        vl = MathTex(r"\mathbf{x}", font_size=50, color=COLOR_V1).next_to(v.get_tip(), UP,buff=0.17).shift(0.05*RIGHT)
+        vhatl = MathTex(r"\hat{\mathbf{x}}", font_size=50, color=COLOR_V1P).next_to(vhat.get_tip(), DOWN,buff=0.1)
+        r = DashedLine(axes.c2p(*vcoords),axes.c2p(*pcoords), dash_length=0.12).set_opacity(0.5)
+        ra = RightAngle(vhat,r,length=0.25,quadrant=(-1,-1)).set_stroke(opacity=0.5)        
+        diagram = VGroup(axes,x,v,xl,vl,r,vhat,vhatl,ra).shift(-VGroup(v,x).get_center()).shift(LEFT*2.25)
+
+        diagram.remove(xl)
+        diagram.remove(axes)        
+
+        frame.scale(0.5).move_to(VGroup(x,v)).shift(UP*.4+RIGHT*1.3)
+
+        self.add(diagram)    
+
+        # write title
+        title = Tex("Projection Matrix Properties", font_size=45).move_to(frame).align_to(frame,UP).shift(DOWN*0.2)
+        ul = Line(title.get_corner(DL)+DL*0.07, title.get_corner(DR)+DR*0.07, color=COLOR_V1)        
+        self.add(title, ul)
+
+        # projection properties
+        p1 = MathTex(r"\mathbf{P}^2 = \mathbf{P}",font_size=55)
+        p2 = MathTex(r"\mathbf{P}^T = \mathbf{P}",font_size=55).next_to(p1,DOWN)
+        color_tex(p1,r"\mathbf{P}",COLOR_V1P)
+        color_tex(p2,r"\mathbf{P}",COLOR_V1P)
+        dots = MathTex(r"\vdots").next_to(p2,DOWN)
+        VGroup(p1,p2,dots).next_to(diagram).shift(RIGHT*0.6)
+        self.add(p1,p2,dots)
+        
+
+
+
 
 class Opening(MovingCameraScene):
     def construct(self):
@@ -639,7 +720,7 @@ class Idempotent(Scene):
     def construct(self):
         # write title
         title = Tex("Projection Matrix Properties", font_size=75).to_edge(UP)
-        ul = Line(title.get_corner(DL)+DL*0.2, title.get_corner(DR)+DR*0.2, color=BLUE)        
+        ul = Line(title.get_corner(DL)+DL*0.2, title.get_corner(DR)+DR*0.2, color=COLOR_V1)        
         self.play(Write(title))
         self.play(Write(ul))
         self.wait()
@@ -753,7 +834,7 @@ class Symmetric(Scene):
     def construct(self):
         # write title
         title = Tex("Projection Matrix Properties", font_size=75).to_edge(UP)
-        ul = Line(title.get_corner(DL)+DL*0.2, title.get_corner(DR)+DR*0.2, color=BLUE)        
+        ul = Line(title.get_corner(DL)+DL*0.2, title.get_corner(DR)+DR*0.2, color=COLOR_V1)        
         self.add(title, ul)
         self.wait()
 
@@ -1249,7 +1330,7 @@ class RankDeficient(Scene):
     def construct(self):
         # write title
         title = Tex("Projection Matrix Properties", font_size=75).to_edge(UP)
-        ul = Line(title.get_corner(DL)+DL*0.2, title.get_corner(DR)+DR*0.2, color=BLUE)        
+        ul = Line(title.get_corner(DL)+DL*0.2, title.get_corner(DR)+DR*0.2, color=COLOR_V1)        
         self.add(title, ul)
         self.wait()
 
@@ -1265,7 +1346,7 @@ class RankDeficient(Scene):
         
 
 
-class NSDemo(Scene):
+class NSDemo(MovingCameraScene):
     def construct(self):
         axes = Axes(
             x_range = [-6,6,1],
@@ -1307,18 +1388,42 @@ class NSDemo(Scene):
         )
         self.wait()
 
-        # vectors in nullspace
-        vectors = [
+        # add vectors in space, but red for nullspace
+        non_ns_vectors = [[
+            Arrow(axes.c2p(0,0), axes.c2p(i,j), buff=0, color=COLOR_V1).set_z_index(-1)
+        for j in range(-3,4) if j!=-i] for i in range(-3,4)]
+        ns_vectors = [
             Vector(axes.c2p(i,-i), color=RED_A)
-        for i in range(-3,4)]
-        self.play(*[GrowArrow(vector) for vector in vectors])
-        self.wait()
+        for i in range(-3,4)]        
+        import itertools
+        self.play(
+            *[GrowArrow(vector) for vector in itertools.chain(*non_ns_vectors)],
+            *[GrowArrow(vector) for vector in ns_vectors]
+        )
 
-        # do transform
-        zerov = Dot(color=COLOR_V1P)
-        self.play(*[
-            Transform(vector, zerov)
-        for vector in vectors])
+        # zoom in
+        self.camera.frame.save_state()
+        self.play(self.camera.frame.animate.move_to(axes @ (-2,2)).scale(0.3),run_time=1.75)
+
+        # project them down
+        projected_vectors = [[
+            Arrow(axes.c2p(0,0), axes.c2p(*project([i,j], [1,1])), buff=0, color=COLOR_V1P)
+        for j in range(-3,4) if j!=-i] for i in range(-3,4)]        
+        zerov = Dot(color=RED_A)
+        self.play(
+            *[Transform(vector, projected_vector) for vector, projected_vector in zip(itertools.chain(*non_ns_vectors), itertools.chain(*projected_vectors))],
+            *[Transform(vector,zerov) for vector in ns_vectors],
+            self.camera.frame.animate.move_to(axes @ (0,0)),
+            run_time=2
+        )
+        self.play(
+            *[FadeOut(vector) for vector in itertools.chain(*non_ns_vectors)],
+            *[vector.animate.set_opacity(0) for vector in ns_vectors],
+            Restore(self.camera.frame),
+            run_time=1.5
+
+        )
+        self.remove(*ns_vectors)
         self.wait()
 
         # nullspace caption
@@ -1336,12 +1441,144 @@ class NSDemo(Scene):
 
         # remove prior captions
         self.play(FadeOut(ns,r1))
+        self.wait()
+        
+        # add vectors back, with our example in front
+        vectors = [[
+            Arrow(axes.c2p(0,0), axes.c2p(i,j), buff=0, color=COLOR_V1).set_z_index(-1)
+        for j in range(-3,4)] for i in range(-3,4)]        
+        vectors[4][0].set_z_index(2)
+        self.play(
+            *[GrowArrow(vector) for vector in itertools.chain(*vectors)]
+        )
+        
+        # zoom in and color one example vector
+        self.camera.frame.save_state()
+        self.play(
+            self.camera.frame.animate.move_to(vectors[4][0].get_end()*0.75).scale(0.2),
+            vectors[4][0].animate.set_color(COLOR_V3P),
+            run_time=2.5
+        )
+        self.wait()
+
+        # project them down and zoom in
+        projected_vectors = [[
+            Arrow(axes.c2p(0,0), axes.c2p(*project([i,j], [1,1])), buff=0, color=COLOR_V1P)
+        for j in range(-3,4)] for i in range(-3,4)]        
+        projected_vectors[4][0].set_color(COLOR_V3P).set_z_index(2)
+        self.play(
+            *[Transform(vector, projected_vector) for vector, projected_vector in zip(itertools.chain(*vectors), itertools.chain(*projected_vectors))],
+            self.camera.frame.animate.move_to(projected_vectors[4][0]),
+            run_time=3
+        )
+        self.wait()
+
+        # fade out vectors
+        self.play(*[FadeOut(vector) for vector in itertools.chain(*vectors)],run_time=1.25)
+        self.wait()
+
+        # grow new vectors and move camera        
+        vectors = [[
+            Arrow(axes.c2p(0,0), axes.c2p(i,j), buff=0, color=COLOR_V1).set_z_index(-1)
+        for j in range(-3,4)] for i in range(-3,4)]        
+        vectors[5][5].set_z_index(2)
+        self.play(            
+            *[GrowArrow(vector) for vector in itertools.chain(*vectors)],
+            self.camera.frame.animate.move_to(vectors[5][5].get_end()*0.75),
+            run_time=3
+        )
+        self.wait()
+
+        # color vector purple
+        self.play(            
+            vectors[5][5].animate.set_color(COLOR_V3P),
+            run_time=2
+        )
+        self.wait()
+
+        # project vectors
+        projected_vectors = [[
+            Arrow(axes.c2p(0,0), axes.c2p(*project([i,j], [1,1])), buff=0, color=COLOR_V1P)
+        for j in range(-3,4)] for i in range(-3,4)]        
+        projected_vectors[5][5].set_color(COLOR_V3P).set_z_index(2)
+        self.play(
+            *[Transform(vector, projected_vector) for vector, projected_vector in zip(itertools.chain(*vectors), itertools.chain(*projected_vectors))],            
+            run_time=2
+        )
+        self.wait()
+
+
+        # equation stuff for eig 1
+        ee1 = MathTex(r"\mathbf{P}x =", r"\lambda x",font_size=22).next_to(vectors[5][4].get_end()).shift(RIGHT*0.17+DOWN*0.22)
+        self.play(Write(ee1))
+        self.wait()
+        ee2 = AlignBaseline(MathTex(r"\mathbf{P}x =", "1 x",font_size=22).move_to(ee1),ee1)
+        self.play(*TransformBuilder(
+            ee1, ee2,
+            [
+                (0,0), # px=
+                ([1,0],None,FadeOut,{"shift":DOWN}), # lambda
+                (None, [1,0],FadeIn,{"shift":DOWN}), # 1
+                ([1,1],[1,1]), # x
+            ]
+        ))
+        eigs1 = Tex("Eigenvalue of 1",font_size=22).next_to(ee2,DOWN,aligned_edge=RIGHT,buff=0.1)
+        self.play(Write(eigs1))
+        self.wait()
+        ee3 = AlignBaseline(MathTex(r"\mathbf{P}x =", "x",font_size=22).move_to(ee2).align_to(ee2,RIGHT),ee2)
+        self.play(*TransformBuilder(
+            ee2,ee3,
+            [
+                (0,0), # px=
+                ([1,0],None), # 1
+                ([1,1],[1,0]), # x
+            ]
+        ))
+        ee1 = ee3
+        self.wait()
+        
+        # fade text and vectors and zoom out
+        self.play(
+            FadeOut(ee1,eigs1),
+            *[FadeOut(vector) for vector in itertools.chain(*vectors)],
+            Restore(self.camera.frame),
+            run_time=2
+        )
+
+        # grow new vectors and zoom in again        
+        vectors = [[
+            Arrow(axes.c2p(0,0), axes.c2p(i,j), buff=0, color=COLOR_V1).set_z_index(-1)
+        for j in range(-3,4)] for i in range(-3,4)]        
+        vectors[5][1].set_z_index(2)
+        self.play(            
+            *[GrowArrow(vector) for vector in itertools.chain(*vectors)],
+            self.camera.frame.animate.move_to(vectors[5][1].get_end()*0.55).scale(0.25),
+            run_time=2
+        )
+
+        # color vector purple
+        self.play(            
+            vectors[5][1].animate.set_color(COLOR_V3P),
+            run_time=2
+        )
+
+        # project vectors
+        projected_vectors = [[
+            Arrow(axes.c2p(0,0), axes.c2p(*project([i,j], [1,1])), buff=0, color=COLOR_V1P)
+        for j in range(-3,4)] for i in range(-3,4)]        
+        projected_vectors[5][1].set_color(COLOR_V3P).set_z_index(2)
+        self.play(
+            *[Transform(vector, projected_vector) for vector, projected_vector in zip(itertools.chain(*vectors), itertools.chain(*projected_vectors))],            
+            run_time=2
+        )
+        self.wait()
+
 
         # eigen equation
-        ee = MathTex(r"\mathbf{P}x =", r"\lambda x",font_size=75).next_to(nsline.get_start(),LEFT).shift(LEFT*0.75)
+        ee = MathTex(r"\mathbf{P}x =", r"\lambda x",font_size=25).next_to(axes @ (1,-1)).shift(RIGHT*0.3)
         self.play(Write(ee))
         self.wait()
-        ee1 = AlignBaseline(MathTex(r"\mathbf{P}x =", "0 x",font_size=75).move_to(ee),ee)
+        ee1 = AlignBaseline(MathTex(r"\mathbf{P}x =", "0 x",font_size=25).move_to(ee),ee)
         self.play(*TransformBuilder(
             ee, ee1,
             [
@@ -1351,10 +1588,10 @@ class NSDemo(Scene):
                 ([1,1],[1,1]), # x
             ]
         ))
-        eigs0 = Tex("Eigenvalue of 0",font_size=55).next_to(ee1,DOWN,aligned_edge=LEFT)
+        eigs0 = Tex("Eigenvalue of 0",font_size=25).next_to(ee1,UP,aligned_edge=RIGHT,buff=0.15)
         self.play(Write(eigs0))
         self.wait()
-        ee2 = AlignBaseline(MathTex(r"\mathbf{P}x =", "0",font_size=75).move_to(ee1).align_to(ee1,LEFT),ee1)
+        ee2 = AlignBaseline(MathTex(r"\mathbf{P}x =", "0",font_size=25).move_to(ee1).align_to(ee1,LEFT),ee1)
         self.play(*TransformBuilder(
             ee1,ee2,
             [
@@ -1379,82 +1616,24 @@ class NSDemo(Scene):
         # fade out stuff
         self.play(FadeOut(rank, eq, dim, ee))"""
         
-        # repeat ns demo
-        # vectors in nullspace
-        vectors = [
-            Vector(axes.c2p(i,-i), color=COLOR_V1)
-        for i in range(-3,4)]        
-        self.wait()
-        self.play(
-            *[GrowArrow(vector) for vector in vectors],             
-        )
-        self.wait()
-
-        # do transform
-        zerov = Dot(color=COLOR_V1P)
-        self.play(*[
-            Transform(vector, zerov)
-        for vector in vectors])        
-        self.wait()
-
-        # equation stuff for eig 1
-        ee1 = MathTex(r"\mathbf{P}x =", r"\lambda x",font_size=75).next_to(line.get_start()).shift(RIGHT*0.75)
-        self.play(Write(ee1))
-        self.wait()
-        ee2 = AlignBaseline(MathTex(r"\mathbf{P}x =", "1 x",font_size=75).move_to(ee1),ee1)
-        self.play(*TransformBuilder(
-            ee1, ee2,
-            [
-                (0,0), # px=
-                ([1,0],None,FadeOut,{"shift":DOWN}), # lambda
-                (None, [1,0],FadeIn,{"shift":DOWN}), # 1
-                ([1,1],[1,1]), # x
-            ]
-        ))
-        eigs1 = Tex("Eigenvalue of 1",font_size=55).next_to(ee2,DOWN,aligned_edge=RIGHT)
-        self.play(Write(eigs1))
-        self.wait()
-        ee3 = AlignBaseline(MathTex(r"\mathbf{P}x =", "x",font_size=75).move_to(ee2).align_to(ee2,RIGHT),ee2)
-        self.play(*TransformBuilder(
-            ee2,ee3,
-            [
-                (0,0), # px=
-                ([1,0],None), # 1
-                ([1,1],[1,0]), # x
-            ]
-        ))
-        ee1 = ee3
-        
-
-        # vectors on projected
-        vectors = [
-            Vector(axes.c2p(i,i), color=COLOR_V1)
-        for i in range(-3,4)]        
-        self.play(
-            *[GrowArrow(vector) for vector in vectors],            
-        )
-        self.wait()
-
-        # do transform        
-        self.play(*[
-            Indicate(vector, color=COLOR_V1P)
-        for vector in vectors])
-        self.wait()
-        
 
 
 class Eigs01(Scene):
     def construct(self):
         # write title
         title = Tex("Projection Matrix Properties", font_size=75).to_edge(UP)
-        ul = Line(title.get_corner(DL)+DL*0.2, title.get_corner(DR)+DR*0.2, color=BLUE)        
+        ul = Line(title.get_corner(DL)+DL*0.2, title.get_corner(DR)+DR*0.2, color=COLOR_V1)        
         self.add(title, ul)
         self.wait()
 
         # text property
         text1 = Tex(r"Eigenvalues of projections are 0's and 1's", font_size=55)
         self.play(Write(text1))
-        self.wait()                
+        self.wait() 
+
+        # fade out text
+        self.play(FadeOut(text1,shift=DOWN))               
+        self.wait()
 
 
 
@@ -1462,7 +1641,7 @@ class MultiplyProperty(Scene):
     def construct(self):
         # write title
         title = Tex("Projection Matrix Properties", font_size=75).to_edge(UP)
-        ul = Line(title.get_corner(DL)+DL*0.2, title.get_corner(DR)+DR*0.2, color=BLUE)        
+        ul = Line(title.get_corner(DL)+DL*0.2, title.get_corner(DR)+DR*0.2, color=COLOR_V1)        
         self.add(title, ul)
         self.wait()
 
@@ -1549,9 +1728,116 @@ class MultiplyProperty(Scene):
             Write(text2)
         )
         self.wait()
+
+        # move title up
+        self.wait()
+        self.play(text2.animate.next_to(ul,DOWN))
+
+        # write PQ
+        eq1 = MathTex("(",r"\mathbf{P}",r"\mathbf{Q}",")^2",font_size=75).shift(DOWN)
+        eq1[1].set_color(COLOR_V1P), eq1[2].set_color(COLOR_V2P)
+        self.play(
+            FadeIn(eq1[1],shift=RIGHT),
+            FadeIn(eq1[2],shift=LEFT),
+        )
+        self.wait()
+
+        # add squared
+        self.play(
+            FadeIn(eq1[0],shift=RIGHT),
+            FadeIn(eq1[3],shift=LEFT),
+        )
+        self.wait()
+
+        # is idempotent question mark
+        eq15 = AlignBaseline(MathTex("(",r"\mathbf{P}",r"\mathbf{Q}",")^2",r"\stackrel{?}{=}",r"\mathbf{P}",r"\mathbf{Q}",font_size=75).move_to(eq1),eq1) 
+        for i in [1,5]: eq15[i].set_color(COLOR_V1P)
+        for i in [2,6]: eq15[i].set_color(COLOR_V2P)
+        self.play(ReplacementTransform(eq1[:4],eq15[:4])) # (pq)2            
+        self.play(
+            ReplacementTransform(eq15[4].copy().scale(6).set_opacity(0), eq15[4]), # eq
+            TransformFromCopy(eq1[1:3],eq15[5:7],path_arc=-120*DEGREES),  # pq
+            run_time=1.25
+        )
+        self.wait()
+
+        # expand squared
+        eq2 = AlignBaseline(MathTex("(",r"\mathbf{P}",r"\mathbf{Q}",")^2","=",r"\mathbf{P}",r"\mathbf{Q}",r"\mathbf{P}",r"\mathbf{Q}",font_size=75).move_to(eq15),eq15)
+        for i in [1,5,7]: eq2[i].set_color(COLOR_V1P)
+        for i in [2,6,8]: eq2[i].set_color(COLOR_V2P)        
+        self.play(*TransformBuilder(
+            eq15,eq2,
+            [
+                (slice(0,4),slice(0,4)), # (PQ)2
+                (4,4), # =
+                (slice(5,None),None,FadeOut,{"shift":DOWN}), # pq
+            ]
+        ),run_time=1.25)
+        self.play(*TransformBuilder(
+            eq15,eq2,
+            [
+                (1,5,TransformFromCopy, {"path_arc":120*DEGREES}), # P
+                (2,6,TransformFromCopy, {"path_arc":120*DEGREES}), # P
+                (1,7,TransformFromCopy, {"path_arc":-120*DEGREES}), # P
+                (2,8,TransformFromCopy, {"path_arc":-120*DEGREES}), # P
+            ],            
+        ),run_time=1.5)
+        self.wait()
+
+        # commute terms
+        eq3 = AlignBaseline(MathTex("(",r"\mathbf{P}",r"\mathbf{Q}",")^2","=",r"\mathbf{P}",r"\mathbf{P}",r"\mathbf{Q}",r"\mathbf{Q}",font_size=75).move_to(eq2),eq2)
+        for i in [1,5,6]: eq3[i].set_color(COLOR_V1P)
+        for i in [2,7,8]: eq3[i].set_color(COLOR_V2P)
+        self.play(*TransformBuilder(
+            eq2,eq3,
+            [
+                (slice(0,6),slice(0,6)), # pq2 = p
+                (6,7,None,{"path_arc":240*DEGREES}), # Q goes right
+                (7,6,None,{"path_arc":240*DEGREES}), # P goes left
+                (8,8) # q
+            ]
+        ),run_time=1.35)
+        self.wait()
+
+        # collect to squares
+        eq4 = AlignBaseline(MathTex("(",r"\mathbf{P}",r"\mathbf{Q}",")^2","=",r"\mathbf{P}",r"^2",r"\mathbf{Q}",r"^2",font_size=75).move_to(eq3),eq3)
+        for i in [1,5]: eq4[i].set_color(COLOR_V1P)
+        for i in [2,7]: eq4[i].set_color(COLOR_V2P)
+        self.play(*TransformBuilder(
+            eq3,eq4,
+            [
+                (slice(0,6),slice(0,6)), # (pq)2 = p
+                (6,6), # p to 2
+                (7,7), # q
+                (8,8), # q to 2
+            ]
+        ),run_time=1.25)
+        self.wait()
+
+        # merge squareds
+        eq5 = AlignBaseline(MathTex("(",r"\mathbf{P}",r"\mathbf{Q}",")^2","=",r"\mathbf{P}",r"\mathbf{Q}",font_size=75).move_to(eq4),eq4)
+        for i in [1,5]: eq5[i].set_color(COLOR_V1P)
+        for i in [2,6]: eq5[i].set_color(COLOR_V2P)
+        self.play(
+            ReplacementTransform(eq4[:5], eq5[:5]), # up to =
+            Merge([eq4[5],eq4[6]],eq5[5]), # p2 to p
+            Merge([eq4[7],eq4[8]],eq5[6]), # q2 to q
+            run_time=1.25
+        )
+        self.wait()
+
+        c = MathTex(r"\checkmark",font_size=180).set_color(XKCD.MINTYGREEN).next_to(eq5)
+        self.play(ReplacementTransform(c.copy().center().scale(5).set_opacity(0),c))
+        self.wait()
+
+
         
 
-config.renderer="opengl"
+
+
+
+
+# config.renderer="opengl"
 class Commute(Scene):
     def construct(self):
         h = 0.6
@@ -1870,9 +2156,6 @@ class Commute(Scene):
 
 
 
-class CommuteIsProjectionProof(Scene):
-    def construct(self):
-        pass
 
 
 class NotCommute(MovingCameraScene):
@@ -2046,7 +2329,7 @@ class AddingMatrices(Scene):
 
         # write title
         title = Tex("Projection Matrix Properties", font_size=75).to_edge(UP)
-        ul = Line(title.get_corner(DL)+DL*0.2, title.get_corner(DR)+DR*0.2, color=BLUE)        
+        ul = Line(title.get_corner(DL)+DL*0.2, title.get_corner(DR)+DR*0.2, color=COLOR_V1)        
         self.play(Write(title), FadeOut(f3))
         self.play(Write(ul))
         self.wait()
@@ -2125,15 +2408,14 @@ class AddingExamples(Scene):
 
         # vector labels
         ul = MathTex(r"u", color=COLOR_V1, font_size=45).next_to(u.get_end(),UP,buff=0.15)        
-        pul = MathTex(r"\mathbf{P_{xy}}","u", font_size=45).next_to(pu.get_end(),UR,buff=0.05).shift(RIGHT*0.5)
+        pul = MathTex(r"\mathbf{P_{xy}}","u", font_size=40).next_to(pu.get_end(),UR,buff=0.05).shift(RIGHT*0.4+DOWN*0.12)
         pul[0].set_color(COLOR_V1P),pul[1].set_color(COLOR_V1)
-        pxul = MathTex(r"\mathbf{P_{x}}","u", font_size=40).next_to(pxu.get_end(),UP,buff=0.05)        
-        pyul = MathTex(r"\mathbf{P_{y}}","u", font_size=40).next_to(pyu.get_end(),RIGHT,buff=0.05)        
-        pzul = MathTex(r"\mathbf{P_{z}}","u", font_size=40).next_to(pzu.get_end(),RIGHT,buff=0.05)        
+        pxul = MathTex(r"\mathbf{P_{x}}","u", font_size=40).next_to(pxu.get_end(),UP,buff=0.05).shift(LEFT*0.35)        
+        pyul = MathTex(r"\mathbf{P_{y}}","u", font_size=40).next_to(pyu.get_end(),RIGHT,buff=0.05).shift(UP*0.2+LEFT*0.15)    
+        pzul = MathTex(r"\mathbf{P_{z}}","u", font_size=40).next_to(pzu.get_end(),RIGHT,buff=0.1)        
         for label in [pxul,pyul,pzul]:
             label[0].set_color(COLOR_V2P), label[1].set_color(COLOR_V1)
         diagram.add(ul,pul,pxul,pyul,pzul)   
-
         
         # scale the camera                
         frame.save_state()
@@ -2361,7 +2643,7 @@ class TraceIsRank(Scene):
     def construct(self):
         # write title
         title = Tex("Projection Matrix Properties", font_size=75).to_edge(UP)
-        ul = Line(title.get_corner(DL)+DL*0.2, title.get_corner(DR)+DR*0.2, color=BLUE)        
+        ul = Line(title.get_corner(DL)+DL*0.2, title.get_corner(DR)+DR*0.2, color=COLOR_V1)        
         self.play(Write(title))
         self.play(Write(ul))
         self.wait()
@@ -2389,7 +2671,7 @@ class TraceIsRank(Scene):
         self.play(MoveToTarget(trace),MoveToTarget(mo))
         self.play(Write(sum[0]))
         self.play(
-            *[Indicate(m.get_entries()[i],scale_factor=1.6,color=COLOR_V1) for i in [0,4,8]],
+            *[Indicate(m.get_entries()[i],scale_factor=1.6) for i in [0,4,8]],
             TransformFromCopy(m.get_entries()[0],sum[1]), # 0.5
             TransformFromCopy(m.get_entries()[4],sum[3]), # -0.5
             TransformFromCopy(m.get_entries()[8],sum[5]), # 1
@@ -2468,17 +2750,24 @@ class TraceIsRank(Scene):
             ,run_time=1.5)
         self.wait()
 
+        # merge so there's only one expression
+        text2 = text1.copy().move_to(trse3)
+        self.play(
+            Merge([text1,trse3],text2)
+        )
+        self.wait()
+
         # down to the title
-        self.play(FadeOut(trse3,text1))
+        self.play(FadeOut(text2))
         self.wait()
 
 
 
-class ProjectionPropsRecap(Scene):
+class ProjectionPropsRecap(MovingCameraScene):
     def construct(self):
         # write title
         title = Tex("Projection Matrix Properties", font_size=75).to_edge(UP)
-        ul = Line(title.get_corner(DL)+DL*0.2, title.get_corner(DR)+DR*0.2, color=BLUE)        
+        ul = Line(title.get_corner(DL)+DL*0.2, title.get_corner(DR)+DR*0.2, color=COLOR_V1)        
         self.add(title, ul)
         self.wait()
 
@@ -2488,7 +2777,7 @@ class ProjectionPropsRecap(Scene):
             r"Symmetric: $\mathbf{P}^T=\mathbf{P}$",
             r"Less-than-full rank: $\text{rank}(\mathbf{P})<n$",
             r"Eigenvalues are 0's and 1's",
-            r"$\mathbf{P_2}\mathbf{P_1}=\mathbf{P_1}\mathbf{P_2}$ if orthogonal or overlapping",
+            r"$\mathbf{P_2}\mathbf{P_1}=\mathbf{P_1}\mathbf{P_2}$ if orthogonal-overlapping",
             r"Orthogonal \& Non-overlapping projections add"
         ]])                
         for i in range(1,len(props)): AlignBaseline(props[i].align_to(props[0], LEFT), props[0]).shift(DOWN*i)
@@ -2497,6 +2786,97 @@ class ProjectionPropsRecap(Scene):
             color_tex(prop,(r"$\mathbf{P_1}$",COLOR_V1P),(r"$\mathbf{P_2}$",COLOR_V2P),("0",RED),("1",COLOR_V1))
             self.play(Write(prop))
             self.wait()
+        
+        self.wait()
+
+        # remove props
+        self.play(FadeOut(props),run_time=2.5)
+        self.wait(0.5)
+
+        # add graphic
+        l1coords = np.array([2,0.5])*2        
+        l2coords = np.array([0.5,2])*1.9                
+        ucoords = np.array([1.5,1.5])*2
+        p1coords = l1coords * np.dot(l1coords,ucoords) / np.dot(l1coords,l1coords)
+        p12coords = l2coords * np.dot(l2coords,p1coords) / np.dot(l2coords,l2coords)
+        p2coords = l2coords * np.dot(l2coords,ucoords) / np.dot(l2coords,l2coords)
+        p21coords = l1coords * np.dot(l1coords,p2coords) / np.dot(l1coords,l1coords)
+        
+        # initial frame stuff
+        frame = self.camera.frame        
+
+        # draw vectors and labels
+        axes = Axes(x_range=[-2,2], x_length=4,y_range=[-2,2],y_length=4)#.rotate(-15*DEGREES)
+        line1 = Line(axes.c2p(*(-l1coords)), axes.c2p(*l1coords), buff=0, color=GREY).set_opacity(0.4)
+        line2 = Line(axes.c2p(*(-l2coords)), axes.c2p(*l2coords), buff=0, color=GREY).set_opacity(0.4)
+        u = Arrow(axes.c2p(0,0), axes.c2p(*ucoords), buff=0, color=COLOR_V1)
+        diagram = VGroup(axes,line1,line2,u)
+
+        # projections
+        p1 = Arrow(axes.c2p(0,0), axes.c2p(*p1coords), buff=0, color=COLOR_V1P)
+        p21 = Arrow(axes.c2p(0,0), axes.c2p(*p21coords), buff=0, color=COLOR_V1P)
+        p2 = Arrow(axes.c2p(0,0), axes.c2p(*p2coords), buff=0, color=COLOR_V2P)
+        p12 = Arrow(axes.c2p(0,0), axes.c2p(*p12coords), buff=0, color=COLOR_V2P)
+        diagram.add(p1,p12,p21,p2)        
+
+        # dashes and right angles
+        d1 = DashedLine(u.get_end(),p1.get_end(),dash_length=0.2).set_opacity(0.4)
+        r1 = RightAngle(d1,p1,length=0.2,quadrant=(-1,-1)).set_stroke(opacity=0.4)
+        d2 = DashedLine(u.get_end(),p2.get_end(),dash_length=0.2).set_opacity(0.4)
+        r2 = RightAngle(d2,p2,length=0.2,quadrant=(-1,-1)).set_stroke(opacity=0.4)
+        d12 = DashedLine(p1.get_end(),p12.get_end(),dash_length=0.2).set_opacity(0.4)
+        r12 = RightAngle(d12,p12,length=0.2,quadrant=(-1,-1)).set_stroke(opacity=0.4)
+        d21 = DashedLine(p2.get_end(),p21.get_end(),dash_length=0.2).set_opacity(0.4)
+        r21 = RightAngle(d21,p21,length=0.2,quadrant=(-1,-1)).set_stroke(opacity=0.4)
+        diagram.add(d1,r1,d2,r2,d12,r12,d21,r21)
+
+        diagram.shift(DOWN*3.3+LEFT*2.7).scale(1.55)
+        diagram.remove(axes)
+        self.play(FadeIn(diagram),run_time=2.5)
+        self.wait(2)
 
 
+
+class Outro(Scene):
+    def construct(self):
+        # credits
+        author = Tex("Created by Sam Levey", font_size=80).to_edge(UP)
+        self.play(FadeIn(author, shift=RIGHT), run_time=1.25)
+
+        thanks = Tex("Special Thanks to Ben Golub", font_size=55).shift(UP*0.5)   
+
+        # music credit
+        music = Tex("Music by Karl Casey @ White Bat Audio",font_size=55).next_to(thanks,DOWN)
+        self.play(FadeIn(thanks,shift=DOWN))
+        self.play(FadeIn(music,shift=DOWN))
+
+        # thanks
+        # thanks = Tex(r"Special thanks to: \\ Josh Perlman \\ Conner Howell", font_size=65)
+        # self.play(FadeIn(thanks, shift=RIGHT))
+
+        # Banner animation
+        banner = ManimBanner()
+        banner.scale(0.3)
+        banner.to_edge(DOWN)
+        banner.shift(RIGHT*2)
+        self.play(FadeIn(banner))
+        made_with = Tex("Made with ")
+        made_with.scale(1.5)
+        made_with.next_to(banner, LEFT, buff=1.2)
+        made_with.align_to(banner.M, DOWN)
+        url = Tex("\\verb|https://manim.community|")
+        url.next_to(VGroup(made_with, banner), DOWN, buff=-0.2)
+        url.align_to(made_with, LEFT)
+        self.play(AnimationGroup(
+            AnimationGroup(banner.expand(), Write(made_with)),
+            FadeIn(url),
+            lag_ratio=0.5
+        ))
+        self.wait(2)
+
+        # Remove things
+
+        self.play(Unwrite(author), Unwrite(VGroup(thanks,music)))
+        self.play(Uncreate(banner), Unwrite(made_with), Unwrite(url))
+        self.wait()
         
