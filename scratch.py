@@ -44,8 +44,34 @@ def color_tex_standard(equation):
 
 
 
+
+def ArrowStrokeCameraUpdater(scene):
+            def updater(arrow):
+                if not hasattr(arrow,"_original_stroke_width"):
+                    arrow._original_stroke_width = arrow.get_stroke_width()
+                return arrow.set_stroke(width=arrow._original_stroke_width*scene.camera.get_focal_distance()/np.linalg.norm(ToThreeDCamera(scene)-arrow.get_center()), family=False)
+            return updater
+
+
+
+class test1(ThreeDScene):
+    def construct(self):
+        arrow = Arrow(LEFT,RIGHT)
+        self.add(arrow)
+        self.wait()
+        
+        arrow.add_updater(ArrowZoomUpdater(self))
+        self.move_camera(frame_center=IN*15)
+        
+        self.wait()
+
+
+
+
 class test(ThreeDScene):
     def construct(self):
+        # Arrow.set_default(flat_stroke = False)
+
         xcoords = np.array([0.7,0.35,0])
         ycoords = np.array([0.3,1.1,0])
         vcoords = np.array([0.5,0.7,0.7])
@@ -60,18 +86,18 @@ class test(ThreeDScene):
             y_range=[0,0.5],y_length=2.5 / 2,
             z_range=[0,0.5],z_length=2.5 / 2,
         ).set_opacity(0)        
-        v = Arrow(axes @ ORIGIN, axes @ vcoords, buff=0, color=VCOLOR,stroke_width=20)        
-        x = Arrow(axes @ ORIGIN, axes @ xcoords, buff=0, color=XCOLOR,stroke_width=20)
-        xp = Arrow(axes @ ORIGIN, axes @ (1,0,0), buff=0, color=XCOLOR,stroke_width=20)
-        y = Arrow(axes @ ORIGIN, axes @ ycoords, buff=0, color=YCOLOR,stroke_width=20)        
-        yp = Arrow(axes @ ORIGIN, axes @ (0,1,0), buff=0, color=YCOLOR,stroke_width=20)
-        p = Arrow(axes @ ORIGIN, axes @ pcoords, buff=0, color=PCOLOR,stroke_width=20)        
-        px = Arrow(axes @ ORIGIN, axes @ (pxcoord*xcoords), buff=0,color=PCOLOR,stroke_width=20)
-        py = Arrow(axes @ ORIGIN, axes @ (pycoord*ycoords), buff=0,color=PCOLOR,stroke_width=20)
+        v = Arrow(axes @ ORIGIN, axes @ vcoords, buff=0, color=VCOLOR)        
+        x = Arrow(axes @ ORIGIN, axes @ xcoords, buff=0, color=XCOLOR)
+        xp = Arrow(axes @ ORIGIN, axes @ (1,0,0), buff=0, color=XCOLOR)
+        y = Arrow(axes @ ORIGIN, axes @ ycoords, buff=0, color=YCOLOR)        
+        yp = Arrow(axes @ ORIGIN, axes @ (0,1,0), buff=0, color=YCOLOR)
+        p = Arrow(axes @ ORIGIN, axes @ pcoords, buff=0, color=PCOLOR)        
+        px = Arrow(axes @ ORIGIN, axes @ (pxcoord*xcoords), buff=0,color=PCOLOR)
+        py = Arrow(axes @ ORIGIN, axes @ (pycoord*ycoords), buff=0,color=PCOLOR)
         dy = DashedLine(axes @ pcoords, axes @ (pxcoord*xcoords), dash_length=0.15).set_opacity(0.4)
         dx = DashedLine(axes @ pcoords, axes @ (pycoord*ycoords), dash_length=0.15).set_opacity(0.4)
         r = Arrow(axes @ pcoords, axes @ vcoords, buff=0, color=RCOLOR)        
-        ArrowGradient(r,[PCOLOR,VCOLOR])
+        # ArrowGradient(r,[PCOLOR,VCOLOR])
         ra = VGroup(
             Line(axes @ (0.9*pcoords),axes @ (0.9*pcoords+OUT*0.1), stroke_width=2),
             Line(axes @ (0.9*pcoords+OUT*0.1),axes @ (1*pcoords+OUT*0.1), stroke_width=2)
@@ -101,16 +127,22 @@ class test(ThreeDScene):
         
         diagram.shift(-VGroup(v,p,r).get_center()).shift(UP*0.5+RIGHT*0.2).shift(DOWN*0.1)
         
-        self.set_camera_orientation(zoom=2.5)        
-        # for vector in vectors: face_camera(self,vector)
-                
+        # self.set_camera_orientation(zoom=2.5)
+        # for vector in vectors: vector.set_flat_stroke(False)
+
+        
         self.add(diagram)
         self.remove(r,rl,xp,yp,xpl,ypl)
-        diagram.rotate(60*DEGREES).rotate(45*DEGREES,axis = RIGHT).shift(DOWN*0.45)
-        self.play(
-            *[Rotate(arrow, 180*DEGREES,axis=arrow.get_vector(),about_point=arrow.get_start(),rate_func=linear) for arrow in vectors],
-            run_time=2.5
-        )
+        self.play(diagram.animate.rotate(60*DEGREES,axis = RIGHT).rotate(45*DEGREES,axis=(axes @ (0,0,1))-(axes @ ORIGIN)).shift(DOWN*0.25))
+        for vector in vectors: 
+            face_camera(self, vector)
+            vector.add_updater(ArrowStrokeCameraUpdater(self))
+        
+        self.move_camera(frame_center=IN*15,run_time=3)
+        for vector in vectors: vector.clear_updaters()
+        self.wait()
+        
+        
 
 
         

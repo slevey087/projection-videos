@@ -852,16 +852,19 @@ class Transition2d(ThreeDScene):
             x_range=[-2,2], x_length=4,
             y_range=[-2,2],y_length=4,
             z_range=[-2,2],z_length=4).set_opacity(0)
-        x2 = Arrow(axes.c2p(0,0,0), axes.c2p(*(xcoords*1.6)), buff=0, color=XCOLOR)
-        v = Arrow(axes.c2p(0,0,0), axes.c2p(*vcoords), buff=0, color=VCOLOR)        
-        x2l = MathTex(r"\mathbf{x}", font_size=60, color=XCOLOR).next_to(x2.get_tip(), RIGHT)
-        vl = MathTex(r"\mathbf{v}", font_size=60, color=VCOLOR).next_to(v.get_tip(), UP)
-        r = Arrow(axes.c2p(*pcoords), axes.c2p(*vcoords), buff=0)        
+        x2 = Arrow(axes.c2p(0,0,0), axes.c2p(*(xcoords*1.6)), buff=0, color=XCOLOR,stroke_width=12)
+        v = Arrow(axes.c2p(0,0,0), axes.c2p(*vcoords), buff=0, color=VCOLOR,stroke_width=12)        
+        r = Arrow(axes.c2p(*pcoords), axes.c2p(*vcoords), buff=0,stroke_width=12)        
         ArrowGradient(r,[PCOLOR,VCOLOR])
+        p = Arrow(axes.c2p(0,0,0), axes.c2p(*pcoords), buff=0, color=PCOLOR,stroke_width=12)        
+        
+        
+        x2l = MathTex(r"\mathbf{x}", font_size=60, color=XCOLOR).next_to(x2.get_tip(), RIGHT)
+        vl = MathTex(r"\mathbf{v}", font_size=60, color=VCOLOR).next_to(v.get_tip(), UP)        
         rl = MathTex(r"\mathbf{v}-\mathbf{p}", font_size=60).next_to(r).shift(UP*0.3+LEFT*0.4)
         color_tex_standard(rl)
-        p = Arrow(axes.c2p(0,0,0), axes.c2p(*pcoords), buff=0, color=PCOLOR)        
         pl = MathTex(r"\mathbf{p}", font_size=60, color=PCOLOR).next_to(p.get_tip(), DOWN)        
+        
         ra = RightAngle(p,r,length=0.2,quadrant=(-1,1))
         
         plane = Surface(lambda u,v: axes.c2p(u,u*xcoords[1]/xcoords[0],v),u_range=[-0.422,4],v_range=[-3,5],resolution=1).set_opacity(0)        
@@ -1817,17 +1820,17 @@ class Project2dFull(MovingCameraScene):
             y_range=[0,0.5],y_length=2.5 / 2,
             z_range=[0,0.5],z_length=2.5 / 2,
         ).set_opacity(0)        
-        v = Arrow(axes @ ORIGIN, axes @ vcoords, buff=0, color=VCOLOR)        
-        x = Arrow(axes @ ORIGIN, axes @ xcoords, buff=0, color=XCOLOR)
-        xp = Arrow(axes @ ORIGIN, axes @ (1,0,0), buff=0, color=XCOLOR)
-        y = Arrow(axes @ ORIGIN, axes @ ycoords, buff=0, color=YCOLOR)        
-        yp = Arrow(axes @ ORIGIN, axes @ (0,1,0), buff=0, color=YCOLOR)
-        p = Arrow(axes @ ORIGIN, axes @ pcoords, buff=0, color=PCOLOR)        
-        px = Arrow(axes @ ORIGIN, axes @ (pxcoord*xcoords), buff=0,color=PCOLOR)
-        py = Arrow(axes @ ORIGIN, axes @ (pycoord*ycoords), buff=0,color=PCOLOR)
+        v = Arrow(axes @ ORIGIN, axes @ vcoords, buff=0, color=VCOLOR).set_stroke(width=6)        
+        x = Arrow(axes @ ORIGIN, axes @ xcoords, buff=0, color=XCOLOR).set_stroke(width=6)
+        xp = Arrow(axes @ ORIGIN, axes @ (1,0,0), buff=0, color=XCOLOR).set_stroke(width=6)
+        y = Arrow(axes @ ORIGIN, axes @ ycoords, buff=0, color=YCOLOR).set_stroke(width=6)        
+        yp = Arrow(axes @ ORIGIN, axes @ (0,1,0), buff=0, color=YCOLOR).set_stroke(width=6)
+        p = Arrow(axes @ ORIGIN, axes @ pcoords, buff=0, color=PCOLOR).set_stroke(width=6)        
+        px = Arrow(axes @ ORIGIN, axes @ (pxcoord*xcoords), buff=0,color=PCOLOR).set_stroke(width=6)
+        py = Arrow(axes @ ORIGIN, axes @ (pycoord*ycoords), buff=0,color=PCOLOR).set_stroke(width=6)
         dy = DashedLine(axes @ pcoords, axes @ (pxcoord*xcoords), dash_length=0.15).set_opacity(0.4)
         dx = DashedLine(axes @ pcoords, axes @ (pycoord*ycoords), dash_length=0.15).set_opacity(0.4)
-        r = Arrow(axes @ pcoords, axes @ vcoords, buff=0, color=RCOLOR)        
+        r = Arrow(axes @ pcoords, axes @ vcoords, buff=0, color=RCOLOR).set_stroke(width=30)        
         ArrowGradient(r,[PCOLOR,VCOLOR])
         ra = VGroup(
             Line(axes @ (0.9*pcoords),axes @ (0.9*pcoords+OUT*0.1), stroke_width=2),
@@ -1889,7 +1892,7 @@ class Project2dFull(MovingCameraScene):
         self.wait(w)
 
         # case 3
-        c3 = MathTex(r"\text{Case 3: }", r"\text{Any basis } \mathbf{x}, \mathbf{y}").next_to(diagram,DOWN).shift(DOWN*0.2)
+        c3 = MathTex(r"\text{Case 3: }", r"\text{Any basis } \mathbf{x}, \mathbf{y}").next_to(diagram,DOWN)
         color_tex_standard(c3)
         self.play(Write(c3[0]))
         self.play(Write(c3[1]))
@@ -1922,6 +1925,10 @@ class Project2dFull(MovingCameraScene):
         # zoom back out        
         self.play(frame.animate.scale(1/0.3).set_euler_angles(phi=0,theta=0,gamma=0).move_to(diagram).shift(DOWN*0.35),run_time=3)
         self.wait(w)
+
+        # TODO: MovingCameraScene doesn't render 3d right, but 3dscene leaves stroke width unchanged when zooming in, making stuff look weird,
+        # so, change this (and previous scenes :/) over to threedscene, but adjust arrow strokes to compensate?
+        # ...or does that create a problem for when we zoom away from the item?
 
 
 

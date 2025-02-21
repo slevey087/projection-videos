@@ -330,19 +330,41 @@ def cross(v1, v2):
     )            
 
 
+def ToThreeDCamera(scene):
+    """
+        Finds the camera in space for ThreeDScene.
+        Note: probably should never use zoom or focal distance to adjust a ThreeDScene! Use frame_center
+    """
+    phi = scene.camera.get_phi()
+    theta = scene.camera.get_theta()
+    focal_distance = scene.camera.get_focal_distance()
+    frame_center = scene.camera.frame_center
+    # don't use zoom or focal distance!
+
+    return np.array([
+        np.sin(phi) * np.cos(theta),
+        np.sin(phi) * np.sin(theta),
+        np.cos(phi)
+    ]) * focal_distance + frame_center
+
+
+
+
 def face_camera(scene, mob,stay_on_axis=True):
     """
         Function to make a mobject face the camera in a (Cairo) ThreeDScene or MovingCameraScene.
         Can be given a mobject once, or attached as an updater (though this makes things run very slowly)
         stay_on_axis means the object will only rotate along its own vertical axis, rather than completely face the camera
     """
-    if isinstance(scene,ThreeDScene):
-        phi = scene.camera.get_phi()
-        theta = scene.camera.get_theta()
-        camera = scene.camera.frame_center + [np.cos(theta)*np.sin(phi),np.sin(theta)*np.sin(phi),np.cos(phi)]
+    if isinstance(scene,ThreeDScene):        
+        camera = ToThreeDCamera(scene)
     
     if isinstance(scene,MovingCameraScene):
         camera = scene.camera.frame.get_center()+OUT*20
+    
+
+    if scene.camera.__class__.__name__ == "OpenGLCamera":
+        camera = scene.camera.get_center()
 
     if isinstance(mob, Arrow):
         vec = mob.get_vector()
@@ -367,6 +389,14 @@ def face_camera(scene, mob,stay_on_axis=True):
     else:               angle = -unsigned_angle
     return mob.rotate(angle,axis=axis, about_point=mob.get_start())        
 
+
+def ArrowStrokeFor3dScene(scene,arrow):
+    """
+        ThreeDScenes don't adjust stroke when you zoom in. This will do that for Arrows.
+        Assumes the arrow stroke is the default value of 6 (and arrow isn't too short).
+        Call at beginning of scene if zoomed in, and attach as updater if changing zoom (then probably remove to save processing)
+    """
+    return arrow.set_stroke(width=6*scene.camera.get_zoom(), family=False)
 
 
 def ArrowGradient(arrow, two_colors, interpolation=4):
