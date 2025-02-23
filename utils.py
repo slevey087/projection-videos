@@ -330,6 +330,7 @@ def cross(v1, v2):
     )            
 
 
+
 def ToThreeDCamera(scene):
     """
         Finds the camera in space for ThreeDScene.
@@ -347,6 +348,23 @@ def ToThreeDCamera(scene):
         np.cos(phi)
     ]) * focal_distance + frame_center
 
+
+def ArrowStrokeFor3dScene(scene,arrow,family=True):
+    """
+        ThreeDScenes don't adjust stroke when you zoom in. This will do that for Arrows.                
+    """
+    if not hasattr(arrow,"_original_stroke_width"):
+        arrow._original_stroke_width = arrow.get_stroke_width()
+    return arrow.set_stroke(width=arrow._original_stroke_width*scene.camera.get_zoom()*scene.camera.get_focal_distance()/np.linalg.norm(ToThreeDCamera(scene)-arrow.get_center()), family=family)
+
+
+def ArrowStrokeCameraUpdater(scene):
+    """
+        Turns ArrowStrokeFor3dScene into updater
+    """
+    def updater(arrow):
+        return ArrowStrokeFor3dScene(scene,arrow)
+    return updater
 
 
 
@@ -390,13 +408,6 @@ def face_camera(scene, mob,stay_on_axis=True):
     return mob.rotate(angle,axis=axis, about_point=mob.get_start())        
 
 
-def ArrowStrokeFor3dScene(scene,arrow):
-    """
-        ThreeDScenes don't adjust stroke when you zoom in. This will do that for Arrows.
-        Assumes the arrow stroke is the default value of 6 (and arrow isn't too short).
-        Call at beginning of scene if zoomed in, and attach as updater if changing zoom (then probably remove to save processing)
-    """
-    return arrow.set_stroke(width=6*scene.camera.get_zoom(), family=False)
 
 
 def ArrowGradient(arrow, two_colors, interpolation=4):

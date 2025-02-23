@@ -3,7 +3,9 @@ from scipy import stats
 import numpy as np
 
 from utils import *
-# from manim import Arrow3D, Cone # over-writing the over-writing from utils :/
+
+
+from sklearn.linear_model import LinearRegression
 
 w=1
 
@@ -900,7 +902,7 @@ class Transition2d(ThreeDScene):
 
 
 
-class Project2dOrthonormal(MovingCameraScene):
+class Project2dOrthonormal(ThreeDScene):
     def construct(self):
         xcoords = np.array([1,0,0])
         ycoords = np.array([0,1,0])
@@ -951,9 +953,11 @@ class Project2dOrthonormal(MovingCameraScene):
         diagram.add(labels)        
         
         diagram.shift(-VGroup(v,p,r).get_center()).shift(UP*0.5+RIGHT*0.2)
-        self.camera.frame.scale(0.4) # self.set_camera_orientation(zoom=2)
-        for vector in (vector for vector in vectors): face_camera(self,vector)
-        
+        self.set_camera_orientation(frame_center=IN*11) # self.set_camera_orientation(zoom=2)
+        for vector in vectors: 
+            ArrowStrokeFor3dScene(self,vector,family=True)
+        face_camera(self,r)
+
         # add v        
         self.play(FadeIn(v))
         self.play(Write(vl))
@@ -985,11 +989,24 @@ class Project2dOrthonormal(MovingCameraScene):
         self.play(Write(pyl))
         self.wait(w)
 
-        # zoom out, write equation below
+        # zoom out
         pe = MathTex(r"\mathbf{p}","=",r"p_x \mathbf{x}","+",r"p_y \mathbf{y}", font_size=60).next_to(diagram,DOWN)
         color_tex_standard(pe)
         pe[0].set_color(PCOLOR), pe[2][-1].set_color(XCOLOR),pe[4][0:2].set_color(PCOLOR), pe[4][-1].set_color(YCOLOR)
-        self.play(self.camera.frame.animate.scale(1.2).move_to(VGroup(*[mob for mob in diagram if mob != axes],pe)),run_time=1.25)
+        for mob in [r,rl,ra]:mob.set_opacity(0)
+        self.move_camera(
+            frame_center=9.5*IN, 
+            added_anims=[
+                diagram.animate.shift(UP*0.3)
+            ],
+            run_time=1.25
+        )
+        self.remove(r,rl,ra)
+        for mob in [r,rl,ra]:mob.set_opacity(1)
+        pe.next_to(diagram,DOWN,buff=0.3)
+        
+
+        # write equation for p
         self.play(TransformFromCopy(pl[0],pe[0]),run_time=1.5)
         self.play(Write(pe[1]))
         self.play(
@@ -1006,7 +1023,7 @@ class Project2dOrthonormal(MovingCameraScene):
         self.wait(w)
 
         # rejection vector
-        self.play(TransformFromCopy(v,r), run_time=1.75)
+        self.play(GrowArrow(r), run_time=1.75)
         self.play(Write(rl))
         self.wait(w)
 
@@ -1015,11 +1032,16 @@ class Project2dOrthonormal(MovingCameraScene):
         self.wait(w)
 
         # zoom out
-        self.play(
-            self.camera.frame.animate.scale(1/(0.4*1.2)),
-            diagram.animate.to_corner(UR),            
-            pe.animate.next_to(diagram.copy().to_corner(UR),DOWN)
-        , run_time=2.5)
+        for vector in vectors: vector.add_updater(ArrowStrokeCameraUpdater(self))
+        self.move_camera(
+            frame_center=ORIGIN,
+            added_anims=[
+                diagram.animate.to_corner(UR),            
+                pe.animate.next_to(diagram.copy().to_corner(UR),DOWN)
+            ],
+            run_time=2.5
+        )        
+        for vector in vectors: vector.clear_updaters()
         self.wait(w)
 
         # to normal equations
@@ -1553,7 +1575,7 @@ class Project2dOrthonormal(MovingCameraScene):
         
 
 
-class Project2dOrthogonal(MovingCameraScene):
+class Project2dOrthogonal(ThreeDScene):
     def construct(self):
         xcoords = np.array([1,0,0])
         ycoords = np.array([0,1,0])
@@ -1604,35 +1626,34 @@ class Project2dOrthogonal(MovingCameraScene):
         diagram.add(labels)        
         
         diagram.shift(-VGroup(v,p,r).get_center()).shift(UP*0.5+RIGHT*0.2)
-        
-        frame = self.camera.frame
-        frame.save_state()
-        frame.scale(0.48)
-        for vector in (vector for vector in vectors): face_camera(self,vector)
-        
+        self.set_camera_orientation(frame_center=IN*9.5) # self.set_camera_orientation(zoom=2)
+        for vector in vectors: 
+            ArrowStrokeFor3dScene(self,vector,family=True)
+        face_camera(self,r)
 
         # write case 2, then move down
         c2 = MathTex(r"\text{Case 2: }", r"\mathbf{x}, \mathbf{y} \text{ Orthogonal}")
         color_tex_standard(c2)  
-        diagram.shift(VGroup(diagram.copy(),c2.copy()).arrange(DOWN)[0].get_center() - diagram.get_center())      
+        diagram.shift(VGroup(diagram.copy(),c2.copy()).arrange(DOWN,buff=0.4)[0].get_center() - diagram.get_center())      
         self.play(Write(c2[0]))
         self.play(Write(c2[1]))
         self.wait(w)
         
         # move text down
-        self.play(c2.animate.next_to(diagram,DOWN))
+        self.play(c2.animate.next_to(diagram,DOWN,buff=0.4))
         self.play(FadeIn(diagram))        
         self.wait(w)
 
         # zoom to x, then lengthen x
-        self.play(frame.animate.move_to(xl).scale(0.3),run_time=1.5)
+        for vector in vectors: vector.add_updater(ArrowStrokeCameraUpdater(self))
+        self.move_camera(frame_center=[*xl.get_center()[:2],-17],run_time=1.75)        
         self.play(
             x.animate.scale(1.2,about_point=x.points[0]),
             xl.animate.shift(0.3*(x.points[-1]-x.points[0])/np.linalg.norm(x.points[-1]-x.points[0]))
         )
-
+        
         # zoom to y then lengthen y
-        self.play(frame.animate.move_to(y.points[-1]).scale(0.8),run_time=2)
+        self.move_camera(frame_center=[*yl.get_center()[:2],-17],run_time=2)        
         self.play(
             y.animate.scale(0.85,about_point=y.points[0]),
             yl.animate.shift(-0.2*(y.points[-1]-y.points[0])/np.linalg.norm(y.points[-1]-y.points[0]))
@@ -1640,11 +1661,14 @@ class Project2dOrthogonal(MovingCameraScene):
         self.wait(w)
 
         # zoom back out
-        self.play(
-            Restore(frame),
-            VGroup(diagram,c2).animate.to_corner(UR),
+        self.move_camera(
+            frame_center=ORIGIN,
+            added_anims=[
+                VGroup(diagram,c2).animate.to_corner(UR),    
+            ],
             run_time=2.5
         )
+        for vector in vectors: vector.clear_updaters()
         self.wait(w)
 
         # add components
@@ -1804,7 +1828,7 @@ class Project2dOrthogonal(MovingCameraScene):
 
 
 
-class Project2dFull(MovingCameraScene):
+class Project2dFull(ThreeDScene):
     def construct(self):
         xcoords = np.array([0.7,0.35,0])
         ycoords = np.array([0.3,1.1,0])
@@ -1830,13 +1854,13 @@ class Project2dFull(MovingCameraScene):
         py = Arrow(axes @ ORIGIN, axes @ (pycoord*ycoords), buff=0,color=PCOLOR).set_stroke(width=6)
         dy = DashedLine(axes @ pcoords, axes @ (pxcoord*xcoords), dash_length=0.15).set_opacity(0.4)
         dx = DashedLine(axes @ pcoords, axes @ (pycoord*ycoords), dash_length=0.15).set_opacity(0.4)
-        r = Arrow(axes @ pcoords, axes @ vcoords, buff=0, color=RCOLOR).set_stroke(width=30)        
+        r = Arrow(axes @ pcoords, axes @ vcoords, buff=0, color=RCOLOR).set_stroke(width=6)        
         ArrowGradient(r,[PCOLOR,VCOLOR])
         ra = VGroup(
             Line(axes @ (0.9*pcoords),axes @ (0.9*pcoords+OUT*0.1), stroke_width=2),
             Line(axes @ (0.9*pcoords+OUT*0.1),axes @ (1*pcoords+OUT*0.1), stroke_width=2)
         )
-        vectors = VGroup(v,x,y,p,px,py,r,xp,yp)
+        vectors = VGroup(v,x,y,xp,yp,p,px,py,r)
         dashes = VGroup(dy,dx)
 
         plane = Surface(lambda u,v:axes @ (u,v,0),u_range=[-0.25,1.25],v_range=[-0.25,1.25],resolution=1).set_opacity(0.5)
@@ -1857,14 +1881,13 @@ class Project2dFull(MovingCameraScene):
         rl = MathTex(r"\mathbf{v-p}", font_size=50).next_to(r,RIGHT,buff=0.15).shift(UP*0.3)
         color_tex_standard(rl)
         labels = VGroup(xl,vl,yl,pl,pxl,pyl,rl,xpl,ypl)
-        diagram.add(labels)        
+        diagram.add(labels)                
         
         diagram.shift(-VGroup(v,p,r).get_center()).shift(UP*0.5+RIGHT*0.2)
-        
-        frame = self.camera.frame
-        frame.save_state()
-        frame.scale(0.4)
-        for vector in (vector for vector in vectors): face_camera(self,vector)
+        self.set_camera_orientation(frame_center=IN*11) # self.set_camera_orientation(zoom=2)
+        for vector in vectors: 
+            ArrowStrokeFor3dScene(self,vector,family=True)
+        face_camera(self,r)
         
         # add v        
         self.play(FadeIn(v))
@@ -1891,9 +1914,22 @@ class Project2dFull(MovingCameraScene):
         ,run_time=1.75)
         self.wait(w)
 
-        # case 3
-        c3 = MathTex(r"\text{Case 3: }", r"\text{Any basis } \mathbf{x}, \mathbf{y}").next_to(diagram,DOWN)
-        color_tex_standard(c3)
+        # zoom out  
+        c3 = MathTex(r"\text{Case 3: }", r"\text{Any basis } \mathbf{x}, \mathbf{y}",z_index=-1).next_to(diagram,DOWN)
+        color_tex_standard(c3)      
+        for mob in [p,pl,px,pxl,py,pyl,r,rl,ra,dx,dy,xp,xpl,yp,ypl]:mob.set_opacity(0)
+        self.move_camera(
+            frame_center=9.5*IN, 
+            added_anims=[
+                diagram.animate.shift(UP*0.3)
+            ],
+            run_time=1.25
+        )
+        self.remove(*[p,pl,px,pxl,py,pyl,r,rl,ra,dx,dy,xp,xpl,yp,ypl])
+        for mob in [p,pl,px,pxl,py,pyl,r,rl,ra,xp,xpl,yp,ypl]:mob.set_opacity(1)
+        dx.set_opacity(0.4),dy.set_opacity(0.4)
+        c3.next_to(diagram,DOWN,buff=0.3)
+
         self.play(Write(c3[0]))
         self.play(Write(c3[1]))
         self.wait(w)
@@ -1917,18 +1953,657 @@ class Project2dFull(MovingCameraScene):
         self.wait(w)
 
         # zoom in
+        diagram_caption = VGroup(axes,plane,v,vl,x,xl,y,yl,p,pl,px,pxl,py,pyl,dx,dy,c3).save_state()
+        [vector.add_updater(ArrowStrokeCameraUpdater(self)) for vector in diagram_caption if isinstance(vector,Arrow)]            
         self.play(
-            frame.animate.scale(0.3).move_to([4.2,1.6,0.5]).set_euler_angles(phi=-40*DEGREES, theta=-27.4*DEGREES, gamma=-25*DEGREES)
-        ,run_time=4)
+            diagram_caption.animate.rotate(-40*DEGREES,axis=(axes @ (1,0,0))-(axes @ (0,1,0))).rotate(45*DEGREES,axis=vcoords-pcoords).shift(DOWN*.5).shift(OUT*8),
+            run_time=3
+        )        
         self.wait(w)
 
         # zoom back out        
-        self.play(frame.animate.scale(1/0.3).set_euler_angles(phi=0,theta=0,gamma=0).move_to(diagram).shift(DOWN*0.35),run_time=3)
+        self.play(Restore(diagram_caption),run_time=3)
+        for vector in vectors: vector.clear_updaters()
         self.wait(w)
 
-        # TODO: MovingCameraScene doesn't render 3d right, but 3dscene leaves stroke width unchanged when zooming in, making stuff look weird,
-        # so, change this (and previous scenes :/) over to threedscene, but adjust arrow strokes to compensate?
-        # ...or does that create a problem for when we zoom away from the item?
+        # rejection vector
+        self.play(GrowArrow(r), run_time=1.75)
+        self.play(Write(rl))
+        self.wait(w)
+
+        # perpendicular
+        self.play(Write(ra))
+        self.wait(w)
+
+        # zoom out    
+        for vector in vectors: vector.add_updater(ArrowStrokeCameraUpdater(self))    
+        self.move_camera(
+            frame_center=ORIGIN,
+            added_anims=[
+                VGroup(diagram,c3).animate.to_corner(UR),    
+            ],
+            run_time=2.5
+        )
+        for vector in vectors: vector.clear_updaters()
+        self.wait(w)
+
+        # to normal equations
+        nex = MathTex(r"(\mathbf{v}-\mathbf{p})\cdot \mathbf{x} =0", font_size=65).shift(3*LEFT+UP*1.5)
+        color_tex_standard(nex)
+        ney = MathTex(r"(\mathbf{v}-\mathbf{p})\cdot \mathbf{y} =0", font_size=65).shift(3*LEFT+DOWN*1.5)
+        color_tex_standard(ney)
+        self.play(
+            Write(nex[0][0]), Write(nex[0][4]), Write(ney[0][0]), Write(ney[0][4]), # parentheses
+            ReplacementTransform(rl[0].copy(),nex[0][1:4]), ReplacementTransform(rl[0].copy(),ney[0][1:4]) # v-p
+        , run_time=2)
+        self.play(Write(nex[0][5]), Write(ney[0][5])) # dot
+        self.play(ReplacementTransform(xl[0].copy(),nex[0][6]), ReplacementTransform(yl[0].copy(),ney[0][6]), run_time=2) # x,y
+        self.play(Write(nex[0][-2:]), Write(ney[0][-2:]),run_time=1.5) # =0        
+        self.wait(w)
+
+        # rearrange normal equations
+        nex1 = MathTex(r"\mathbf{x} \cdot \mathbf{p}","=",r"\mathbf{x} \cdot \mathbf{v}", font_size=65).move_to(nex)
+        AlignBaseline(nex1,nex)
+        color_tex_standard(nex1)
+        ney1 = MathTex(r"\mathbf{y} \cdot \mathbf{p}","=",r"\mathbf{y} \cdot \mathbf{v}", font_size=65).move_to(ney)
+        AlignBaseline(ney1,ney)
+        color_tex_standard(ney1)
+        self.play(
+            *TransformBuilder(
+                nex,nex1,
+                [
+                    ([0,[0,4]],None), # ()
+                    ([0,1],[-1,-1],None,{"path_arc":120*DEGREES}), # v
+                    ([0,2],None), # -
+                    ([0,3],[0,2]), # p
+                    ([0,5],[0,1],None,{"path_arc":120*DEGREES}), # dot
+                    ([0,5],[2,1], TransformFromCopy,{"path_arc":-120*DEGREES}), #dot
+                    ([0,6],[0,0],None,{"path_arc":120*DEGREES}), # x
+                    ([0,6],[2,0],TransformFromCopy), # x
+                    ([0,7],[1,0]), # =
+                    ([0,-1],None) # 0
+                ]
+            ),
+            *TransformBuilder(
+                ney,ney1,
+                [
+                    ([0,[0,4]],None), # ()
+                    ([0,1],[-1,-1],None,{"path_arc":120*DEGREES}), # v
+                    ([0,2],None), # -
+                    ([0,3],[0,2]), # p
+                    ([0,5],[0,1],None,{"path_arc":120*DEGREES}), # dot
+                    ([0,5],[2,1], TransformFromCopy,{"path_arc":-120*DEGREES}), #dot
+                    ([0,6],[0,0],None,{"path_arc":120*DEGREES}), # y
+                    ([0,6],[2,0],TransformFromCopy), # y
+                    ([0,7],[1,0]), # =
+                    ([0,-1],None) # 0
+                ]
+            ), run_time=2.5)
+        self.wait(w)
+
+        # substitute p
+        nex2 = MathTex(r"\mathbf{x} \cdot (p_x \mathbf{x} + p_y \mathbf{y})","=",r"\mathbf{x} \cdot \mathbf{v}", font_size=65).move_to(nex1)        
+        color_tex_standard(nex2)
+        AlignBaseline(nex2,nex1)
+        ney2 = MathTex(r"\mathbf{y} \cdot (p_x \mathbf{x} + p_y \mathbf{y})","=",r"\mathbf{y} \cdot \mathbf{v}", font_size=65).move_to(ney1)        
+        color_tex_standard(ney2)
+        AlignBaseline(ney2,ney1)
+        self.play(
+            ReplacementTransform(nex1[0][0], nex2[0][0]), # x
+            ReplacementTransform(nex1[0][1], nex2[0][1]), # dot
+            FadeIn(nex2[0][2]), FadeIn(nex2[0][-1]), # ()
+            FadeOut(nex1[0][2]), # p
+            FadeIn(nex2[0][3:10],shift=DOWN), # px x + py y        
+            ReplacementTransform(nex1[1], nex2[1]), # =
+            ReplacementTransform(nex1[2], nex2[2]), # rhs
+            ReplacementTransform(ney1[0][0], ney2[0][0]), # x
+            ReplacementTransform(ney1[0][1], ney2[0][1]), # dot
+            FadeIn(ney2[0][2]), FadeIn(ney2[0][-1]), # ()
+            FadeOut(ney1[0][2]), # p
+            FadeIn(ney2[0][3:10],shift=DOWN), # px x + py y        
+            ReplacementTransform(ney1[1], ney2[1]), # =
+            ReplacementTransform(ney1[2], ney2[2]) # rhs
+        , run_time=2)
+        self.wait()
+
+        # distribute dot products
+        nex3 = MathTex(r"p_x \mathbf{x} \cdot \mathbf{x} + p_y \mathbf{x} \cdot \mathbf{y}","=",r"\mathbf{x} \cdot \mathbf{v}", font_size=65).move_to(nex1)        
+        color_tex_standard(nex3)
+        AlignBaseline(nex3,nex1)
+        ney3 = MathTex(r"p_x \mathbf{y} \cdot \mathbf{x} + p_y \mathbf{y} \cdot \mathbf{y}","=",r"\mathbf{y} \cdot \mathbf{v}", font_size=65).move_to(ney1)        
+        color_tex_standard(ney3)
+        AlignBaseline(ney3,ney1)
+        self.play(*TransformBuilder(
+            nex2,nex3,
+            [
+                ([0,0],[0,2],None,{"path_arc":-280*DEGREES}), # x
+                ([0,0],[0,8],TransformFromCopy,{"path_arc":120*DEGREES}), # x
+                ([0,1],[0,3],None,{"path_arc":-280*DEGREES}), # dot
+                ([0,1],[0,9],TransformFromCopy,{"path_arc":120*DEGREES}), # dot
+                ([0,2],None), ([0,-1],None), # ()
+                ([0,[3,4]], [0,[0,1]]), # px
+                ([0,5],[0,4]), # x
+                ([0,6],[0,5]), # +
+                ([0,[7,8]],[0,[6,7]]), #py
+                ([0,9],[0,10]), # y
+                (1,1), (2,2) # = rhs
+            ]
+        ), *TransformBuilder(
+            ney2,ney3,
+            [
+                ([0,0],[0,2],None,{"path_arc":-280*DEGREES}), # y
+                ([0,0],[0,8],TransformFromCopy,{"path_arc":120*DEGREES}), # y
+                ([0,1],[0,3],None,{"path_arc":-280*DEGREES}), # dot
+                ([0,1],[0,9],TransformFromCopy,{"path_arc":120*DEGREES}), # dot
+                ([0,2],None), ([0,-1],None), # ()
+                ([0,[3,4]], [0,[0,1]]), # px
+                ([0,5],[0,4]), # x
+                ([0,6],[0,5]), # +
+                ([0,[7,8]],[0,[6,7]]), #py
+                ([0,9],[0,10]), # y
+                (1,1), (2,2) # = rhs
+            ]
+        )
+        ,run_time=2)
+        self.wait(w)
+
+        # to matrix equations
+        gram = Matrix([
+            [r"\mathbf{x} \cdot \mathbf{x}",r"\mathbf{x} \cdot \mathbf{y}"],
+            [r"\mathbf{y} \cdot \mathbf{x}",r"\mathbf{y} \cdot \mathbf{y}"],
+        ],element_alignment_corner=UL, h_buff=1.5)
+        color_tex_standard(gram)
+        comps = Matrix([
+            ["p_x"],
+            ["p_y"]
+        ],v_buff=1.1,element_to_mobject_config={"font_size":65}).next_to(gram)
+        color_tex_standard(comps)
+        eq = MathTex("=").next_to(comps)
+        dots = Matrix([
+            [r"\mathbf{x} \cdot \mathbf{v}"],
+            [r"\mathbf{y} \cdot \mathbf{v}"]
+        ],v_buff=1.1,element_to_mobject_config={"font_size":65}).next_to(eq)
+        color_tex_standard(dots)
+        VGroup(gram,comps,eq,dots).arrange().next_to(c3,LEFT)
+        self.play(
+            Merge([nex3[0][0:2],ney3[0][0:2]], comps.get_entries()[0][0][:]), # px
+            Merge([nex3[0][6:8],ney3[0][6:8]], comps.get_entries()[1][0][:]), # py
+            ReplacementTransform(nex3[0][2:5],gram.get_rows()[0][0][0][:]), # x.x
+            ReplacementTransform(nex3[0][8:11],gram.get_rows()[0][1][0][:]), # x.y
+            ReplacementTransform(ney3[0][2:5],gram.get_rows()[1][0][0][:]), # y.x
+            ReplacementTransform(ney3[0][8:11],gram.get_rows()[1][1][0][:]), # y.y
+            ReplacementTransform(nex3[2],dots.get_entries()[0][0]), # x.v
+            ReplacementTransform(ney3[2],dots.get_entries()[1][0]), # y.v            
+            FadeIn(gram.get_brackets(),comps.get_brackets(),dots.get_brackets()), # brackets
+            Merge([nex3[1],ney3[1]],eq[0]), # =
+            FadeOut(nex3[0][5],ney3[0][5])
+        , run_time=3)
+
+        # label gram matrix
+        graml1 = Tex(r"Gram Matrix").next_to(gram,DOWN).shift(DOWN*1.25)
+        graml2 = Tex(r"(Metric Tensor)", font_size=40).next_to(graml1,DOWN).shift(DOWN*0)
+        a1 = Arrow(graml1.get_top(),gram.get_entries().get_bottom(),color=XCOLOR)
+        self.play(
+            Write(graml1),
+            GrowArrow(a1),            
+        )
+        self.wait(0.5)
+        self.play(Write(graml2))
+        self.wait(w)
+
+        # remove label, arrow
+        self.play(FadeOut(a1,graml1,graml2,shift=LEFT))
+        self.wait(w)
+
+        # from dots to transpose
+        gramt = Matrix([
+            [r"\mathbf{x}^T \mathbf{x}",r"\mathbf{x}^T \mathbf{y}"],
+            [r"\mathbf{y}^T \mathbf{x}",r"\mathbf{y}^T \mathbf{y}"],
+        ],element_alignment_corner=UL).move_to(gram)
+        color_tex_standard(gramt)
+        dotst = Matrix([
+            [r"\mathbf{x}^T \mathbf{v}"],
+            [r"\mathbf{y}^T \mathbf{v}"]
+        ],v_buff=1.1,element_to_mobject_config={"font_size":65}).move_to(dots)
+        color_tex_standard(dotst)
+        self.play(
+            ReplacementTransform(gram,gramt),
+            ReplacementTransform(dots,dotst)
+        ,run_time=1.75)
+        self.wait(w)
+
+        # move down
+        self.play(
+            VGroup(gramt,comps,eq,dotst).animate.next_to(c3.copy().shift(LEFT*c3.get_center()[0]), DOWN)
+        , run_time=1.75)
+        
+        # factor
+        xtyt = Matrix([
+            [r"\mathbf{x}^T"],
+            [r"\mathbf{y}^T"]
+        ])
+        color_tex_standard(xtyt)
+        xy = Matrix([[r"\mathbf{x}",r"\mathbf{y}"]], element_alignment_corner=UL)
+        color_tex_standard(xy)        
+        xtyt4v = Matrix([
+            [r"\mathbf{x}^T"],
+            [r"\mathbf{y}^T"]
+        ])
+        color_tex_standard(xtyt4v)
+        veq = MathTex(r"\mathbf{v}",font_size=75)
+        color_tex_standard(veq)        
+        VGroup(xtyt,xy,comps.generate_target(),eq.generate_target(),xtyt4v,veq).arrange().next_to(c3.copy().shift(LEFT*c3.get_center()[0]), DOWN)
+        VGroup(xtyt,xy).next_to(comps,LEFT)
+        self.play(
+            ReplacementTransform(gramt.get_brackets()[0], xtyt.get_brackets()[0]), # left [
+            FadeIn(xtyt.get_brackets()[1]), # left ]
+            FadeIn(xy.get_brackets()[0]), # right [
+            ReplacementTransform(gramt.get_brackets()[1], xy.get_brackets()[1]), # right ]
+            *[Merge([entry[0][i] for entry in gramt.get_rows()[0]], xtyt.get_entries()[0][0][i]) for i in [0,1]], # xt
+            *[Merge([entry[0][i] for entry in gramt.get_rows()[1]], xtyt.get_entries()[1][0][i]) for i in [0,1]], # yt
+            Merge([entry[0][2] for entry in gramt.get_columns()[0]], xy.get_entries()[0]), # x
+            Merge([entry[0][2] for entry in gramt.get_columns()[1]], xy.get_entries()[1]) # y            
+        ,run_time=3.5)
+        self.play(            
+            VGroup(xtyt,xy).animate.next_to(comps.target,LEFT),
+            MoveToTarget(comps),
+            MoveToTarget(eq),
+            ReplacementTransform(dotst.get_brackets(),xtyt4v.get_brackets()), 
+            *[ReplacementTransform(entry1[0][:2], entry2[0][:2]) for entry1,entry2 in zip(dotst.get_entries(), xtyt4v.get_entries())],
+            Merge([entry[0][2] for entry in dotst.get_entries()], veq[0][0]) # v
+        ,run_time=2.5)
+        self.wait(w)
+
+        # write A at bottom, and replace xy matrix with A
+        aeq = MathTex("A","=")
+        xyadef = xy.copy().next_to(aeq)
+        VGroup(aeq,xyadef).next_to(VGroup(xtyt,xy,comps,eq,xtyt4v,veq),DOWN)
+        self.play(Write(aeq[0]))
+        self.play(Write(aeq[1]))
+        A = MathTex("A", font_size=75).move_to(xy)
+        self.play(
+            ReplacementTransform(xy,xyadef),
+            TransformFromCopy(aeq[0],A[0],path_arc=180*DEGREES)
+        , run_time=2)
+        At = MathTex("A^T", font_size=75).move_to(xtyt)
+        AlignBaseline(At,A)
+        self.play(ReplacementTransform(xtyt,At), run_time=1.75)
+        At4v = MathTex("A^T", font_size=75).move_to(xtyt4v)
+        AlignBaseline(At4v,A)
+        self.play(ReplacementTransform(xtyt4v,At4v), run_time=1.75)
+
+        # collect equation
+        VGroup(At.generate_target(),A.generate_target(),comps.generate_target(),eq.generate_target(),At4v.generate_target(),veq.generate_target()).arrange(buff=0.15).next_to(c3.copy().shift(LEFT*c3.get_center()[0]), DOWN)
+        for mob in [At,eq,At4v,veq]: AlignBaseline(mob.target,A.target)
+        self.play(
+            *[MoveToTarget(mob) for mob in [At,A,comps,eq,At4v,veq]]
+        ,run_time=2)
+        self.wait(w)
+
+        # invert Ata
+        compform = MathTex("=",r"\left(A^T A \right)^{-1}","A^T","\mathbf{v}", font_size=75)
+        color_tex_standard(compform)
+        VGroup(comps.generate_target(),compform).arrange().next_to(c3.copy().shift(LEFT*c3.get_center()[0]), DOWN)
+        self.play(
+            MoveToTarget(comps),
+            ReplacementTransform(eq[0],compform[0]), #=            
+            FadeIn(compform[1][0]), FadeIn(compform[1][-3:]), # ()-1
+            ReplacementTransform(At[0][:],compform[1][1:3],path_arc=-230*DEGREES), # At
+            ReplacementTransform(A[0][0],compform[1][3],path_arc=-230*DEGREES), # A
+            ReplacementTransform(At4v[0],compform[2]), # At
+            ReplacementTransform(veq[0],compform[-1]) # v            
+        , run_time=2.5)
+        self.wait(w)
+
+        # move components
+        compsfull = VGroup(comps,compform)
+        self.play(compsfull.animate.move_to(LEFT*3+UP*2),run_time=1.75)
+
+        # write p formula
+        pe = MathTex(r"\mathbf{p}","=",r"p_x \mathbf{x}","+",r"p_y \mathbf{y}", font_size=80)
+        color_tex_standard(pe).next_to(c3.copy().shift(LEFT*c3.get_center()[0]), DOWN)
+        self.play(FadeIn(pe,shift=RIGHT),run_time=1.25)
+        self.wait(w)
+
+        # factor p
+        peq = MathTex(r"\mathbf{p}","=", font_size=80)
+        color_tex_standard(peq)
+        xy = Matrix([[r"\mathbf{x}",r"\mathbf{y}"]], element_alignment_corner=UL)
+        color_tex_standard(xy)
+        compsp = Matrix([
+            ["p_x"],
+            ["p_y"]
+        ],v_buff=1.1,element_to_mobject_config={"font_size":65})
+        color_tex_standard(compsp)
+        VGroup(peq,xy,compsp).arrange().next_to(c3.copy().shift(LEFT*c3.get_center()[0]), DOWN)
+        self.play(
+            ReplacementTransform(pe[0],peq[0]), # p
+            ReplacementTransform(pe[1],peq[1]), # =
+            FadeIn(xy.get_brackets()[0],compsp.get_brackets()[1]),
+            ReplacementTransform(pe[2][0:2],compsp.get_entries()[0][0][:]), # px
+            ReplacementTransform(pe[4][0:2],compsp.get_entries()[1][0][:]), # py
+            ReplacementTransform(pe[2][2], xy.get_entries()[0][0][0]), # x
+            ReplacementTransform(pe[4][2], xy.get_entries()[1][0][0]), # y
+            ReplacementTransform(pe[3],VGroup(xy.get_brackets()[1],compsp.get_brackets()[0])) # +
+        ,run_time=3)
+        self.wait(w)
+
+        # first term to A
+        A = MathTex("A", font_size=80).move_to(xy)
+        AlignBaseline(A,peq)
+        self.play(
+            FadeOut(xy),
+            TransformFromCopy(aeq[0],A)
+        , run_time=1.75)
+        self.wait(w)
+
+        # substitute in components
+        pe2 = MathTex(r"\mathbf{p}","=","A",r"\left(A^T A \right)^{-1}","A^T","\mathbf{v}",font_size=80)
+        color_tex_standard(pe2).next_to(c3.copy().shift(LEFT*c3.get_center()[0]), DOWN)
+        self.play(
+            ReplacementTransform(peq[0],pe2[0]), # p
+            ReplacementTransform(peq[1],pe2[1]), # =
+            ReplacementTransform(A[0],pe2[2]), # A
+            FadeOut(compsp), # vector components
+            TransformFromCopy(compform[1:], pe2[3:]) # ata-1atv
+        ,run_time=2.5)
+        self.wait(w)
+
+        # to black
+        self.play(FadeOut(*self.mobjects))
 
 
 
+
+class LinearRegressionDemo(ThreeDScene):
+    def construct(self):
+        # for scatterplot
+        axes2 = Axes(
+            x_range=[-1, 6],
+            y_range=[-1, 6],
+            axis_config={"include_tip": True},
+            x_length=6,
+            y_length=6
+        )
+        
+        # Add labels
+        x_label = axes2.get_x_axis_label("x")
+        y_label = axes2.get_y_axis_label("y")
+        
+        # Generate random data points
+        np.random.seed(42)  # For reproducibility
+        X = np.random.uniform(0, 5, 20).reshape(-1, 1)
+        y = 1 + 0.8 * X + np.random.normal(0, 0.4, (20, 1))
+        
+        # Fit linear regression
+        reg = LinearRegression().fit(X, y)
+        
+        # Create dots for data points
+        dots = VGroup(            
+            *[
+                Dot(axes2.c2p(X[i, 0], y[i, 0]), radius=0.05)
+                    for i in range(len(X))
+            ]
+        )
+        
+        # Create regression line
+        x_range = np.array([0, 5]).reshape(-1, 1)
+        y_pred = reg.predict(x_range)
+        line = Line(
+            start=axes2.c2p(x_range[0, 0], y_pred[0,0]),
+            end=axes2.c2p(x_range[1, 0], y_pred[1,0]),
+            color=COLOR_V1
+        )
+        
+        # Animate
+        self.play(Create(axes2), Create(x_label), Create(y_label))
+        
+        self.play(AnimationGroup(
+            *[GrowFromCenter(dot) for dot in dots],
+            lag_ratio=0.05
+        ))
+        
+        self.play(Create(line))
+        self.wait()
+
+        # down to 3 data points, with labels
+        self.play(
+            FadeOut(dots[3:])
+        )
+        dots[3:].set_opacity(0)
+        labels = VGroup(*[MathTex("(x_" + str(i) + ", y_" + str(i) + ")",font_size=60).next_to(dots[i-1]) for i in [1,2,3]])        
+        for label in labels:
+            color_tex(label, ("x", XCOLOR), ("y", VCOLOR))            
+        self.play(Write(labels))
+        self.wait()
+
+        # move graph over, to equations
+        eqns = VGroup(
+            *[
+                MathTex("y_"+str(i), "=",r"\beta_0","+",r"\beta_1","x_"+str(i),font_size=75)
+                    for i in [1,2,3]
+            ]
+        ).arrange(DOWN)
+        for eqn in eqns: color_tex(eqn, ("x",XCOLOR),(r"\beta_0",PCOLOR.lighter()),(r"\beta_1",PCOLOR.lighter()),("y",VCOLOR))
+        VGroup(axes2.copy(),eqns).arrange(buff=1.5)
+        self.play(
+            VGroup(axes2, x_label,y_label,line,dots,labels).animate.shift(VGroup(axes2.copy(),eqns).arrange(buff=1.5)[0].get_center()-axes2.get_center())
+        )
+        self.play(
+            *[ 
+                AnimationGroup(
+                    TransformFromCopy(label[0][1:3],eqn[5][:]), # x
+                    TransformFromCopy(label[0][4:6],eqn[0][:]), # y
+                    Write(eqn[1:5])
+                )
+                    for label, eqn in zip(labels, eqns)
+            ],
+            run_time=2.5
+        )
+        self.wait()
+
+        # indicate beta0 and beta1
+        self.play(
+            *[
+                Indicate(eqn[2]) for eqn in eqns
+            ]
+        )
+        self.wait()
+        self.play(
+            *[
+                Indicate(eqn[4]) for eqn in eqns
+            ]
+        )
+        self.wait()
+
+        # get rid of graph, equations to center
+        self.play(
+            FadeOut(axes2, x_label,y_label,dots,line,labels),
+            eqns.animate.center(),
+            run_time=2
+        )
+        self.wait()
+
+        # collect to vectors
+        # to y vector
+        y = Matrix([
+            ["y_1"],["y_2"],["y_3"]
+        ],element_to_mobject_config={"font_size":60}).next_to(eqns[1][1],LEFT)
+        for elem in y.get_entries(): color_tex(elem, "y", VCOLOR)
+        self.play(
+            *[
+                ReplacementTransform(eqn[0],elem[0])  # combine y into vector
+                    for eqn,elem in zip(eqns,y.get_entries())
+            ],
+            FadeIn(y.get_brackets())
+        )
+        
+        # equals
+        eq = MathTex("=", font_size=75).move_to(eqns[1][1])
+        self.play(Merge([eqn[1] for eqn in eqns], eq))
+
+        # beta0
+        beta0 = Matrix([
+            [r"\beta_0"],[r"\beta_0"],[r"\beta_0"]
+        ],element_to_mobject_config={"font_size":60}).next_to(eq)        
+        for elem in beta0.get_entries(): color_tex(elem, r"\beta_0", PCOLOR.lighter())
+        self.play(
+            FadeIn(beta0.get_brackets()),
+            *[
+                ReplacementTransform(eqn[2],elem[0])  # combine y into vector
+                    for eqn,elem in zip(eqns,beta0.get_entries())
+            ],
+            *[
+                eqn[3:].animate.shift(RIGHT*(eqn[3].copy().next_to(beta0).get_center()[0]-eqn[3].get_center()[0]))
+                    for eqn in eqns
+            ]
+        )
+
+        # +
+        plus = MathTex("+", font_size=75).next_to(beta0)
+        self.play(Merge([eqn[3] for eqn in eqns],plus))
+
+        # beta1 and x's        
+        beta1x = Matrix([
+            [r"\beta_1 x_1"],[r"\beta_1 x_2"],[r"\beta_1 x_3"]
+        ],element_to_mobject_config={"font_size":60}).next_to(plus)
+        for elem in beta1x.get_entries(): color_tex(elem, (r"\beta_1", PCOLOR.lighter()), ("x",XCOLOR))
+        self.play(
+            FadeIn(beta1x.get_brackets()),
+            *[
+                ReplacementTransform(eqn[4][:],elem[0][:2])  # combine y into vector
+                    for eqn,elem in zip(eqns,beta1x.get_entries())
+            ],
+            *[
+                ReplacementTransform(eqn[5][:],elem[0][2:])  # combine y into vector
+                    for eqn,elem in zip(eqns,beta1x.get_entries())
+            ],
+        )
+
+        # factor beta1 out
+        beta1 = MathTex(r"\beta_1",font_size=75, color=PCOLOR.lighter()).next_to(plus)
+        x = Matrix([
+            [r"x_1"],[r"x_2"],[r"x_3"]
+        ],element_to_mobject_config={"font_size":60}).next_to(beta1)
+        for elem in x.get_entries(): color_tex(elem, ("x",XCOLOR))
+        self.play(
+            Merge([elem[0][:2] for elem in beta1x.get_entries()],beta1), # beta1
+            *[
+                ReplacementTransform(betax[0][2:], xelem[0][:])  # xi
+                    for betax, xelem in zip(beta1x.get_entries(),x.get_entries())
+            ],
+            *[
+                ReplacementTransform(old,new)  # brackets
+                    for old,new in zip(beta1x.get_brackets(),x.get_brackets())
+            ]
+        )
+
+        # factor beta0 to 1's
+        beta0t = MathTex(r"\beta_0", font_size=75,color=PCOLOR.lighter())
+        ones =  Matrix([
+            [r"1"],[r"1"],[r"1"]
+        ],element_to_mobject_config={"font_size":60}).next_to(beta0t)
+        for elem in ones.get_entries(): color_tex(elem, ("1",YCOLOR.lighter()))
+        VGroup(y.generate_target(),eq.generate_target(),beta0t,ones,plus.generate_target(),beta1.generate_target(),x.generate_target()).arrange().center()
+        self.play(
+            Merge(beta0.get_entries(),beta0t), # beta0
+            *[
+                TransformFromCopy(beta,one)   # ones
+                    for beta,one in zip(beta0.get_entries(),ones.get_entries())
+            ],
+            *[
+                ReplacementTransform(old,new)  # brackets
+                    for old,new in zip(beta0.get_brackets(),ones.get_brackets())
+            ],
+            *[
+                MoveToTarget(mob)
+                    for mob in [y,eq,plus,beta1,x]
+            ]
+        )   
+        vector_equation = VGroup(y,eq,beta0t,ones,plus,beta1,x)     
+        self.wait()
+
+        xcoords = np.array([0.9,0.25,0])
+        ycoords = np.array([0.3,1.1,0])
+        vcoords = np.array([0.5,0.7,0.7])
+        amatrix = np.vstack([xcoords,ycoords]).T
+        pxcoord = np.matmul(np.linalg.inv(np.matmul(amatrix.T,amatrix)),np.matmul(amatrix.T, vcoords))[0]
+        pycoord = np.matmul(np.linalg.inv(np.matmul(amatrix.T,amatrix)),np.matmul(amatrix.T, vcoords))[1]
+        pcoords = pxcoord*xcoords + pycoord*ycoords
+
+        # define diagram
+        axes = ThreeDAxes(
+            x_range=[0,0.5],x_length=2.5 / 2,
+            y_range=[0,0.5],y_length=2.5 / 2,
+            z_range=[0,0.5],z_length=2.5 / 2,
+        ).set_opacity(0)        
+        v = Arrow(axes @ ORIGIN, axes @ vcoords, buff=0, color=VCOLOR).set_stroke(width=6)        
+        x = Arrow(axes @ ORIGIN, axes @ xcoords, buff=0, color=XCOLOR).set_stroke(width=6)        
+        y = Arrow(axes @ ORIGIN, axes @ ycoords, buff=0, color=YCOLOR).set_stroke(width=6)                
+        p = Arrow(axes @ ORIGIN, axes @ pcoords, buff=0, color=PCOLOR).set_stroke(width=6)        
+        px = Arrow(axes @ ORIGIN, axes @ (pxcoord*xcoords), buff=0,color=PCOLOR).set_stroke(width=6)
+        py = Arrow(axes @ ORIGIN, axes @ (pycoord*ycoords), buff=0,color=PCOLOR).set_stroke(width=6)
+        dy = DashedLine(axes @ pcoords, axes @ (pxcoord*xcoords), dash_length=0.15).set_opacity(0.4)
+        dx = DashedLine(axes @ pcoords, axes @ (pycoord*ycoords), dash_length=0.15).set_opacity(0.4)
+        r = Arrow(axes @ pcoords, axes @ vcoords, buff=0, color=RCOLOR).set_stroke(width=6)        
+        ArrowGradient(r,[PCOLOR,VCOLOR])
+        ra = VGroup(
+            Line(axes @ (0.9*pcoords),axes @ (0.9*pcoords+OUT*0.1), stroke_width=2),
+            Line(axes @ (0.9*pcoords+OUT*0.1),axes @ (1*pcoords+OUT*0.1), stroke_width=2)
+        )
+        vectors = VGroup(v,x,y,p,px,py,r)
+        dashes = VGroup(dy,dx)
+
+        plane = Surface(lambda u,v:axes @ (u,v,0),u_range=[-0.25,1.25],v_range=[-0.25,1.25],resolution=1).set_opacity(0.5).set_z_index(-1)
+        
+        diagram = VGroup(axes,plane,vectors,dashes, ra)
+        diagram.rotate(-125*DEGREES).rotate(-70*DEGREES,RIGHT)        
+        
+        vl = MathTex(r"\mathbf{y}", color=VCOLOR, font_size=50).next_to(v.get_end(),buff=0.15)
+        xl = MathTex(r"\mathbf{x}", color=XCOLOR, font_size=50).next_to(x.get_end(),DOWN,buff=0.1)
+        yl = MathTex(r"\mathbf{1}", color=YCOLOR, font_size=50).next_to(y.get_end(),DOWN,buff=0.1)        
+        AlignBaseline(xl,yl)
+        pl = MathTex(r"\mathbf{\hat{y}}", color=PCOLOR, font_size=50).next_to(p.get_end(),DR,buff=0.15)
+        pxl = MathTex(r"\beta_1 \mathbf{x}", font_size=40).next_to(px.get_end(),UL,buff=0.1)
+        color_tex(pxl,(r"\mathbf{x}",XCOLOR), (r"\beta_1",PCOLOR))      
+        pyl = MathTex(r"\beta_0 \mathbf{1}", font_size=40).next_to(py.get_end(),UR,buff=0.08)
+        color_tex(pyl,(r"\mathbf{1}",YCOLOR), (r"\beta_0",PCOLOR))      
+        rl = MathTex(r"\mathbf{y-\hat{y}}", font_size=50).next_to(r,RIGHT,buff=0.15).shift(UP*0.3)
+        color_tex(rl,(r"\mathbf{y}",VCOLOR), (r"\mathbf{\hat{y}}",PCOLOR))      
+        labels = VGroup(xl,vl,yl,pl,pxl,pyl,rl)
+        diagram.add(labels)                
+        
+        diagram.shift(-VGroup(v,p,r).get_center()).shift(UP*0.5+RIGHT*0.2)
+        
+        # zoom in for diagram, move equations to corner
+        self.move_camera(
+            frame_center=IN*10,
+            added_anims=[
+                vector_equation.animate.move_to(LEFT*2+UP*1.35).scale(0.35)
+            ],
+            run_time=1.5
+        )
+        for vector in vectors: 
+            ArrowStrokeFor3dScene(self,vector,family=True)
+        face_camera(self,r)
+
+        # y to y
+        self.play(GrowArrow(v))
+        self.play(TransformFromCopy(vector_equation[0].get_entries(),vl),run_time=1.5)        
+
+        # x to x
+        self.play(GrowArrow(x))
+        self.play(TransformFromCopy(vector_equation[6].get_entries(),xl),run_time=1.5)        
+
+        # ones to 1
+        self.play(GrowArrow(y))
+        self.play(TransformFromCopy(vector_equation[3].get_entries(),yl),run_time=1.5)        
+
+        self.wait()
+
+        # draw plane
+        self.play(Create(plane,shift=UP),run_time=3)
+        self.wait()
+
+
+        
