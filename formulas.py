@@ -2538,8 +2538,9 @@ class LinearRegressionDemo(ThreeDScene):
             z_range=[0,0.5],z_length=2.5 / 2,
         ).set_opacity(0)        
         v = Arrow(axes @ ORIGIN, axes @ vcoords, buff=0, color=VCOLOR).set_stroke(width=6)        
+        vpl = Arrow(axes @ ORIGIN, axes @ pcoords, buff=0, color=VCOLOR).set_stroke(width=6)        
         x = Arrow(axes @ ORIGIN, axes @ xcoords, buff=0, color=XCOLOR).set_stroke(width=6)        
-        y = Arrow(axes @ ORIGIN, axes @ ycoords, buff=0, color=YCOLOR).set_stroke(width=6)                
+        y = Arrow(axes @ ORIGIN, axes @ ycoords, buff=0, color=YCOLOR).set_stroke(width=6)                        
         p = Arrow(axes @ ORIGIN, axes @ pcoords, buff=0, color=PCOLOR).set_stroke(width=6)        
         px = Arrow(axes @ ORIGIN, axes @ (pxcoord*xcoords), buff=0,color=PCOLOR).set_stroke(width=6)
         py = Arrow(axes @ ORIGIN, axes @ (pycoord*ycoords), buff=0,color=PCOLOR).set_stroke(width=6)
@@ -2551,7 +2552,7 @@ class LinearRegressionDemo(ThreeDScene):
             Line(axes @ (0.9*pcoords),axes @ (0.9*pcoords+OUT*0.1), stroke_width=2),
             Line(axes @ (0.9*pcoords+OUT*0.1),axes @ (1*pcoords+OUT*0.1), stroke_width=2)
         )
-        vectors = VGroup(v,x,y,p,px,py,r)
+        vectors = VGroup(v,x,y,p,px,py,r,vpl)
         dashes = VGroup(dy,dx)
 
         plane = Surface(lambda u,v:axes @ (u,v,0),u_range=[-0.25,1.25],v_range=[-0.25,1.25],resolution=1).set_opacity(0.5).set_z_index(-1)
@@ -2560,9 +2561,10 @@ class LinearRegressionDemo(ThreeDScene):
         diagram.rotate(-125*DEGREES).rotate(-70*DEGREES,RIGHT)        
         
         vl = MathTex(r"\mathbf{y}", color=VCOLOR, font_size=50).next_to(v.get_end(),buff=0.15)
+        vpll = MathTex(r"\mathbf{y}", color=VCOLOR, font_size=50).next_to(vpl.get_end(),DOWN,buff=0.1)        
         xl = MathTex(r"\mathbf{x}", color=XCOLOR, font_size=50).next_to(x.get_end(),DOWN,buff=0.1)
         yl = MathTex(r"\mathbf{1}", color=YCOLOR, font_size=50).next_to(y.get_end(),DOWN,buff=0.1)        
-        AlignBaseline(xl,yl)
+        AlignBaseline(xl,yl), AlignBaseline(vpll,yl)
         pl = MathTex(r"\mathbf{\hat{y}}", color=PCOLOR, font_size=50).next_to(p.get_end(),DR,buff=0.15)
         pxl = MathTex(r"\beta_1 \mathbf{x}", font_size=40).next_to(px.get_end(),UL,buff=0.1)
         color_tex(pxl,(r"\mathbf{x}",XCOLOR), (r"\beta_1",PCOLOR))      
@@ -2570,7 +2572,7 @@ class LinearRegressionDemo(ThreeDScene):
         color_tex(pyl,(r"\mathbf{1}",YCOLOR), (r"\beta_0",PCOLOR))      
         rl = MathTex(r"\mathbf{y-\hat{y}}", font_size=50).next_to(r,RIGHT,buff=0.15).shift(UP*0.3)
         color_tex(rl,(r"\mathbf{y}",VCOLOR), (r"\mathbf{\hat{y}}",PCOLOR))      
-        labels = VGroup(xl,vl,yl,pl,pxl,pyl,rl)
+        labels = VGroup(xl,vl,yl,pl,pxl,pyl,rl,vpll)
         diagram.add(labels)                
         
         diagram.shift(-VGroup(v,p,r).get_center()).shift(UP*0.5+RIGHT*0.2)
@@ -2605,5 +2607,480 @@ class LinearRegressionDemo(ThreeDScene):
         self.play(Create(plane,shift=UP),run_time=3)
         self.wait()
 
+        # y to plane
+        v.save_state(), vl.save_state()
+        for vector in [v,x,y,px,py]: vector.add_updater(ArrowStrokeCameraUpdater(self))
+        self.play(
+            Transform(v,vpl),
+            Transform(vl,vpll),
+            run_time=1.5
+        )
+        self.move_camera(
+            frame_center= IN*15+DOWN*0.2+RIGHT*0.25,
+            run_time=1.5
+        )                
+        self.wait()
+
+        # component vectors
+        self.play(GrowArrow(py), run_time=1.25)
+        self.play(Write(pyl))
+        self.play(GrowArrow(px), run_time=1.25)
+        self.play(Write(pxl))
+        
+        # vector addition of components to y
+        py.save_state()
+        self.play(FadeOut(v))
+        self.play(            
+            py.animate.put_start_and_end_on(axes @ (pxcoord*xcoords), axes @ pcoords),
+            run_time=1.5
+        )
+        self.play(GrowArrow(v))
+        self.play(Restore(py))
+        self.wait()
+
+        # y back to its position
+        self.move_camera(frame_center=IN*10,run_time=1.5)
+        self.play(
+            Restore(v),
+            Restore(vl),
+            FadeOut(px,py,pxl,pyl),
+            run_time=1.5
+        )
+        for vector in [v,x,y,px,py]: vector.clear_updaters()
+        self.wait()
+
+        # project y
+        self.play(TransformFromCopy(v,p),run_time=1.5)
+        self.play(Write(pl),run_time=1.25)
+        self.wait()
+
+        # update formula
+        yhatv = y = Matrix([
+            [r"\hat{y}_1"],[r"\hat{y}_2"],[r"\hat{y}_3"]
+        ],element_to_mobject_config={"font_size":60}).scale(0.35).next_to(vector_equation[1],LEFT,buff=0.2*0.35)
+        for elem in yhatv.get_entries(): color_tex(elem, r"\hat{y}", PCOLOR.lighter())
+        self.play(
+            *[
+                ReplacementTransform(old,new)
+                    for old,new in zip(vector_equation[0].get_brackets(),yhatv.get_brackets())
+            ],
+            *[
+                Merge([old,pl.copy()], new)
+                    for old,new in zip(vector_equation[0].get_entries(),yhatv.get_entries())
+            ],
+            run_time=2
+        )
+        vector_equation = VGroup(yhatv,*vector_equation[1:])
+        self.wait()
+
+        # components
+        self.play(
+            TransformFromCopy(p,px),
+            Write(dx),
+            TransformFromCopy(p,py),
+            Write(dy),
+            run_time=2
+        )
+        self.play(
+            FadeIn(pxl,shift=RIGHT),
+            FadeIn(pyl,shift=LEFT),
+            run_time=2
+        )        
+        self.wait()
+
+        # other choices for y-hat
+        pxc2, pyc2 = 1,0.9
+        pxc3, pyc3 = 0.7,1.3
+        pxc4, pyc4 = 1.2,0.6   
+        p.add_updater(lambda arrow: ArrowStrokeFor3dScene(self, arrow.put_start_and_end_on(axes @ ORIGIN, axes @ (([*px.get_end()] @ axes)[0]/xcoords[0]*xcoords +  ([*py.get_end()] @ axes)[0]/ycoords[0]*ycoords))))
+        dxu = always_redraw(lambda: DashedLine(p.get_end(), px.get_end(), dash_length=0.15).set_opacity(0.4))
+        self.remove(dx),self.add(dxu)
+        dyu = always_redraw(lambda: DashedLine(p.get_end(), py.get_end(), dash_length=0.15).set_opacity(0.4))
+        self.remove(dy),self.add(dyu)        
+        # to first new spot
+        ArrowStrokeFor3dScene(self,px.generate_target().put_start_and_end_on(axes @ ORIGIN, axes @ (pxc2*xcoords)))
+        ArrowStrokeFor3dScene(self,py.generate_target().put_start_and_end_on(axes @ ORIGIN, axes @ (pyc2*ycoords)))
+        self.play(
+            MoveToTarget(px),
+            MoveToTarget(py),
+            run_time=2
+        )
+        # to second new spot
+        ArrowStrokeFor3dScene(self,px.generate_target().put_start_and_end_on(axes @ ORIGIN, axes @ (pxc3*xcoords)))
+        ArrowStrokeFor3dScene(self,py.generate_target().put_start_and_end_on(axes @ ORIGIN, axes @ (pyc3*ycoords)))
+        self.play(
+            MoveToTarget(px),
+            MoveToTarget(py),
+            run_time=2
+        )
+        # to third
+        ArrowStrokeFor3dScene(self,px.generate_target().put_start_and_end_on(axes @ ORIGIN, axes @ (pxc4*xcoords)))
+        ArrowStrokeFor3dScene(self,py.generate_target().put_start_and_end_on(axes @ ORIGIN, axes @ (pyc4*ycoords)))
+        self.play(
+            MoveToTarget(px),
+            MoveToTarget(py),
+            run_time=2
+        )
+        # back home
+        ArrowStrokeFor3dScene(self,px.generate_target().put_start_and_end_on(axes @ ORIGIN, axes @ (pxcoord*xcoords)))
+        ArrowStrokeFor3dScene(self,py.generate_target().put_start_and_end_on(axes @ ORIGIN, axes @ (pycoord*ycoords)))
+        self.play(
+            MoveToTarget(px),
+            MoveToTarget(py),
+            run_time=2
+        )
+        for vector in vectors: vector.clear_updaters()
+        self.remove(dxu),self.add(dx)
+        self.remove(dyu),self.add(dy)
+        self.wait()
+
+        # add rejection vector
+        self.play(GrowArrow(r),run_time=1.75)
+        self.play(Write(rl))
+        self.play(Write(ra))
+        self.wait()
+
+        # zoom out    
+        for vector in vectors: vector.add_updater(ArrowStrokeCameraUpdater(self))    
+        for mob in [vpl,vpll]: mob.set_opacity(0)
+        self.move_camera(
+            frame_center=ORIGIN,
+            added_anims=[
+                VGroup(diagram).animate.to_corner(UR),    
+                FadeOut(vector_equation)
+            ],
+            run_time=2.5
+        )
+        for vector in vectors: vector.clear_updaters()
+        self.wait(w)
+
+        # to normal equations
+        def color_tex_reg_standard(tex):
+            return color_tex(tex,(r"\mathbf{y}",VCOLOR),(r"\mathbf{\hat{y}}",PCOLOR),(r"\mathbf{x}",XCOLOR),(r"\mathbf{1}",YCOLOR),(r"\beta_0",PCOLOR),(r"\beta_1",PCOLOR))
 
         
+        # all the code here down is adapted from
+        # Project2dFull above, so a bunch of the comments below are off :/
+
+
+
+        nex = MathTex(r"(\mathbf{y}-\mathbf{\hat{y}})\cdot \mathbf{1} =0", font_size=65).shift(3*LEFT+UP*1.5)
+        color_tex_reg_standard(nex)
+        ney = MathTex(r"(\mathbf{y}-\mathbf{\hat{y}})\cdot \mathbf{x} =0", font_size=65).shift(3*LEFT+DOWN*1.5)
+        color_tex_reg_standard(ney)
+        self.play(
+            Write(nex[0][0]), Write(nex[0][5]), Write(ney[0][0]), Write(ney[0][5]), # parentheses
+            ReplacementTransform(rl[0].copy(),nex[0][1:5]), ReplacementTransform(rl[0].copy(),ney[0][1:5]) # v-p
+        , run_time=2)
+        self.play(Write(nex[0][6]), Write(ney[0][6])) # dot
+        self.play(ReplacementTransform(yl[0].copy(),nex[0][7]), ReplacementTransform(xl[0].copy(),ney[0][7]), run_time=2) # x,y
+        self.play(Write(nex[0][-2:]), Write(ney[0][-2:]),run_time=1.5) # =0        
+        self.wait(w)
+
+        # rearrange normal equations
+        nex1 = MathTex(r"\mathbf{1} \cdot \mathbf{\hat{y}}","=",r"\mathbf{1} \cdot \mathbf{y}", font_size=65).move_to(nex)
+        AlignBaseline(nex1,nex)
+        color_tex_reg_standard(nex1)
+        ney1 = MathTex(r"\mathbf{x} \cdot \mathbf{\hat{y}}","=",r"\mathbf{x} \cdot \mathbf{y}", font_size=65).move_to(ney)
+        AlignBaseline(ney1,ney)
+        color_tex_reg_standard(ney1)
+        self.play(
+            *TransformBuilder(
+                nex,nex1,
+                [
+                    ([0,[0,5]],None), # ()
+                    ([0,1],[-1,-1],None,{"path_arc":120*DEGREES}), # v
+                    ([0,2],None), # -
+                    ([0,[3,4]],[0,[2,3]]), # p
+                    ([0,6],[0,1],None,{"path_arc":120*DEGREES}), # dot
+                    ([0,6],[2,1], TransformFromCopy,{"path_arc":-120*DEGREES}), #dot
+                    ([0,7],[0,0],None,{"path_arc":120*DEGREES}), # x
+                    ([0,7],[2,0],TransformFromCopy), # x
+                    ([0,8],[1,0]), # =
+                    ([0,-1],None) # 0
+                ]
+            ),
+            *TransformBuilder(
+                ney,ney1,
+                [
+                    ([0,[0,5]],None), # ()
+                    ([0,1],[-1,-1],None,{"path_arc":120*DEGREES}), # v
+                    ([0,2],None), # -
+                    ([0,[3,4]],[0,[2,3]]), # p
+                    ([0,6],[0,1],None,{"path_arc":120*DEGREES}), # dot
+                    ([0,6],[2,1], TransformFromCopy,{"path_arc":-120*DEGREES}), #dot
+                    ([0,7],[0,0],None,{"path_arc":120*DEGREES}), # y
+                    ([0,7],[2,0],TransformFromCopy), # y
+                    ([0,8],[1,0]), # =
+                    ([0,-1],None) # 0
+                ]
+            ), run_time=2.5)
+        self.wait(w)
+
+        # substitute p
+        nex2 = MathTex(r"\mathbf{1} \cdot (\beta_0 \mathbf{1} + \beta_1 \mathbf{x})","=",r"\mathbf{1} \cdot \mathbf{y}", font_size=65).move_to(nex1)        
+        color_tex_reg_standard(nex2)
+        AlignBaseline(nex2,nex1)
+        ney2 = MathTex(r"\mathbf{x} \cdot (\beta_0 \mathbf{1} + \beta_1 \mathbf{x})","=",r"\mathbf{x} \cdot \mathbf{y}", font_size=65).move_to(ney1)        
+        color_tex_reg_standard(ney2)
+        AlignBaseline(ney2,ney1)
+        self.play(
+            ReplacementTransform(nex1[0][0], nex2[0][0]), # x
+            ReplacementTransform(nex1[0][1], nex2[0][1]), # dot
+            FadeIn(nex2[0][2]), FadeIn(nex2[0][-1]), # ()
+            FadeOut(nex1[0][2:4]), # p
+            FadeIn(nex2[0][3:10],shift=DOWN), # px x + py y        
+            ReplacementTransform(nex1[1], nex2[1]), # =
+            ReplacementTransform(nex1[2], nex2[2]), # rhs
+            ReplacementTransform(ney1[0][0], ney2[0][0]), # x
+            ReplacementTransform(ney1[0][1], ney2[0][1]), # dot
+            FadeIn(ney2[0][2]), FadeIn(ney2[0][-1]), # ()
+            FadeOut(ney1[0][2:4]), # p
+            FadeIn(ney2[0][3:10],shift=DOWN), # px x + py y        
+            ReplacementTransform(ney1[1], ney2[1]), # =
+            ReplacementTransform(ney1[2], ney2[2]) # rhs
+        , run_time=2)
+        self.wait()
+
+        # distribute dot products
+        nex3 = MathTex(r"\beta_0 \mathbf{1} \cdot \mathbf{1} + \beta_1 \mathbf{1} \cdot \mathbf{x}","=",r"\mathbf{1} \cdot \mathbf{y}", font_size=65).move_to(nex1)        
+        color_tex_reg_standard(nex3)
+        AlignBaseline(nex3,nex1)
+        ney3 = MathTex(r"\beta_0 \mathbf{x} \cdot \mathbf{1} + \beta_1 \mathbf{x} \cdot \mathbf{x}","=",r"\mathbf{x} \cdot \mathbf{y}", font_size=65).move_to(ney1)        
+        color_tex_reg_standard(ney3)
+        AlignBaseline(ney3,ney1)
+        self.play(*TransformBuilder(
+            nex2,nex3,
+            [
+                ([0,0],[0,2],None,{"path_arc":-280*DEGREES}), # x
+                ([0,0],[0,8],TransformFromCopy,{"path_arc":120*DEGREES}), # x
+                ([0,1],[0,3],None,{"path_arc":-280*DEGREES}), # dot
+                ([0,1],[0,9],TransformFromCopy,{"path_arc":120*DEGREES}), # dot
+                ([0,2],None), ([0,-1],None), # ()
+                ([0,[3,4]], [0,[0,1]]), # px
+                ([0,5],[0,4]), # x
+                ([0,6],[0,5]), # +
+                ([0,[7,8]],[0,[6,7]]), #py
+                ([0,9],[0,10]), # y
+                (1,1), (2,2) # = rhs
+            ]
+        ), *TransformBuilder(
+            ney2,ney3,
+            [
+                ([0,0],[0,2],None,{"path_arc":-280*DEGREES}), # y
+                ([0,0],[0,8],TransformFromCopy,{"path_arc":120*DEGREES}), # y
+                ([0,1],[0,3],None,{"path_arc":-280*DEGREES}), # dot
+                ([0,1],[0,9],TransformFromCopy,{"path_arc":120*DEGREES}), # dot
+                ([0,2],None), ([0,-1],None), # ()
+                ([0,[3,4]], [0,[0,1]]), # px
+                ([0,5],[0,4]), # x
+                ([0,6],[0,5]), # +
+                ([0,[7,8]],[0,[6,7]]), #py
+                ([0,9],[0,10]), # y
+                (1,1), (2,2) # = rhs
+            ]
+        )
+        ,run_time=2)
+        self.wait(w)
+
+        # to matrix equations
+        gram = Matrix([
+            [r"\mathbf{1} \cdot \mathbf{1}",r"\mathbf{1} \cdot \mathbf{x}"],
+            [r"\mathbf{x} \cdot \mathbf{1}",r"\mathbf{x} \cdot \mathbf{x}"],
+        ],element_alignment_corner=DL, h_buff=1.5)
+        color_tex_reg_standard(gram)
+        comps = Matrix([
+            [r"\beta_0"],
+            [r"\beta_1"]
+        ],v_buff=1.1,element_to_mobject_config={"font_size":65}).next_to(gram)
+        color_tex_reg_standard(comps)
+        eq = MathTex("=").next_to(comps)
+        dots = Matrix([
+            [r"\mathbf{1} \cdot \mathbf{y}"],
+            [r"\mathbf{x} \cdot \mathbf{y}"]
+        ],v_buff=1.1,element_to_mobject_config={"font_size":65}).next_to(eq)
+        color_tex_reg_standard(dots)
+        VGroup(gram,comps,eq,dots).arrange().to_edge(LEFT,buff=0.35)
+        self.play(
+            Merge([nex3[0][0:2],ney3[0][0:2]], comps.get_entries()[0][0][:]), # px
+            Merge([nex3[0][6:8],ney3[0][6:8]], comps.get_entries()[1][0][:]), # py
+            ReplacementTransform(nex3[0][2:5],gram.get_rows()[0][0][0][:]), # x.x
+            ReplacementTransform(nex3[0][8:11],gram.get_rows()[0][1][0][:]), # x.y
+            ReplacementTransform(ney3[0][2:5],gram.get_rows()[1][0][0][:]), # y.x
+            ReplacementTransform(ney3[0][8:11],gram.get_rows()[1][1][0][:]), # y.y
+            ReplacementTransform(nex3[2],dots.get_entries()[0][0]), # x.v
+            ReplacementTransform(ney3[2],dots.get_entries()[1][0]), # y.v            
+            FadeIn(gram.get_brackets(),comps.get_brackets(),dots.get_brackets()), # brackets
+            Merge([nex3[1],ney3[1]],eq[0]), # =
+            FadeOut(nex3[0][5],ney3[0][5])
+        , run_time=3)
+        self.wait()
+
+        # from dots to transpose
+        gramt = Matrix([
+            [r"\mathbf{1}^T \mathbf{1}",r"\mathbf{1}^T \mathbf{x}"],
+            [r"\mathbf{x}^T \mathbf{1}",r"\mathbf{x}^T \mathbf{x}"],
+        ],element_alignment_corner=DL).move_to(gram)
+        color_tex_reg_standard(gramt)
+        dotst = Matrix([
+            [r"\mathbf{1}^T \mathbf{y}"],
+            [r"\mathbf{x}^T \mathbf{y}"]
+        ],v_buff=1.1,element_to_mobject_config={"font_size":65}).move_to(dots)
+        color_tex_reg_standard(dotst)
+        self.play(
+            ReplacementTransform(gram,gramt),
+            ReplacementTransform(dots,dotst)
+        ,run_time=1.75)
+        self.wait(w)
+
+        # move down
+        self.play(
+            VGroup(gramt,comps,eq,dotst).animate.center()
+        , run_time=1.75)
+        
+        # factor
+        xtyt = Matrix([
+            [r"\mathbf{1}^T"],
+            [r"\mathbf{x}^T"]
+        ])
+        color_tex_reg_standard(xtyt)
+        xy = Matrix([[r"\mathbf{1}",r"\mathbf{x}"]], element_alignment_corner=DL)
+        color_tex_reg_standard(xy)        
+        xtyt4v = Matrix([
+            [r"\mathbf{1}^T"],
+            [r"\mathbf{x}^T"]
+        ])
+        color_tex_reg_standard(xtyt4v)
+        veq = MathTex(r"\mathbf{y}",font_size=75)
+        color_tex_reg_standard(veq)        
+        VGroup(xtyt,xy,comps.generate_target(),eq.generate_target(),xtyt4v,veq).arrange().center()
+        VGroup(xtyt,xy).next_to(comps,LEFT)
+        self.play(
+            ReplacementTransform(gramt.get_brackets()[0], xtyt.get_brackets()[0]), # left [
+            FadeIn(xtyt.get_brackets()[1]), # left ]
+            FadeIn(xy.get_brackets()[0]), # right [
+            ReplacementTransform(gramt.get_brackets()[1], xy.get_brackets()[1]), # right ]
+            *[Merge([entry[0][i] for entry in gramt.get_rows()[0]], xtyt.get_entries()[0][0][i]) for i in [0,1]], # xt
+            *[Merge([entry[0][i] for entry in gramt.get_rows()[1]], xtyt.get_entries()[1][0][i]) for i in [0,1]], # yt
+            Merge([entry[0][2] for entry in gramt.get_columns()[0]], xy.get_entries()[0]), # x
+            Merge([entry[0][2] for entry in gramt.get_columns()[1]], xy.get_entries()[1]) # y            
+        ,run_time=3.5)
+        self.play(            
+            VGroup(xtyt,xy).animate.next_to(comps.target,LEFT),
+            MoveToTarget(comps),
+            MoveToTarget(eq),
+            ReplacementTransform(dotst.get_brackets(),xtyt4v.get_brackets()), 
+            *[ReplacementTransform(entry1[0][:2], entry2[0][:2]) for entry1,entry2 in zip(dotst.get_entries(), xtyt4v.get_entries())],
+            Merge([entry[0][2] for entry in dotst.get_entries()], veq[0][0]) # v
+        ,run_time=2.5)
+        self.wait(w)
+
+        # write A at bottom, and replace xy matrix with A
+        aeq = MathTex(r"\mathbf{X}","=")
+        xyadef = xy.copy().next_to(aeq)
+        VGroup(aeq,xyadef).next_to(VGroup(xtyt,xy,comps,eq,xtyt4v,veq),DOWN)
+        self.play(Write(aeq[0]))
+        self.play(Write(aeq[1]))
+        A = MathTex(r"\mathbf{X}", font_size=75).move_to(xy)
+        self.play(
+            ReplacementTransform(xy,xyadef),
+            TransformFromCopy(aeq[0],A[0],path_arc=180*DEGREES)
+        , run_time=2)
+        At = MathTex(r"\mathbf{X}^T", font_size=75).move_to(xtyt)
+        AlignBaseline(At,A)
+        self.play(ReplacementTransform(xtyt,At), run_time=1.75)
+        At4v = MathTex(r"\mathbf{X}^T", font_size=75).move_to(xtyt4v)
+        AlignBaseline(At4v,A)
+        self.play(ReplacementTransform(xtyt4v,At4v), run_time=1.75)
+
+        # collect equation
+        VGroup(At.generate_target(),A.generate_target(),comps.generate_target(),eq.generate_target(),At4v.generate_target(),veq.generate_target()).arrange(buff=0.15).center()
+        for mob in [At,eq,At4v,veq]: AlignBaseline(mob.target,A.target)
+        self.play(
+            *[MoveToTarget(mob) for mob in [At,A,comps,eq,At4v,veq]]
+        ,run_time=2)
+        self.wait(w)
+
+        # invert Ata
+        compform = MathTex("=",r"\left(\mathbf{X}^T \mathbf{X} \right)^{-1}",r"\mathbf{X}^T",r"\mathbf{y}", font_size=75)
+        color_tex_standard(compform)
+        VGroup(comps.generate_target(),compform).arrange().center()
+        self.play(
+            MoveToTarget(comps),
+            ReplacementTransform(eq[0],compform[0]), #=            
+            FadeIn(compform[1][0]), FadeIn(compform[1][-3:]), # ()-1
+            ReplacementTransform(At[0][:],compform[1][1:3],path_arc=-230*DEGREES), # At
+            ReplacementTransform(A[0][0],compform[1][3],path_arc=-230*DEGREES), # A
+            ReplacementTransform(At4v[0],compform[2]), # At
+            ReplacementTransform(veq[0],compform[-1]) # v            
+        , run_time=2.5)
+        self.wait(w)
+
+        # move components
+        compsfull = VGroup(comps,compform)
+        self.play(compsfull.animate.move_to(LEFT*3+UP*2),run_time=1.75)
+
+        # write p formula
+        pe = MathTex(r"\mathbf{\hat{y}}","=",r"\beta_0 \mathbf{1}","+",r"\beta_1 \mathbf{x}", font_size=80)
+        color_tex_reg_standard(pe).center()
+        self.play(FadeIn(pe,shift=RIGHT),run_time=1.25)
+        self.wait(w)
+
+        # factor p
+        peq = MathTex(r"\mathbf{\hat{y}}","=", font_size=80)
+        color_tex_reg_standard(peq)
+        xy = Matrix([[r"\mathbf{1}",r"\mathbf{x}"]], element_alignment_corner=DL)
+        color_tex_reg_standard(xy)
+        compsp = Matrix([
+            [r"\beta_0"],
+            [r"\beta_1"]
+        ],v_buff=1.1,element_to_mobject_config={"font_size":65})
+        color_tex_reg_standard(compsp)
+        VGroup(peq,xy,compsp).arrange().center()
+        self.play(
+            ReplacementTransform(pe[0],peq[0]), # p
+            ReplacementTransform(pe[1],peq[1]), # =
+            FadeIn(xy.get_brackets()[0],compsp.get_brackets()[1]),
+            ReplacementTransform(pe[2][0:2],compsp.get_entries()[0][0][:]), # px
+            ReplacementTransform(pe[4][0:2],compsp.get_entries()[1][0][:]), # py
+            ReplacementTransform(pe[2][2], xy.get_entries()[0][0][0]), # x
+            ReplacementTransform(pe[4][2], xy.get_entries()[1][0][0]), # y
+            ReplacementTransform(pe[3],VGroup(xy.get_brackets()[1],compsp.get_brackets()[0])) # +
+        ,run_time=3)
+        self.wait(w)
+
+        # first term to A
+        A = MathTex(r"\mathbf{X}", font_size=80).move_to(xy)
+        AlignBaseline(A,peq)
+        self.play(
+            FadeOut(xy),
+            TransformFromCopy(aeq[0],A)
+        , run_time=1.75)
+        self.wait(w)
+
+        # substitute in components
+        pe2 = MathTex(r"\mathbf{\hat{y}}","=",r"\mathbf{X}",r"\left(\mathbf{X}^T \mathbf{X} \right)^{-1}",r"\mathbf{X}^T",r"\mathbf{y}",font_size=80)
+        color_tex_reg_standard(pe2).center()
+        self.play(
+            ReplacementTransform(peq[0],pe2[0]), # p
+            ReplacementTransform(peq[1],pe2[1]), # =
+            ReplacementTransform(A[0],pe2[2]), # A
+            FadeOut(compsp), # vector components
+            TransformFromCopy(compform[1:], pe2[3:]) # ata-1atv
+        ,run_time=2.5)
+        self.wait(w)
+
+        # to black
+        self.play(FadeOut(*self.mobjects))
+
+
+        self.wait()
+
+
+
+
+        
+
+
+
+

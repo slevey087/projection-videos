@@ -46,62 +46,12 @@ def color_tex_standard(equation):
 
 class test(ThreeDScene):
     def construct(self):
-        xcoords = np.array([0.9,0.25,0])
-        ycoords = np.array([0.3,1.1,0])
-        vcoords = np.array([0.5,0.7,0.7])
-        amatrix = np.vstack([xcoords,ycoords]).T
-        pxcoord = np.matmul(np.linalg.inv(np.matmul(amatrix.T,amatrix)),np.matmul(amatrix.T, vcoords))[0]
-        pycoord = np.matmul(np.linalg.inv(np.matmul(amatrix.T,amatrix)),np.matmul(amatrix.T, vcoords))[1]
-        pcoords = pxcoord*xcoords + pycoord*ycoords
-
-        # define diagram
-        axes = ThreeDAxes(
-            x_range=[0,0.5],x_length=2.5 / 2,
-            y_range=[0,0.5],y_length=2.5 / 2,
-            z_range=[0,0.5],z_length=2.5 / 2,
-        ).set_opacity(0)        
-        v = Arrow(axes @ ORIGIN, axes @ vcoords, buff=0, color=VCOLOR).set_stroke(width=6)        
-        x = Arrow(axes @ ORIGIN, axes @ xcoords, buff=0, color=XCOLOR).set_stroke(width=6)        
-        y = Arrow(axes @ ORIGIN, axes @ ycoords, buff=0, color=YCOLOR).set_stroke(width=6)                
-        p = Arrow(axes @ ORIGIN, axes @ pcoords, buff=0, color=PCOLOR).set_stroke(width=6)        
-        px = Arrow(axes @ ORIGIN, axes @ (pxcoord*xcoords), buff=0,color=PCOLOR).set_stroke(width=6)
-        py = Arrow(axes @ ORIGIN, axes @ (pycoord*ycoords), buff=0,color=PCOLOR).set_stroke(width=6)
-        dy = DashedLine(axes @ pcoords, axes @ (pxcoord*xcoords), dash_length=0.15).set_opacity(0.4)
-        dx = DashedLine(axes @ pcoords, axes @ (pycoord*ycoords), dash_length=0.15).set_opacity(0.4)
-        r = Arrow(axes @ pcoords, axes @ vcoords, buff=0, color=RCOLOR).set_stroke(width=6)        
-        ArrowGradient(r,[PCOLOR,VCOLOR])
-        ra = VGroup(
-            Line(axes @ (0.9*pcoords),axes @ (0.9*pcoords+OUT*0.1), stroke_width=2),
-            Line(axes @ (0.9*pcoords+OUT*0.1),axes @ (1*pcoords+OUT*0.1), stroke_width=2)
-        )
-        vectors = VGroup(v,x,y,p,px,py,r)
-        dashes = VGroup(dy,dx)
-
-        plane = Surface(lambda u,v:axes @ (u,v,0),u_range=[-0.25,1.25],v_range=[-0.25,1.25],resolution=1).set_opacity(0.5)
+        axes = ThreeDAxes()
+        self.add(axes)
+        a = Arrow()
+        print([*a.get_end()] @ axes)
+        print((0,0,1) @ axes)
         
-        diagram = VGroup(axes,plane,vectors,dashes, ra)
-        diagram.rotate(-125*DEGREES).rotate(-70*DEGREES,RIGHT)        
-        
-        vl = MathTex(r"\mathbf{y}", color=VCOLOR, font_size=50).next_to(v.get_end(),buff=0.15)
-        xl = MathTex(r"\mathbf{x}", color=XCOLOR, font_size=50).next_to(x.get_end(),DOWN,buff=0.1)
-        yl = MathTex(r"\mathbf{1}", color=YCOLOR, font_size=50).next_to(y.get_end(),RIGHT,buff=0.15)        
-        pl = MathTex(r"\mathbf{\hat{y}}", color=PCOLOR, font_size=50).next_to(p.get_end(),DR,buff=0.15)
-        pxl = MathTex(r"\beta_1 \mathbf{x}", font_size=40).next_to(px.get_end(),UL,buff=0.1)
-        color_tex(pxl,(r"\mathbf{x}",XCOLOR), (r"\beta_1",PCOLOR))      
-        pyl = MathTex(r"\beta_0 \mathbf{1}", font_size=40).next_to(py.get_end(),UR,buff=0.08)
-        color_tex(pyl,(r"\mathbf{1}",YCOLOR), (r"\beta_0",PCOLOR))      
-        rl = MathTex(r"\mathbf{y-\hat{y}}", font_size=50).next_to(r,RIGHT,buff=0.15).shift(UP*0.3)
-        color_tex(rl,(r"\mathbf{y}",VCOLOR), (r"\mathbf{\hat{y}}",PCOLOR))      
-        labels = VGroup(xl,vl,yl,pl,pxl,pyl,rl)
-        diagram.add(labels)                
-        
-        diagram.shift(-VGroup(v,p,r).get_center()).shift(UP*0.5+RIGHT*0.2)
-        self.set_camera_orientation(frame_center=IN*10) # self.set_camera_orientation(zoom=2)
-        for vector in vectors: 
-            ArrowStrokeFor3dScene(self,vector,family=True)
-        face_camera(self,r)
-
-        self.add(diagram)
 
 
 class test1(ThreeDScene):
