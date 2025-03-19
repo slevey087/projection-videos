@@ -358,12 +358,12 @@ def ArrowStrokeFor3dScene(scene,arrow,family=True):
     return arrow.set_stroke(width=arrow._original_stroke_width*scene.camera.get_zoom()*scene.camera.get_focal_distance()/np.linalg.norm(ToThreeDCamera(scene)-arrow.get_center()), family=family)
 
 
-def ArrowStrokeCameraUpdater(scene):
+def ArrowStrokeCameraUpdater(scene,family=True):
     """
         Turns ArrowStrokeFor3dScene into updater
     """
     def updater(arrow):
-        return ArrowStrokeFor3dScene(scene,arrow)
+        return ArrowStrokeFor3dScene(scene,arrow,family=family)
     return updater
 
 
@@ -702,3 +702,30 @@ class RightAngleIn3D(OpenGLVMobject):
         
         super().__init__(**kwargs)
         self.points=np.array([start,middle1,middle,middle, middle2,end])
+
+
+# Two functions below are for blurring
+# This is taken from https://discord.com/channels/581738731934056449/1206279466674954260/1206587498264924190
+from PIL import Image, ImageFilter
+
+class ImageBlur(Animation):
+    def __init__(self, image, final_blur=25, *args, **kwargs):
+        super().__init__(image, *args, **kwargs)
+        self.final_blur = final_blur
+
+    def interpolate_submobject(
+            self,
+            submobject: Mobject,
+            starting_submobject: Mobject,
+            alpha: float):
+        img = Image.fromarray(starting_submobject.pixel_array)
+        img = img.filter(ImageFilter.GaussianBlur(1+self.final_blur*alpha))
+        submobject.pixel_array = np.array(img)
+        return self
+
+def capture_current_frame(self) -> ImageMobject:
+    # add this to scene class
+    self.wait(0) # Force render current objects
+    frame = Image.fromarray(self.renderer.camera.pixel_array)
+    return ImageMobject(frame).scale_to_fit_width(config.frame_width)
+    

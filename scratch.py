@@ -46,13 +46,166 @@ def color_tex_standard(equation):
 
 class test(ThreeDScene):
     def construct(self):
-        axes = ThreeDAxes()
-        self.add(axes)
-        a = Arrow()
-        print([*a.get_end()] @ axes)
-        print((0,0,1) @ axes)
-        
+        xcoords = np.array([1,0,0])
+        ycoords = np.array([0,1,0])
+        vcoords = np.array([0.5,0.7,0.7])
+        pxcoord = np.dot(xcoords,vcoords)
+        pycoord = np.dot(ycoords,vcoords)
+        pcoords = pxcoord*xcoords + pycoord*ycoords        
 
+        # define diagram
+        axes = ThreeDAxes(
+            x_range=[0,0.5],x_length=2.5 / 2,
+            y_range=[0,0.5],y_length=2.5 / 2,
+            z_range=[0,0.5],z_length=2.5 / 2,
+        ).set_opacity(0)        
+        v = Arrow(axes @ ORIGIN, axes @ vcoords, buff=0, color=VCOLOR)        
+        x = Arrow(axes @ ORIGIN, axes @ xcoords, buff=0, color=XCOLOR)
+        y = Arrow(axes @ ORIGIN, axes @ ycoords, buff=0, color=YCOLOR)
+        p = Arrow(axes @ ORIGIN, axes @ pcoords, buff=0, color=PCOLOR)        
+        px = Arrow(axes @ ORIGIN, axes @ (pxcoord*xcoords), buff=0,color=PCOLOR)
+        py = Arrow(axes @ ORIGIN, axes @ (pycoord*ycoords), buff=0,color=PCOLOR)
+        dy = DashedLine(axes @ pcoords, axes @ (pxcoord*xcoords), dash_length=0.15).set_opacity(0.4)
+        dx = DashedLine(axes @ pcoords, axes @ (pycoord*ycoords), dash_length=0.15).set_opacity(0.4)
+        r = Arrow(axes @ pcoords, axes @ vcoords, buff=0, color=RCOLOR)        
+        ArrowGradient(r,[PCOLOR,VCOLOR])
+        rx = Arrow(axes @ xcoords, axes @ (xcoords + vcoords-pcoords), buff=0, color=RCOLOR)        
+        ArrowGradient(rx,[PCOLOR,VCOLOR])        
+        ry = Arrow(axes @ ycoords, axes @ (ycoords + vcoords-pcoords), buff=0, color=RCOLOR)        
+        ArrowGradient(ry,[PCOLOR,VCOLOR])        
+        ra = VGroup(
+            Line(axes @ (0.9*pcoords),axes @ (0.9*pcoords+OUT*0.1), stroke_width=2),
+            Line(axes @ (0.9*pcoords+OUT*0.1),axes @ (1*pcoords+OUT*0.1), stroke_width=2)
+        )
+        rax = VGroup(
+            Line(axes @ (0.9*xcoords),axes @ (0.9*xcoords+OUT*0.1), stroke_width=2),
+            Line(axes @ (0.9*xcoords+OUT*0.1),axes @ (1*xcoords+OUT*0.1), stroke_width=2)
+        )
+        ray = VGroup(
+            Line(axes @ (0.9*ycoords),axes @ (0.9*ycoords+OUT*0.1), stroke_width=2),
+            Line(axes @ (0.9*ycoords+OUT*0.1),axes @ (1*ycoords+OUT*0.1), stroke_width=2)
+        )
+        vectors = VGroup(v,x,y,p,px,py,r,rx,ry)
+        dashes = VGroup(dy,dx)        
+
+        plane = Surface(lambda u,v:axes @ (u,v,0),u_range=[-0.25,1.25],v_range=[-0.25,1.25],resolution=1).set_opacity(0.5)
+        
+        diagram = VGroup(axes,plane,vectors,dashes, ra,rax,ray)
+        diagram.rotate(-125*DEGREES).rotate(-70*DEGREES,RIGHT)        
+        
+        vl = MathTex(r"\mathbf{v}", color=VCOLOR, font_size=50).next_to(v.get_end(),buff=0.15)
+        xl = MathTex(r"\mathbf{x}", color=XCOLOR, font_size=50).next_to(x.get_end(),LEFT,buff=0.15)
+        yl = MathTex(r"\mathbf{y}", color=YCOLOR, font_size=50).next_to(y.get_end(),RIGHT,buff=0.15)
+        pl = MathTex(r"\mathbf{p}", color=PCOLOR, font_size=50).next_to(p.get_end(),DR,buff=0.15)
+        pxl = MathTex(r"p_x \mathbf{x}", font_size=40).next_to(px.get_end(),UP,buff=0.25)
+        color_tex_standard(pxl)        
+        pyl = MathTex(r"p_y \mathbf{y}", font_size=40).next_to(py.get_end(),UR,buff=0.15).shift(LEFT*0.13)
+        color_tex_standard(pyl)        
+        rl = MathTex(r"\mathbf{v-p}", font_size=50).next_to(r,RIGHT,buff=0.15).shift(UP*0.3)
+        color_tex_standard(rl)
+        labels = VGroup(xl,vl,yl,pl,pxl,pyl,rl)
+        diagram.add(labels)        
+        
+        diagram.shift(-VGroup(v,p,r).get_center()).shift(UP*0.5+RIGHT*0.2)
+        self.set_camera_orientation(frame_center=IN*11) # self.set_camera_orientation(zoom=2)
+        for vector in vectors: 
+            ArrowStrokeFor3dScene(self,vector,family=True)        
+        
+        self.add(diagram)        
+        self.set_camera_orientation(frame_center=ORIGIN)
+        diagram.to_corner(UR)
+        self.remove(rx,ry,rax,ray)
+
+        nex3 = MathTex(r"p_x \mathbf{x} \cdot \mathbf{x} + p_y \mathbf{x} \cdot \mathbf{y}","=",r"\mathbf{x} \cdot \mathbf{v}", font_size=65).shift(UP*2+LEFT*3)
+        ney3 = MathTex(r"p_x \mathbf{y} \cdot \mathbf{x} + p_y \mathbf{y} \cdot \mathbf{y}","=",r"\mathbf{y} \cdot \mathbf{v}", font_size=65).shift(DOWN*2+LEFT*3)   
+        c1 = MathTex(r"\text{Case 1: }", r"\mathbf{x}, \mathbf{y} \text{ Orthonormal}")        
+        self.add(nex3,ney3,c1)        
+        self.wait()
+
+        # zoom back in to diagram
+        for vector in vectors: vector.add_updater(ArrowStrokeCameraUpdater(self))
+        self.move_camera(
+            frame_center=VGroup(v,p,r).get_center()+DOWN*0.5+LEFT*0.2+IN*11,
+            added_anims=[
+                VGroup(r,rl,ra,px,py,dx,dy,pxl,pyl,p,pl).animate.set_opacity(0)
+            ],
+            run_time=2
+        )           
+        for mob in [rx,ry,rax,ray]: mob.set_opacity(0)
+        for vector in vectors: vector.clear_updaters()        
+        self.wait()
+
+        # project x        
+        self.play(Rotate(diagram,-55*DEGREES,axis=(axes@(0,0,1))-(axes @ ORIGIN)),about_point=axes@(0.5,0.45,0),run_time=2)
+        dpx = DashedLine(v.get_end(),px.get_end(),dash_length=0.15).set_opacity(0.4)      
+        rapx = VGroup(
+            Line(axes @ (0.9*pxcoord*xcoords),(axes @ (0.9*pxcoord*xcoords))+dpx.get_unit_vector()*-0.2, stroke_width=2),
+            Line((axes @ (0.9*pxcoord*xcoords))+dpx.get_unit_vector()*-0.2,(axes @ (1*pxcoord*xcoords))+dpx.get_unit_vector()*-0.2, stroke_width=2)
+        )        
+        self.remove(px)
+        px.set_opacity(1)
+        self.play(
+            TransformFromCopy(v,px),
+            Write(dpx),
+            run_time=2
+        )
+        self.play(Write(rapx))
+        diagram.add(dpx,rapx)
+        
+        # project y
+        self.play(Rotate(diagram,90*DEGREES,axis=(axes@(0,0,1))-(axes @ ORIGIN)),about_point=axes@(0.5,0.45,0),run_time=2)
+        dpy = DashedLine(v.get_end(),py.get_end(),dash_length=0.15).set_opacity(0.4)      
+        rapy = VGroup(
+            Line(axes @ (0.9*pycoord*ycoords),(axes @ (0.9*pycoord*ycoords))+dpy.get_unit_vector()*-0.2, stroke_width=2),
+            Line((axes @ (0.9*pycoord*ycoords))+dpy.get_unit_vector()*-0.2,(axes @ (1*pycoord*ycoords))+dpy.get_unit_vector()*-0.2, stroke_width=2)
+        )        
+        self.remove(py)
+        py.set_opacity(1)
+        self.play(
+            TransformFromCopy(v,py),
+            Write(dpy),
+            run_time=2
+        )
+        self.play(Write(rapy))        
+        diagram.add(dpy,rapy)
+
+        # restore diagram angle
+        self.play(Rotate(diagram,-35*DEGREES,axis=(axes@(0,0,1))-(axes @ ORIGIN)),about_point=axes@(0.5,0.45,0),run_time=2)
+        self.wait()
+
+        # vector sum
+        py.save_state()
+        py.add_updater(ArrowStrokeCameraUpdater(self))
+        self.play(
+            py.animate.put_start_and_end_on(px.get_end(),p.get_end()),
+            run_time=1.25
+        )
+        self.remove(p)
+        p.set_opacity(1)
+        self.play(GrowArrow(p))
+        self.play(Restore(py),run_time=1.25)
+        py.clear_updaters()
+        self.wait()
+
+        # zoom back out and restore diagram
+        for vector in vectors: vector.add_updater(ArrowStrokeCameraUpdater(self))
+        for mob in [rx,ry,rax,ray]: mob.set_opacity(0)
+        self.move_camera(
+            frame_center=ORIGIN,
+            added_anims=[
+                FadeOut(dpx,rapx,dpy,rapy),
+                VGroup(r,rl,ra,p,pl,pxl,pyl).animate.set_opacity(1),
+                VGroup(dx,dy).animate.set_opacity(0.4)
+            ],
+            run_time=2
+        )
+        diagram.remove(dpx,rapx,dpy,rapy)
+        for vector in vectors: vector.clear_updaters()
+        for mob in [rx,ry,rax,ray]: self.remove(mob.set_opacity(1))
+        self.wait()
+
+# config.from_animation_number = 2
+# config.upto_animation_number = 3
 
 class test1(ThreeDScene):
     def construct(self):
