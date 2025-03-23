@@ -54,7 +54,7 @@ def color_tex_standard(equation):
 
 
 class Thumbnail(ThreeDScene):
-    def construct(self):
+    def construct(self):       
         xcoords = np.array([1,0,0])
         ycoords = np.array([0,1,0])
         vcoords = np.array([0.5,0.7,0.7])
@@ -103,15 +103,39 @@ class Thumbnail(ThreeDScene):
         rl = MathTex(r"\mathbf{v-p}", font_size=50).next_to(r,RIGHT,buff=0.15).shift(UP*0.3)
         color_tex_standard(rl)
         labels = VGroup(xl,vl,yl,pl,pxl,pyl,rl)
-        diagram.add(labels)        
+        # diagram.add(labels)        
         
         diagram.shift(-VGroup(v,p,r).get_center()).shift(UP*0.5+RIGHT*0.2)
-        self.set_camera_orientation(frame_center=IN*11) # self.set_camera_orientation(zoom=2)
+
+        diagram.shift(RIGHT*3.75+DOWN*0.5).scale(1.25)
+        # self.set_camera_orientation(frame_center=IN*10+UP*0.3)
         for vector in vectors: 
             ArrowStrokeFor3dScene(self,vector,family=True)
-        face_camera(self,r)  
+        face_camera(self,r)                               
 
-        self.add(diagram)      
+        # write caption        
+        caption = Tex("Orthogonal Projection Formulas",font_size=75).to_edge(UP)
+        ul = Line(caption.get_corner(DL)+DL*0.1, caption.get_corner(DR)+DR*0.1, color=UNDERLINE_COLOR)        
+        self.add(caption, ul)        
+
+        # formula for projection matrix
+        formula1 = MathTex(r"P=A \left(A^T A \right)^{-1} A^T",font_size=65).shift(LEFT*3)
+
+
+        # formula for beta coefficients
+        formula2 = MathTex(r"\hat{\beta} = (\mathbf{X}^T \mathbf{X})^{-1} \mathbf{X}^T \mathbf{y}",font_size=65)
+        VGroup(formula1,formula2).arrange(DOWN,buff=0.5).shift(LEFT*3)
+        self.add(formula1, formula2, diagram)
+
+        # least squares
+        ls = Tex("Least Squares!", font_size=75).to_edge(DOWN)
+        self.add(ls)
+
+        a1 = CurvedArrow(ls.get_top()+LEFT*0.5, formula2.get_bottom(),color=UNDERLINE_COLOR,angle=-45*DEGREES)
+        a2 = CurvedArrow(ls.get_top()+RIGHT*0.5, axes @ (1.32,0.25,0),color=UNDERLINE_COLOR,angle = 45*DEGREES)
+        self.add(a1,a2)
+
+ 
         
 
 
@@ -1871,28 +1895,28 @@ class Project2dOrthonormal(ThreeDScene):
             ReplacementTransform(xyex,peqA[2]), # matrix to A
             MoveToTarget(xtytex), MoveToTarget(veq) # matrix v
         ,run_time=1.5)
-        
-        # matrix to A transpose
+
+        # A for reference
         peqATv = MathTex(r"\mathbf{p}","=","A","A^T",r"\mathbf{v}", font_size=80)
         color_tex_standard(peqATv)
         peqATv.move_to(VGroup(peqA,xtytex,veq))
-        self.play(
-            ReplacementTransform(peqA[0:3],peqATv[0:3]), # p=A
-            ReplacementTransform(xtytex,peqATv[3]), # matrix to At
-            ReplacementTransform(veq,peqATv[4]) # v
-        ,run_time=1.5)
-        self.wait(w)
-
-        # A for reference
         Aeq = MathTex("A","=", font_size=70)
         xy = Matrix([[r"\mathbf{x}",r"\mathbf{y}"]], 
             element_alignment_corner=UL,element_to_mobject_config={"font_size":65})
         color_tex_standard(xy)
         VGroup(Aeq,xy).arrange().next_to(peqATv,DOWN)
         xy.shift(UP*(Aeq[1].get_center()[1]-xy.get_center()[1]))
-        self.play(TransformFromCopy(peqATv[2],Aeq[0])) # A
+        self.play(TransformFromCopy(peqA[2],Aeq[0])) # A
         self.play(Write(Aeq[1])) # =
         self.play(FadeIn(xy,shift=DR))
+        self.wait(w)
+        
+        # matrix to A transpose (variables defined just above)        
+        self.play(
+            ReplacementTransform(peqA[0:3],peqATv[0:3]), # p=A
+            ReplacementTransform(xtytex,peqATv[3]), # matrix to At
+            ReplacementTransform(veq,peqATv[4]) # v
+        ,run_time=1.5)
         self.wait(w)
 
         # get components back
@@ -2352,6 +2376,7 @@ class Project2dFull(ThreeDScene):
         # zoom in
         diagram_caption = VGroup(axes,plane,v,vl,x,xl,y,yl,p,pl,px,pxl,py,pyl,dx,dy,c3).save_state()
         [vector.add_updater(ArrowStrokeCameraUpdater(self)) for vector in diagram_caption if isinstance(vector,Arrow)]            
+        for mob in [dx,dy]: mob.add_updater(ArrowStrokeCameraUpdater(self))
         self.play(
             diagram_caption.animate.rotate(-40*DEGREES,axis=(axes @ (1,0,0))-(axes @ (0,1,0))).rotate(45*DEGREES,axis=vcoords-pcoords).shift(DOWN*.5).shift(OUT*8),
             run_time=3
@@ -2360,7 +2385,7 @@ class Project2dFull(ThreeDScene):
 
         # zoom back out        
         self.play(Restore(diagram_caption),run_time=3)
-        for vector in vectors: vector.clear_updaters()
+        for vector in vectors+[dx,dy]: vector.clear_updaters()
         self.wait(w)
 
         # rejection vector
@@ -2706,6 +2731,21 @@ class Project2dFull(ThreeDScene):
         ,run_time=2.5)
         self.wait(w)
 
+        # highlight inner product
+        self.play(
+            Indicate(pe2[3], scale_factor=1.75, color=XKCD.LIGHTTURQUOISE), 
+            run_time=1.75
+        )
+        self.wait()
+
+        # highlight outer product
+        self.play(
+            Indicate(pe2[2],scale_factor=2, color=XKCD.BUBBLEGUM),
+            Indicate(pe2[4],scale_factor=2, color=XKCD.BUBBLEGUM),
+            run_time=1.75
+        )
+        self.wait()
+
         # to black
         self.play(FadeOut(*self.mobjects))
 
@@ -2892,7 +2932,8 @@ class LinearRegressionDemo(ThreeDScene):
             *[
                 ReplacementTransform(old,new)  # brackets
                     for old,new in zip(beta1x.get_brackets(),x.get_brackets())
-            ]
+            ],
+            run_time=1.25
         )
 
         # factor beta0 to 1's
@@ -2915,7 +2956,8 @@ class LinearRegressionDemo(ThreeDScene):
             *[
                 MoveToTarget(mob)
                     for mob in [y,eq,plus,beta1,x]
-            ]
+            ],
+            run_time=1.25
         )   
         vector_equation = VGroup(y,eq,beta0t,ones,plus,beta1,x)     
         self.wait()
@@ -3086,10 +3128,11 @@ class LinearRegressionDemo(ThreeDScene):
         self.wait()
 
         # other choices for y-hat
-        pxc2, pyc2 = 1,0.9
-        pxc3, pyc3 = 0.7,1.3
-        pxc4, pyc4 = 1.2,0.6   
+        pxc2, pyc2 = 0.8,0.9
+        pxc3, pyc3 = 0.6,1.1
+        pxc4, pyc4 = 1.1,0.5   
         p.add_updater(lambda arrow: ArrowStrokeFor3dScene(self, arrow.put_start_and_end_on(axes @ ORIGIN, axes @ (([*px.get_end()] @ axes)[0]/xcoords[0]*xcoords +  ([*py.get_end()] @ axes)[0]/ycoords[0]*ycoords))))
+        pl.add_updater(lambda label: label.next_to(p.get_end(),DR,buff=0.15))
         dxu = always_redraw(lambda: DashedLine(p.get_end(), px.get_end(), dash_length=0.15).set_opacity(0.4))
         self.remove(dx),self.add(dxu)
         dyu = always_redraw(lambda: DashedLine(p.get_end(), py.get_end(), dash_length=0.15).set_opacity(0.4))
@@ -3127,6 +3170,7 @@ class LinearRegressionDemo(ThreeDScene):
             run_time=2
         )
         for vector in vectors: vector.clear_updaters()
+        pl.clear_updaters()
         self.remove(dxu),self.add(dx)
         self.remove(dyu),self.add(dy)
         self.wait()
@@ -3134,7 +3178,58 @@ class LinearRegressionDemo(ThreeDScene):
         # add rejection vector
         self.play(GrowArrow(r),run_time=1.75)
         self.play(Write(rl))
-        self.play(Write(ra))
+        self.play(ReplacementTransform(ra.copy().scale(20).shift(LEFT*3).set_opacity(0),ra),run_time=2)
+        self.wait()
+
+        # a few other choices for y-hat, to show longer rejections?
+        pxc2, pyc2 = 0.8,0.9
+        pxc3, pyc3 = 0.6,1.1
+        pxc4, pyc4 = 1.1,0.5   
+        p.add_updater(lambda arrow: ArrowStrokeFor3dScene(self, arrow.put_start_and_end_on(axes @ ORIGIN, axes @ (([*px.get_end()] @ axes)[0]/xcoords[0]*xcoords +  ([*py.get_end()] @ axes)[0]/ycoords[0]*ycoords))))        
+        pl.add_updater(lambda label: label.next_to(p.get_end(),DR,buff=0.15))
+        r.add_updater(lambda arrow: ArrowStrokeFor3dScene(self, arrow.put_start_and_end_on(p.get_end(), v.get_end())))
+        dxu = always_redraw(lambda: DashedLine(p.get_end(), px.get_end(), dash_length=0.15).set_opacity(0.4))        
+        self.remove(dx),self.add(dxu)
+        dyu = always_redraw(lambda: DashedLine(p.get_end(), py.get_end(), dash_length=0.15).set_opacity(0.4))
+        self.remove(dy),self.add(dyu)        
+        # to first new spot
+        ArrowStrokeFor3dScene(self,px.generate_target().put_start_and_end_on(axes @ ORIGIN, axes @ (pxc2*xcoords)))
+        ArrowStrokeFor3dScene(self,py.generate_target().put_start_and_end_on(axes @ ORIGIN, axes @ (pyc2*ycoords)))
+        self.play(
+            MoveToTarget(px),
+            MoveToTarget(py),
+            FadeOut(ra),
+            run_time=2
+        )
+        # to second new spot
+        ArrowStrokeFor3dScene(self,px.generate_target().put_start_and_end_on(axes @ ORIGIN, axes @ (pxc3*xcoords)))
+        ArrowStrokeFor3dScene(self,py.generate_target().put_start_and_end_on(axes @ ORIGIN, axes @ (pyc3*ycoords)))
+        self.play(
+            MoveToTarget(px),
+            MoveToTarget(py),
+            run_time=2
+        )
+        # to third
+        ArrowStrokeFor3dScene(self,px.generate_target().put_start_and_end_on(axes @ ORIGIN, axes @ (pxc4*xcoords)))
+        ArrowStrokeFor3dScene(self,py.generate_target().put_start_and_end_on(axes @ ORIGIN, axes @ (pyc4*ycoords)))
+        self.play(
+            MoveToTarget(px),
+            MoveToTarget(py),
+            run_time=2
+        )
+        # back home
+        ArrowStrokeFor3dScene(self,px.generate_target().put_start_and_end_on(axes @ ORIGIN, axes @ (pxcoord*xcoords)))
+        ArrowStrokeFor3dScene(self,py.generate_target().put_start_and_end_on(axes @ ORIGIN, axes @ (pycoord*ycoords)))
+        self.play(
+            MoveToTarget(px),
+            MoveToTarget(py),            
+            run_time=2
+        )
+        for vector in vectors: vector.clear_updaters()
+        pl.clear_updaters()
+        self.remove(dxu),self.add(dx)
+        self.remove(dyu),self.add(dy)
+        self.play(FadeIn(ra,shift=RIGHT),run_time=1.5)
         self.wait()
 
         # zoom out    
@@ -3400,7 +3495,7 @@ class LinearRegressionDemo(ThreeDScene):
 
         # invert Ata
         compform = MathTex("=",r"\left(\mathbf{X}^T \mathbf{X} \right)^{-1}",r"\mathbf{X}^T",r"\mathbf{y}", font_size=75)
-        color_tex_standard(compform)
+        color_tex_reg_standard(compform)
         VGroup(comps.generate_target(),compform).arrange().center()
         self.play(
             MoveToTarget(comps),
@@ -3474,9 +3569,187 @@ class LinearRegressionDemo(ThreeDScene):
         self.wait()
 
 
-
-
+class Preview(MovingCameraScene):
+    def construct(self):
+        self.camera.frame.scale(0.6)
+        axes = Axes(x_range=[-2,2], x_length=4,y_range=[-2,2],y_length=4)
+        x = Line(axes @ (-3,0), axes @ (3,0),color=GREY)        
         
+        dotcoords = [
+            (-1,2), (1,1), (-1,-2),(-0.5,-0.5)
+        ]
+        dots = VGroup()
+        right_dashes = VGroup()
+        slant_dashes = VGroup()
+        for dotcoord in dotcoords:
+            dots.add(Dot(axes @ dotcoord))
+            right_dashes.add(DashedLine(axes @ dotcoord, axes @ (dotcoord[0],0), dash_length=0.1))
+            slant_dashes.add(DashedLine(axes @ dotcoord, axes @ (dotcoord[0]+dotcoord[1],0),dash_length=0.1))
+        
+        # projection lines, red
+        r1 = Line(axes @ (0,-2),axes @ (0,2), color=XKCD.LIGHTRED)
+        r2 = Line(axes @ (2,-2),axes @ (-2,2), color=XKCD.LIGHTRED)
+
+        self.add(x)        
+        self.wait()
+
+        # add dots
+        self.play(Write(dots))
+        self.wait()
+
+        # add projection lines
+        self.play(
+            Write(r1),
+            *[Write(right) for right in right_dashes]
+        )
+
+        # to slanted projection
+        self.play(
+            ReplacementTransform(r1,r2),
+            *[ReplacementTransform(right,slant) for right,slant in zip(right_dashes,slant_dashes)]
+        )
+        self.wait()
+
+        # project down
+        for dash,dot in zip(slant_dashes,dots): 
+            (lambda dot: dash.add_updater(lambda dash: dash.put_start_and_end_on(dot.get_center(),dash.get_end())))(dot)
+        self.play(
+            *[dot.animate.move_to(dash.get_end()) for dot,dash in zip(dots,slant_dashes)],            
+        )
+        self.wait()
+
+
+
+
+
+
+
+
+class Outro(ThreeDScene):
+    def construct(self):
+
+        xcoords = np.array([1,0,0])
+        ycoords = np.array([0,1,0])
+        vcoords = np.array([0.5,0.7,0.7])
+        pxcoord = np.dot(xcoords,vcoords)
+        pycoord = np.dot(ycoords,vcoords)
+        pcoords = pxcoord*xcoords + pycoord*ycoords        
+
+        # define diagram
+        axes = ThreeDAxes(
+            x_range=[0,0.5],x_length=2.5 / 2,
+            y_range=[0,0.5],y_length=2.5 / 2,
+            z_range=[0,0.5],z_length=2.5 / 2,
+        ).set_opacity(0)        
+        v = Arrow(axes @ ORIGIN, axes @ vcoords, buff=0, color=VCOLOR)        
+        x = Arrow(axes @ ORIGIN, axes @ xcoords, buff=0, color=XCOLOR)
+        y = Arrow(axes @ ORIGIN, axes @ ycoords, buff=0, color=YCOLOR)
+        p = Arrow(axes @ ORIGIN, axes @ pcoords, buff=0, color=PCOLOR)        
+        px = Arrow(axes @ ORIGIN, axes @ (pxcoord*xcoords), buff=0,color=PCOLOR)
+        py = Arrow(axes @ ORIGIN, axes @ (pycoord*ycoords), buff=0,color=PCOLOR)
+        dx = DashedLine(p.get_end(),px.get_end(), dash_length=0.15).set_opacity(0.4)
+        dy = DashedLine(axes @ pcoords, axes @ (pycoord*ycoords), dash_length=0.15).set_opacity(0.4)
+        dxy = DashedLine(axes @ vcoords, axes @ pcoords, dash_length=0.15).set_opacity(0.4)
+        r = Arrow(axes @ pcoords, axes @ vcoords, buff=0, color=RCOLOR)        
+        ArrowGradient(r,[PCOLOR,VCOLOR])
+        ra = VGroup(
+            Line(axes @ (0.9*pcoords),axes @ (0.9*pcoords+OUT*0.1), stroke_width=2),
+            Line(axes @ (0.9*pcoords+OUT*0.1),axes @ (1*pcoords+OUT*0.1), stroke_width=2)
+        )
+        vectors = VGroup(v,x,y,p,px,py,r)
+        dashes = VGroup(dy,dx,dxy)
+        dashes.set_stroke(width=2)
+
+        plane = Surface(lambda u,v:axes @ (u,v,0),u_range=[-0.25,1.25],v_range=[-0.25,1.25],resolution=1).set_opacity(0.5)
+        
+        diagram = VGroup(axes,plane,vectors,dashes, ra)
+        diagram.rotate(-125*DEGREES).rotate(-70*DEGREES,RIGHT)        
+        
+        vl = MathTex(r"\mathbf{v}", color=VCOLOR, font_size=50).next_to(v.get_end(),buff=0.15)
+        xl = MathTex(r"\mathbf{x}", color=XCOLOR, font_size=50).next_to(x.get_end(),LEFT,buff=0.15)
+        yl = MathTex(r"\mathbf{y}", color=YCOLOR, font_size=50).next_to(y.get_end(),RIGHT,buff=0.15)
+        pl = MathTex(r"\mathbf{p}", color=PCOLOR, font_size=50).next_to(p.get_end(),DR,buff=0.15)
+        pxl = MathTex(r"p_x \mathbf{x}", font_size=40).next_to(px.get_end(),UP,buff=0.25)
+        color_tex_standard(pxl)        
+        pyl = MathTex(r"p_y \mathbf{y}", font_size=40).next_to(py.get_end(),UR,buff=0.15)
+        color_tex_standard(pyl)        
+        rl = MathTex(r"\mathbf{v-p}", font_size=50).next_to(r,RIGHT,buff=0.15).shift(UP*0.3)
+        color_tex_standard(rl)
+        labels = VGroup(xl,vl,yl,pl,pxl,pyl,rl)
+        # diagram.add(labels)        
+        
+        diagram.shift(-VGroup(v,p,r).get_center()).shift(UP*0.5+RIGHT*0.2)
+
+        diagram.shift(RIGHT*3.75+DOWN*0.5).scale(1.25)
+        # self.set_camera_orientation(frame_center=IN*10+UP*0.3)
+        for vector in vectors: 
+            ArrowStrokeFor3dScene(self,vector,family=True)
+        face_camera(self,r)                               
+
+        # write caption        
+        caption = Tex("Orthogonal Projection Formulas",font_size=75).to_edge(UP)
+        ul = Line(caption.get_corner(DL)+DL*0.1, caption.get_corner(DR)+DR*0.1, color=UNDERLINE_COLOR)        
+        self.play(
+            DrawBorderThenFill(caption),
+            Write(ul)
+        )
+        self.wait()        
+
+        # formula for projection matrix
+        formula1 = MathTex(r"P=A \left(A^T A \right)^{-1} A^T",font_size=75).shift(LEFT*3)
+        self.play(FadeIn(formula1, shift=RIGHT))        
+
+        # formula for beta coefficients
+        formula2 = MathTex(r"\hat{\beta} = (\mathbf{X}^T \mathbf{X})^{-1} \mathbf{X}^T \mathbf{y}",font_size=75)
+        VGroup(formula1.generate_target(),formula2).arrange(DOWN,buff=1).shift(LEFT*3+DOWN*0.5)
+        self.play(MoveToTarget(formula1))
+        self.play(FadeIn(formula2, shift=RIGHT))
+        self.play(FadeIn(diagram, shift=LEFT))
+        self.wait()
+
+        self.play(FadeOut(*self.mobjects, run_time=2.5))
+        self.wait()
+
+        # credits
+        author = Tex("Created by Sam Levey", font_size=80).to_edge(UP)
+        self.play(FadeIn(author, shift=RIGHT), run_time=1.25)
+
+        # thanks = Tex("Special Thanks to ----", font_size=55).shift(UP*0.5)   
+
+        # music credit
+        music = Tex("Music by Karl Casey @ White Bat Audio",font_size=55)
+        # self.play(FadeIn(thanks,shift=DOWN))
+        self.play(FadeIn(music,shift=DOWN))
+
+        # thanks
+        # thanks = Tex(r"Special thanks to: \\ Josh Perlman \\ Conner Howell", font_size=65)
+        # self.play(FadeIn(thanks, shift=RIGHT))
+
+        # Banner animation
+        banner = ManimBanner()
+        banner.scale(0.3)
+        banner.to_edge(DOWN)
+        banner.shift(RIGHT*2)
+        self.play(FadeIn(banner))
+        made_with = Tex("Made with ")
+        made_with.scale(1.5)
+        made_with.next_to(banner, LEFT, buff=1.2)
+        made_with.align_to(banner.M, DOWN)
+        url = Tex("\\verb|https://manim.community|")
+        url.next_to(VGroup(made_with, banner), DOWN, buff=-0.2)
+        url.align_to(made_with, LEFT)
+        self.play(AnimationGroup(
+            AnimationGroup(banner.expand(), Write(made_with)),
+            FadeIn(url),
+            lag_ratio=0.5
+        ))
+        self.wait(2)
+
+        # Remove things
+
+        self.play(Unwrite(author), Unwrite(music))
+        self.play(Uncreate(banner), Unwrite(made_with), Unwrite(url))
+        self.wait()
 
 
 
