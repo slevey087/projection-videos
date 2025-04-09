@@ -50,7 +50,8 @@ class test(MovingCameraScene):
         vcoords = np.array([1,2.2])
         k = 0.55 # parameter to control degree of oblique projection. At 1, it's the orthogonal projection; at 0, it's 0.
         pcoords = xcoords * np.dot(xcoords,vcoords) / np.dot(xcoords,xcoords) * k
-        zcoords = np.array([1,-(vcoords - pcoords)[0] / ((vcoords - pcoords)[1])]) * 2 # formula here is based on tha the dot product with r must be 0
+        bcoords = 2 * np.array([1,-((vcoords - pcoords)[0]) / ((vcoords - pcoords)[1])])  # formula here is based on tha the dot product with r must be 0
+        zcoords = bcoords * np.dot(vcoords, bcoords) / np.dot(bcoords,bcoords) 
         
         # initial frame stuff
         frame = self.camera.frame
@@ -64,26 +65,33 @@ class test(MovingCameraScene):
         p = Arrow(axes.c2p(0,0), axes.c2p(*pcoords), buff=0, color=PCOLOR)
         r = Arrow(axes.c2p(*pcoords), axes.c2p(*vcoords), buff=0)                
         ArrowGradient(r,[PCOLOR,VCOLOR])
+        b = Arrow(axes @ ORIGIN, axes @ bcoords,buff=0, color=COLOR_V3P)
         z = Arrow(axes @ ORIGIN, axes @ zcoords,buff=0, color=COLOR_V3P)
-        vectors = VGroup(x,v,p,r,z)       
+        vectors = VGroup(x,v,p,r,b,z)       
 
         angle = Angle(p,r,radius=0.35,quadrant=(-1,1),other_angle=True) 
         dx = DashedLine(v.get_end(),p.get_end(),dash_length=0.1).set_opacity(0.6)
+        db = DashedLine(v.get_end(),axes @ zcoords,dash_length=0.1).set_opacity(0.6)
+        rab = RightAngle(db, b,length=0.2,quadrant=(-1,1)).set_stroke(opacity=0.6)
+
 
         xl = MathTex(r"\mathbf{x}", font_size=60, color=XCOLOR).next_to(x.get_tip(), RIGHT)
         vl = MathTex(r"\mathbf{v}", font_size=60, color=VCOLOR).next_to(v.get_tip(), UP)        
         pl = MathTex(r"\mathbf{p}", font_size=60, color=PCOLOR).next_to(p.get_tip(), DR,buff=0.03)        
         rl = MathTex(r"\mathbf{v}-\mathbf{p}", font_size=60).next_to(r.get_center()).shift(UP*0.1+RIGHT*0.05)
         color_tex_standard(rl)
-        zl = MathTex(r"\mathbf{z}", font_size=60, color=COLOR_V3P).next_to(z.get_tip(),buff=0.15)        
-        labels = VGroup(xl, vl, pl, rl, zl)
+        bl = MathTex(r"\mathbf{b}", font_size=60, color=COLOR_V3P).next_to(b.get_tip(),buff=0.15)        
+        labels = VGroup(xl, vl, pl, rl, bl)
         
-        diagram = VGroup(axes, vectors, labels,angle,dx)
+        diagram = VGroup(axes, vectors, labels,angle,dx,db,rab)
         diagram.to_corner(UR)
         
         frame.move_to(diagram).scale(0.5)
 
         self.add(diagram)
+        self.remove(angle)
+        pl.move_to(angle).shift(UL*0.1)
+        
 
 
 # config.from_animation_number = 2
