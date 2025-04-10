@@ -429,6 +429,23 @@ class Oblique1D(MovingCameraScene):
         self.wait()
 
         # pull denominators out
+        coef3 = MathTex(r"p_x = \left(\mathbf{b}^T \mathbf{x} \right)^{-1} \mathbf{b}^T \mathbf{v}", font_size=70).shift(LEFT*2+DOWN)
+        color_tex_standard(coef3)
+        AlignBaseline(coef3.move_to(coef2),coef2)
+        self.play(
+            *TransformBuilder(
+                coef2,coef3,
+                [
+                    ([0,slice(0,3)],[0,slice(0,3)]), # px=
+                    (None,[0,[3,7]],FadeIn), # ()
+                    ([0,slice(7,10)],[0,slice(4,7)],None,{"path_arc":-120*DEGREES}), # btx
+                    (None,[0,slice(8,10)],FadeIn), #-1
+                    ([0,slice(3,6)],[0,slice(10,None)],None,{"path_arc":-120*DEGREES}), # btv
+                    ([0,6],None) # frac
+                ]
+            ),run_time=2
+        )
+        self.wait()
         pfe3 = MathTex(r"\mathbf{p} =", r"\mathbf{x}",r"\left(\mathbf{b}^T \mathbf{x} \right)^{-1}",r"\mathbf{b}^T \mathbf{v}",  font_size=70)
         AlignBaseline(pfe3.move_to(pfe2),pfe2)
         color_tex_standard(pfe3)  
@@ -449,30 +466,109 @@ class Oblique1D(MovingCameraScene):
             run_time=2
         )
         self.wait()
-        coef3 = MathTex(r"p_x = \left(\mathbf{b}^T \mathbf{x} \right)^{-1} \mathbf{b}^T \mathbf{v}", font_size=70).shift(LEFT*2+DOWN)
-        color_tex_standard(coef3)
-        AlignBaseline(coef3.move_to(coef2),coef2)
+
+        # merge px and p
+        pfe4 = pfe3.copy().shift(DOWN).scale(1.1)
         self.play(
-            *TransformBuilder(
-                coef2,coef3,
-                [
-                    ([0,slice(0,3)],[0,slice(0,3)]), # px=
-                    (None,[0,[3,7]],FadeIn), # ()
-                    ([0,slice(7,10)],[0,slice(4,7)],None,{"path_arc":-120*DEGREES}), # btx
-                    (None,[0,slice(8,10)],FadeIn), #-1
-                    ([0,slice(3,6)],[0,slice(10,None)],None,{"path_arc":-120*DEGREES}), # btv
-                    ([0,6],None) # frac
-                ]
-            ),run_time=2
+            ReplacementTransform(pfe3[0],pfe4[0]), # p=
+            ReplacementTransform(pfe3[1],pfe4[1]), #x
+            Merge([pfe3[2][:],coef3[0][3:10]],pfe4[2][:]),
+            Merge([pfe3[3][:],coef3[0][10:]],pfe4[3][:]),
+            FadeOut(coef3[0][:3]),
+            run_time=1.5
         )
+        self.wait()
+
+        # projection matrix ellipse
+        el = Ellipse(width=5.1,height=1.75).move_to(pfe4[2][3]).rotate(5*DEGREES).shift(RIGHT*0.2+UP*0.15)
+        pm = Tex("Projection Matrix", font_size=75).next_to(el,UP)
+        self.play(
+            DrawBorderThenFill(pm),
+            Write(el),
+            run_time=1.5
+        )
+        self.wait(w)
+
+        # projection matrix out
+        self.play(
+            Unwrite(el),
+            DrawBorderThenFill(pm, reverse_rate_function=True),
+            run_time=1.5
+        )
+        self.wait(w)
+
+        # indicate inner then outer product
+        self.play(
+            Indicate(pfe4[2][1:4],scale_factor=1.75,color=XKCD.LIGHTTURQUOISE)
+        ,run_time=1.75)
+        self.wait(w)
+        self.play(
+            Indicate(pfe4[1],scale_factor=2,color=XKCD.BUBBLEGUM),
+            Indicate(pfe4[3][:2],scale_factor=2,color=XKCD.BUBBLEGUM)
+        ,run_time=1.75)
+        self.wait(w)
+
+        # zoom back to diagram
+        self.play(frame.animate.move_to(diagram).scale(0.43),run_time=2)
+        self.wait()
+
+        # remove r and label
+        self.play(FadeOut(r,rl))
+
+        # adjust oblique angle so that x and b overla
+        self.remove(rab,db,b,bl,p)
+        kv = ValueTracker(k)
+        pv = always_redraw(lambda: Arrow(axes.c2p(0,0), axes.c2p(*(xcoords * np.dot(xcoords,vcoords) / np.dot(xcoords,xcoords) * kv.get_value())), buff=0, color=PCOLOR))
+        bv = always_redraw(lambda: Arrow(axes @ ORIGIN, axes @ (2 * np.array([1,-((vcoords - (xcoords * np.dot(xcoords,vcoords) / np.dot(xcoords,xcoords) * kv.get_value()))[0]) / ((vcoords - (xcoords * np.dot(xcoords,vcoords) / np.dot(xcoords,xcoords) * kv.get_value()))[1])])),buff=0, color=BCOLOR))
+        blv = always_redraw(lambda: MathTex(r"\mathbf{b}", font_size=60, color=BCOLOR).next_to(bv.get_tip(),buff=0.15))
+        dbv = always_redraw(lambda: DashedLine(v.get_end(),axes @ ((2 * np.array([1,-((vcoords - (xcoords * np.dot(xcoords,vcoords) / np.dot(xcoords,xcoords) * kv.get_value()))[0]) / ((vcoords - (xcoords * np.dot(xcoords,vcoords) / np.dot(xcoords,xcoords) * kv.get_value()))[1])])) * np.dot(vcoords, (2 * np.array([1,-((vcoords - (xcoords * np.dot(xcoords,vcoords) / np.dot(xcoords,xcoords) * kv.get_value()))[0]) / ((vcoords - (xcoords * np.dot(xcoords,vcoords) / np.dot(xcoords,xcoords) * kv.get_value()))[1])]))) / np.dot((2 * np.array([1,-((vcoords - (xcoords * np.dot(xcoords,vcoords) / np.dot(xcoords,xcoords) * kv.get_value()))[0]) / ((vcoords - (xcoords * np.dot(xcoords,vcoords) / np.dot(xcoords,xcoords) * kv.get_value()))[1])])),(2 * np.array([1,-((vcoords - (xcoords * np.dot(xcoords,vcoords) / np.dot(xcoords,xcoords) * kv.get_value()))[0]) / ((vcoords - (xcoords * np.dot(xcoords,vcoords) / np.dot(xcoords,xcoords) * kv.get_value()))[1])])))),dash_length=0.1).set_opacity(0.6))
+        rabv = always_redraw(lambda: RightAngle(dbv, bv,length=0.2,quadrant=(-1,1)).set_stroke(opacity=0.6))
+        self.add(bv,pv,dbv,blv,rabv)
+        self.play(
+            kv.animate.set_value(1),
+            FadeOut(xl),
+            run_time=2
+        )
+        self.wait()
+        self.play(
+            kv.animate.set_value(k),
+            FadeIn(xl),
+            run_time=2
+        )
+        self.wait()
+        self.remove(pv,bv,dbv,blv,rabv)
+        self.add(rab,db,b,bl,p)
+        self.wait()
+
+        # zoom back out, add stuff back in
+        self.play(
+            Restore(frame),
+            FadeIn(r,rl),
+            run_time=2
+        )
+        self.wait()
+
+        # caption about inner product
+        ip1 = MathTex(r"\text{If }",r"\mathbf{b}\cdot \mathbf{x}=1:",font_size=70).next_to(pfe4,UP,aligned_edge=LEFT).shift(UP*0.25)
+        color_tex_standard(ip1)
+        self.play(Write(ip1[0]),run_time=1.25)
+        self.play(Write(ip1[1]),run_time=1.25)
+        self.wait()
+
+        # to outer product
+        pfe5 = MathTex(r"\mathbf{p} =", r"\mathbf{x}",r"\mathbf{b}^T \mathbf{v}",  font_size=70)
+        AlignBaseline(pfe5.move_to(pfe4),pfe4)
+        color_tex_standard(pfe5)
+        self.play(TransformMatchingTex(pfe4,pfe5),run_time=2)
+        self.wait()
+
+        # back to full formula
+        self.play(
+            TransformMatchingTex(pfe5,pfe4),
+            FadeOut(ip1),
+            run_time=2)
         self.wait()
 
 
 
-
-
-
-
-
-
-config.from_animation_number = 83
+config.from_animation_number = 103
