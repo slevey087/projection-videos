@@ -217,7 +217,7 @@ class Oblique1D(MovingCameraScene):
         self.add(r,rl,p,angle)
         self.wait()
 
-        # flash rejection
+        # flash rejection direction
         tr = VMobject().add_points_as_corners(
             [r.get_end(),r.get_start()]
         ).set_color(YELLOW)
@@ -530,10 +530,20 @@ class Oblique1D(MovingCameraScene):
             run_time=2
         )
         self.wait()
+        # other direction
+        self.remove(dbv)
+        dbv = always_redraw(lambda: DashedLine(v.get_end(),pv.get_end(),dash_length=0.1).set_opacity(0.6))
+        self.add(dbv)
+        self.play(kv.animate.set_value(1.25),run_time=2)
+        self.wait()
+        self.play(kv.animate(rate_func=rate_functions.ease_in_sine).set_value(1),run_time=1.5)
+        self.remove(dbv)
+        dbv = always_redraw(lambda: DashedLine(v.get_end(),axes @ ((2 * np.array([1,-((vcoords - (xcoords * np.dot(xcoords,vcoords) / np.dot(xcoords,xcoords) * kv.get_value()))[0]) / ((vcoords - (xcoords * np.dot(xcoords,vcoords) / np.dot(xcoords,xcoords) * kv.get_value()))[1])])) * np.dot(vcoords, (2 * np.array([1,-((vcoords - (xcoords * np.dot(xcoords,vcoords) / np.dot(xcoords,xcoords) * kv.get_value()))[0]) / ((vcoords - (xcoords * np.dot(xcoords,vcoords) / np.dot(xcoords,xcoords) * kv.get_value()))[1])]))) / np.dot((2 * np.array([1,-((vcoords - (xcoords * np.dot(xcoords,vcoords) / np.dot(xcoords,xcoords) * kv.get_value()))[0]) / ((vcoords - (xcoords * np.dot(xcoords,vcoords) / np.dot(xcoords,xcoords) * kv.get_value()))[1])])),(2 * np.array([1,-((vcoords - (xcoords * np.dot(xcoords,vcoords) / np.dot(xcoords,xcoords) * kv.get_value()))[0]) / ((vcoords - (xcoords * np.dot(xcoords,vcoords) / np.dot(xcoords,xcoords) * kv.get_value()))[1])])))),dash_length=0.1).set_opacity(0.6))
+        self.add(dbv)
         self.play(
-            kv.animate.set_value(k),
+            kv.animate(rate_func=rate_functions.ease_out_sine).set_value(k),
             FadeIn(xl),
-            run_time=2
+            run_time=1.5
         )
         self.wait()
         self.remove(pv,bv,dbv,blv,rabv)
@@ -569,6 +579,272 @@ class Oblique1D(MovingCameraScene):
             run_time=2)
         self.wait()
 
+        
+
+class Oblique2D(ThreeDScene):
+    def construct(self):
+        xcoords = np.array([1,0,0])
+        ycoords = np.array([0,1,0])
+        b1coords = np.array([1,0,0.35])
+        b2coords = np.array([0,1,0.15])
+        vcoords = np.array([0.5,0.7,0.7])
+        amatrix = np.vstack([xcoords,ycoords]).T
+        bmatrix = np.vstack([b1coords,b2coords]).T
+        
+        pxcoord = np.matmul(np.linalg.inv(np.matmul(bmatrix.T,amatrix)), np.matmul(bmatrix.T,vcoords))[0]
+        pycoord = np.matmul(np.linalg.inv(np.matmul(bmatrix.T,amatrix)), np.matmul(bmatrix.T,vcoords))[1]
+        pcoords = pxcoord*xcoords + pycoord*ycoords
+        
+        bpxcoord = np.matmul(np.linalg.inv(np.matmul(bmatrix.T,bmatrix)), np.matmul(bmatrix.T,vcoords))[0]
+        bpycoord = np.matmul(np.linalg.inv(np.matmul(bmatrix.T,bmatrix)), np.matmul(bmatrix.T,vcoords))[1]
+        bpcoords = bpxcoord*b1coords + bpycoord*b2coords
+
+        # define diagram
+        axes = ThreeDAxes(
+            x_range=[0,0.5],x_length=2.5 / 2,
+            y_range=[0,0.5],y_length=2.5 / 2,
+            z_range=[0,0.5],z_length=2.5 / 2,
+        ).set_opacity(0)        
+        v = Arrow(axes @ ORIGIN, axes @ vcoords, buff=0, color=VCOLOR,shade_in_3d=True).set_stroke(width=6)        
+        x = Arrow(axes @ ORIGIN, axes @ xcoords, buff=0, color=XCOLOR).set_stroke(width=6)
+        y = Arrow(axes @ ORIGIN, axes @ ycoords, buff=0, color=YCOLOR).set_stroke(width=6)        
+        p = Arrow(axes @ ORIGIN, axes @ pcoords, buff=0, color=PCOLOR).set_stroke(width=6)        
+        px = Arrow(axes @ ORIGIN, axes @ (pxcoord*xcoords), buff=0,color=PCOLOR).set_stroke(width=6)
+        py = Arrow(axes @ ORIGIN, axes @ (pycoord*ycoords), buff=0,color=PCOLOR).set_stroke(width=6)
+        dp = DashedLine(v.get_end(),p.get_end(),dash_length=0.15).set_opacity(0.4)
+        dy = DashedLine(axes @ pcoords, axes @ (pxcoord*xcoords), dash_length=0.15).set_opacity(0.4)
+        dx = DashedLine(axes @ pcoords, axes @ (pycoord*ycoords), dash_length=0.15).set_opacity(0.4)
+        r = Arrow(axes @ pcoords, axes @ vcoords, buff=0, color=RCOLOR).set_stroke(width=6)        
+        ArrowGradient(r,[PCOLOR,VCOLOR])
+
+        angle = Arc3d(p.get_center(),r.get_center(),p.get_end(),radius=0.4).set_stroke(opacity=0.4)
+        vectors = VGroup(v,x,y,p,px,py,r)
+        dashes = VGroup(dp,dy,dx)
+
+        plane =  Surface(lambda u,v:axes @ (u,v,0),u_range=[-0.25,1.25],v_range=[-0.25,1.25],stroke_width=0.1,resolution=10).set_opacity(0.6).set_color(ManimColor('#29ABCA'))
+        plane2 = Surface(lambda u,v:axes @ (u*b1coords+v*b2coords),u_range=[-0.25,1.25],v_range=[-0.25,1.25],stroke_width=0.1,resolution=10).set_opacity(0.6).set_color(BCOLOR)
+        
+        diagram = Group(axes,plane,vectors,dashes, angle,plane2)
+        diagram.rotate(-125*DEGREES).rotate(-70*DEGREES,RIGHT)        
+        
+        vl = MathTex(r"\mathbf{v}", color=VCOLOR, font_size=50).next_to(v.get_end(),buff=0.15)
+        xl = MathTex(r"\mathbf{x}", color=XCOLOR, font_size=50).next_to(x.get_end(),LEFT,buff=0.15)
+        yl = MathTex(r"\mathbf{y}", color=YCOLOR, font_size=50).next_to(y.get_end(),RIGHT,buff=0.15)
+        pl = MathTex(r"\mathbf{p}", color=PCOLOR, font_size=50).next_to(p.get_end(),DR,buff=0.15)
+        pxl = MathTex(r"p_x \mathbf{x}", font_size=40).next_to(px.get_end(),UL,buff=0.15)
+        color_tex_standard(pxl)        
+        pyl = MathTex(r"p_y \mathbf{y}", font_size=40).next_to(py.get_end(),UP,buff=0.15)
+        color_tex_standard(pyl)        
+        rl = MathTex(r"\mathbf{v-p}", font_size=50).next_to(r,RIGHT,buff=0.15).shift(UP*0.3)
+        color_tex_standard(rl)
+        labels = VGroup(xl,vl,yl,pl,pxl,pyl,rl)
+        diagram.add(labels)                
+        
+        diagram.shift(-VGroup(v,p,r).get_center()).shift(UP*0.35+RIGHT*0.2)
+        self.set_camera_orientation(frame_center=IN*11) # self.set_camera_orientation(zoom=2)
+        for vector in vectors: 
+            ArrowStrokeFor3dScene(self,vector,family=True)
+        face_camera(self,r)
+        ArrowGradient(r,[PCOLOR,VCOLOR])
+
+        # setup plane, vectors
+        self.play(Write(plane),run_time=2)
+        self.play(GrowArrow(v))
+        self.play(Write(vl))
+        self.wait()
+
+        # project to p, with dash and angle
+        self.play(
+            TransformFromCopy(v,p),
+            Write(dp),
+            run_time=2
+        )
+        self.play(Write(pl))
+        self.play(Write(angle))
+        self.wait()
+
+        # a few different projections
+        pxc2, pyc2 = 0.3,1.1
+        pxc3, pyc3 = 0.2,0.3
+        pxc4, pyc4 = 1.1,0.2
+        p.save_state()
+        ArrowStrokeFor3dScene(self,p.generate_target().put_start_and_end_on(axes @ ORIGIN, axes @ (pxc2*xcoords + pyc2*ycoords)))
+        dpv = always_redraw(lambda: DashedLine(v.get_end(),p.get_end(),dash_length=0.15).set_opacity(0.4))
+        self.remove(dp), self.add(dpv)
+        anglev = always_redraw(lambda: Arc3d(p.get_center(),dpv.get_center(),p.get_end(),radius=0.4).set_stroke(opacity=0.4))
+        self.remove(angle), self.add(anglev)
+        self.play(MoveToTarget(p),run_time=1.5)
+        ArrowStrokeFor3dScene(self,p.generate_target().put_start_and_end_on(axes @ ORIGIN, axes @ (pxc3*xcoords + pyc3*ycoords)))
+        self.play(MoveToTarget(p),run_time=1.5)
+        ArrowStrokeFor3dScene(self,p.generate_target().put_start_and_end_on(axes @ ORIGIN, axes @ (pxc4*xcoords + pyc4*ycoords)))
+        self.play(MoveToTarget(p),run_time=1.5)
+        self.play(Restore(p),run_time=1.5)
+        self.remove(dpv,anglev), self.add(dp,angle)
+        self.wait()
+
+        # add x,y basis
+        self.play(GrowArrow(x))
+        self.play(Write(xl))
+        self.play(GrowArrow(y))
+        self.play(Write(yl))
+        self.wait()
+
+        # to px, py
+        self.play(
+            TransformFromCopy(p,px),
+            Create(dy)
+        , run_time=1.75)
+        self.play(Write(pxl))
+        self.play(
+            TransformFromCopy(p,py),
+            Create(dx)
+        , run_time=1.75)
+        self.play(Write(pyl))
+        self.wait(w)
+
+        # zoom out
+        pe = MathTex(r"\mathbf{p}","=",r"p_x \mathbf{x}","+",r"p_y \mathbf{y}", font_size=60).next_to(diagram,DOWN)
+        color_tex_standard(pe)
+        pe[0].set_color(PCOLOR), pe[2][-1].set_color(XCOLOR),pe[4][0:2].set_color(PCOLOR), pe[4][-1].set_color(YCOLOR)
+        for mob in [r,rl,plane2]:mob.set_opacity(0)
+        self.move_camera(
+            frame_center=9.5*IN, 
+            added_anims=[
+                diagram.animate.shift(UP*0.3)
+            ],
+            run_time=1.25
+        )
+        self.remove(r,rl,plane2)
+        for mob in [r,rl,plane2]:mob.set_opacity(1)
+        plane2.set_opacity(0.6)
+        pe.next_to(diagram,DOWN,buff=0.3)
+        
+        # write equation for p
+        self.play(TransformFromCopy(pl[0],pe[0]),run_time=1.5)
+        self.play(Write(pe[1]))
+        self.play(
+            TransformFromCopy(pxl[0],pe[2]),
+            Indicate(pxl[0]),
+            run_time=1.5
+        )
+        self.play(Write(pe[3]))
+        self.play(
+            TransformFromCopy(pyl[0],pe[4]),
+            Indicate(pyl[0]),
+            run_time=1.5
+        )
+        self.wait(w)
+
+        # draw rejection
+        self.play(FadeOut(dp))
+        self.play(GrowArrow(r),run_time=1.5)
+        self.play(Write(rl))
+        self.wait()
+
+        # flash rejection
+        tr = VMobject().add_points_as_corners(
+            [r.get_end(),r.get_start()]
+        ).set_color(YELLOW).set_z_index(2)
+        mask = Rectangle(height=8,width=12).set_fill(BLACK,0.6).set_stroke(BLACK).move_to(diagram).set_z_index(1)
+        self.play(FadeIn(mask),run_time=1.25)
+        self.play(ShowPassingFlash(tr,time_width=0.2),run_time=2)
+        
+        # un-mask and remove stuff
+        self.play(
+            FadeOut(pe,pxl,pyl,dx,dy,px,py,r,rl),
+            FadeOut(mask),
+            run_time=1.25
+        )
+        # add plane, zoom in
+        for mob in [x,y,p,v,dp]: mob.set_shade_in_3d(True)
+        self.play(
+            Write(plane2),
+            Write(dp)
+        )
+        for mob in [pe,pxl,pyl,dx,dy,px,py,r,rl]:mob.set_opacity(0)
+        self.move_camera(
+            frame_center=IN*13,
+            added_anims=[diagram.animate.rotate(40*DEGREES, axis=(axes @ (vcoords - pcoords))-(axes @ ORIGIN), about_point=diagram.get_center()).rotate(10*DEGREES,axis=(axes @ b2coords) - (axes @ ORIGIN),about_point=diagram.get_center()).shift(DOWN*0.15)],
+            run_time=2
+        )
+        self.remove(pe,pxl,pyl,dx,dy,px,py,r,rl)
+        for mob in [pe,pxl,pyl,px,py,r,rl]:mob.set_opacity(1)
+        for mob in [dx,dy]: mob.set_opacity(0.4)
+
+        # add right angle
+        ra = VGroup(
+            Line(axes @ (0.9*bpcoords),axes @ (0.9*bpcoords+0.1*(vcoords-pcoords)), stroke_width=2),
+            Line(axes @ (0.9*bpcoords+0.1*(vcoords-pcoords)),axes @ (1*bpcoords+0.1*(vcoords-pcoords)), stroke_width=2)
+        ).set_stroke(opacity=0.6)
+        self.play(ReplacementTransform(ra.copy().scale(20).shift(LEFT*3).set_opacity(0),ra),run_time=2)
+        self.wait()
+
+        # move the oblique plane around
+        def get_b_values(b1,b2):
+            return (
+                np.array([b1[0].get_value(),b1[1].get_value(),b1[2].get_value()]),
+                np.array([b2[0].get_value(),b2[1].get_value(),b2[2].get_value()])
+            )
+        def bm_calc(b1,b2):    
+            bmatrix = np.vstack([b1,b2]).T
+            return bmatrix
+        def px_calc(b1,b2):
+            px = np.matmul(np.linalg.inv(np.matmul(bm_calc(b1,b2).T,amatrix)), np.matmul(bm_calc(b1,b2).T,vcoords))[0]
+            return px
+        def py_calc(b1,b2):
+            py = np.matmul(np.linalg.inv(np.matmul(bm_calc(b1,b2).T,amatrix)), np.matmul(bm_calc(b1,b2).T,vcoords))[1]
+            return py
+        def p_calc(b1,b2):
+            p = px_calc(b1,b2)*xcoords + py_calc(b1,b2)*ycoords
+            return p
+        def bx_calc(b1,b2):
+            bx = np.matmul(np.linalg.inv(np.matmul(bm_calc(b1,b2).T,bm_calc(b1,b2))), np.matmul(bm_calc(b1,b2).T,vcoords))[0]
+            return bx
+        def by_calc(b1,b2):
+            by = np.matmul(np.linalg.inv(np.matmul(bm_calc(b1,b2).T,bm_calc(b1,b2))), np.matmul(bm_calc(b1,b2).T,vcoords))[1]
+            return by
+        def bp_calc(b1,b2):
+            bp = b1*bx_calc(b1,b2) + b2 * by_calc(b1,b2)
+            return bp
+        self.remove(pl,dp,ra,angle,plane,plane2)
+        b1 = [ValueTracker(b1coords[0]),ValueTracker(b1coords[1]),ValueTracker(b1coords[2])]
+        b2 = [ValueTracker(b2coords[0]),ValueTracker(b2coords[1]),ValueTracker(b2coords[2])]
+        b1c2 = np.array([1,0,0.4])
+        b2c2 = np.array([0,1,0])
+        # pv = always_redraw(lambda: Arrow(axes @ ORIGIN, axes @ (px_calc(*get_b_values(b1,b2))*xcoords + py_calc(*get_b_values(b1,b2))*ycoords), buff=0, color=PCOLOR).set_stroke(width=6)        )
+        p.add_updater(lambda mob: ArrowStrokeFor3dScene(self,mob.put_start_and_end_on(axes @ ORIGIN, axes @ (px_calc(*get_b_values(b1,b2))*xcoords + py_calc(*get_b_values(b1,b2))*ycoords))))
+        dpv = always_redraw(lambda: DashedLine(v.get_end(),p.get_end(),dash_length=0.15).set_opacity(0.4))
+        anglev = always_redraw(lambda: Arc3d(p.get_center(),dpv.get_start(),p.get_end(),radius=0.4).set_stroke(opacity=0.4))
+        plane2v = always_redraw(lambda: Surface(lambda u,v:axes @ (u*(get_b_values(b1,b2)[0])+v*(get_b_values(b1,b2)[1])),u_range=[-0.25,1.25],v_range=[-0.25,1.25],stroke_width=0.1,resolution=6).set_opacity(0.6).set_color(BCOLOR))
+        plane1v = always_redraw(lambda: Surface(lambda u,v:axes @ (u,v,0),u_range=[-0.25,1.25],v_range=[-0.25,1.25],stroke_width=0.1,resolution=10).set_opacity(0.6).set_color(ManimColor('#29ABCA')))
+        rav = always_redraw(lambda: VGroup(
+            Line(axes @ (0.9*bp_calc(*get_b_values(b1,b2))),axes @ (0.9*bp_calc(*get_b_values(b1,b2)+0.1*(vcoords-p_calc(*get_b_values(b1,b2))))), stroke_width=2),
+            Line(axes @ (0.9*bp_calc(*get_b_values(b1,b2)+0.1*(vcoords-p_calc(*get_b_values(b1,b2))))),axes @ (1*bp_calc(*get_b_values(b1,b2)+0.1*(vcoords-p_calc(*get_b_values(b1,b2))))), stroke_width=2)
+        ).set_stroke(opacity=0.6))
+        self.add(dpv,anglev,rav,plane,plane2v)
+        b1c2 = np.array([1,0,0.4])
+        b2c2 = np.array([0,1,0])
+        b1c3 = np.array([1,0,0])
+        b2c3 = np.array([0,1,0.4])
+        self.play(
+            b1[0].animate.set_value(b1c2[0]),b1[1].animate.set_value(b1c2[1]),b1[2].animate.set_value(b1c2[2]),
+            b2[0].animate.set_value(b2c2[0]),b2[1].animate.set_value(b2c2[1]),b2[2].animate.set_value(b2c2[2]),
+            run_time=2
+        )
+        self.play(
+            b1[0].animate.set_value(b1c3[0]),b1[1].animate.set_value(b1c3[1]),b1[2].animate.set_value(b1c3[2]),
+            b2[0].animate.set_value(b2c3[0]),b2[1].animate.set_value(b2c3[1]),b2[2].animate.set_value(b2c3[2]),
+            run_time=2
+        )
+        self.wait()
+        pcoords = pxcoord*xcoords + pycoord*ycoords
+        bpcoords = bpxcoord*b1coords + bpycoord*b2coords
 
 
-config.from_animation_number = 103
+        
+config.from_animation_number = 39
+
+
+
+
+
