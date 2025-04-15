@@ -48,17 +48,148 @@ def color_tex_standard(equation):
 
 
 
-config.renderer="opengl"
+# config.renderer="opengl"
+
+
+import numpy as np
+
+
+
+class FlatArrow(OpenGLGroup):
+    def __init__(
+        self,
+        start=LEFT,
+        end=RIGHT,
+        stroke_width=0.07,
+        tip_length=0.38,
+        tip_width=0.42,
+        color=WHITE,
+        **kwargs
+    ):
+        super().__init__(**kwargs)
+        self.stroke_width = stroke_width
+        self.tip_length = tip_length
+        self.tip_width = tip_width if tip_width is not None else 2 * stroke_width
+        self.color = color
+        self._start = np.array(start)
+        self._end = np.array(end)
+        self._create_arrow()
+
+    def _create_arrow(self):
+        direction = self._end - self._start
+        length = np.linalg.norm(direction)
+        if length == 0:
+            self.submobjects = []
+            return
+
+        unit = direction / length
+        shaft_length = max(0, length - self.tip_length)
+
+        # Create shaft surface
+        def shaft_surface(u, v):
+            return np.array([
+                u * shaft_length,
+                (v - 0.5) * self.stroke_width,
+                0
+            ])
+
+        shaft = OpenGLSurface(
+            shaft_surface,
+            u_range=[0, 1],
+            v_range=[0, 1],
+            # resolution=(2, 2),
+            epsilon=0.000001,
+            fill_opacity=1,
+            checkerboard_colors=[self.color],
+        )
+
+        # Create tip surface
+        def tip_surface(u, v):
+            return np.array([
+                v * self.tip_length,
+                (0.5 - u) * (1 - v) * self.tip_width,
+                0
+            ])
+
+        tip = OpenGLSurface(
+            tip_surface,
+            u_range=[0, 1],
+            v_range=[0, 1],
+            # resolution=(3, 3),
+            epsilon=0.000001,
+            fill_opacity=1,
+            checkerboard_colors=[self.color],
+        )
+        tip.shift(RIGHT * shaft_length)  # Position tip at the end of the shaft
+
+        self.submobjects = [shaft, tip]
+
+        # Calculate the center of the combined arrow
+        center = self._start + direction / 2
+
+        # Position the combined arrow
+        self.move_to(center)
+
+        # Align the arrow with the direction vector
+        reference_vector = RIGHT
+        if not np.allclose(unit, reference_vector):
+            axis = np.cross(reference_vector, unit)
+            norm_axis = np.linalg.norm(axis)
+            if norm_axis > 1e-6:  # Avoid division by zero for collinear vectors
+                angle = np.arccos(np.dot(reference_vector, unit))
+                self.rotate(angle, axis=axis / norm_axis, about_point=center)
+
+    def put_start_and_end_on(self, start, end):
+        self._start = np.array(start)
+        self._end = np.array(end)
+        self._create_arrow()
+        return self
+
+    def get_vector(self):
+        return self._end - self._start
+
+    def get_unit_vector(self):
+        vec = self.get_vector()
+        norm = np.linalg.norm(vec)
+        return vec / norm if norm != 0 else RIGHT
+
+    def scale(self, factor, **kwargs):
+        vec = self.get_vector()
+        new_end = self._start + factor * vec
+        return self.put_start_and_end_on(self._start, new_end)
+
+
+
+class test1(ThreeDScene):
+    def construct(self):
+        self.set_camera_orientation(zoom=1.5)
+
+        plane = Surface(lambda u,v: (u,v,0),u_range=[-2,2],v_range=[-2,2],resolution=8).set_opacity(0.6)
+        v1 = Arrow(2*LEFT,2*RIGHT,buff=0, color=YELLOW)
+        v2 = Arrow(2*LEFT,RIGHT+UP,buff=0,color=RED)
+
+        plane2 = Surface(lambda u,v: (u,v,0),u_range=[-2,2],v_range=[-2,2],resolution=8,color=GREEN).set_opacity(0.6).shift(IN*0.5)
+        
+        diagram = VGroup(plane,v1,v2).set_shade_in_3d(True,True)
+        diagram.add(plane2)
+        self.add(diagram)
+
+        self.wait()
+        self.play(diagram.animate.rotate(-125*DEGREES).rotate(-70*DEGREES,RIGHT),run_time=2) 
+        self.wait()
+        plane2.add_updater(lambda p: p.set_shade_in_3d(True))
+        self.play(plane2.animate.shift(2*(plane.get_center()-plane2.get_center())),run_time=2)
+        self.wait()
+
 
 class test(ThreeDScene):
     def construct(self):
-        Arrow.set_default(flat_stroke=False,shade_in_3d=True)
-
-
+        Arrow.set_default(shade_in_3d=True)
+        
         xcoords = np.array([1,0,0])
         ycoords = np.array([0,1,0])
-        b1coords = np.array([1,0,0.35])
-        b2coords = np.array([0,1,0.15])
+        b1coords = normalize(np.array([1,0,0.35]))
+        b2coords = normalize(np.array([0,1,0.15]))
         vcoords = np.array([0.5,0.7,0.7])
         amatrix = np.vstack([xcoords,ycoords]).T
         bmatrix = np.vstack([b1coords,b2coords]).T
@@ -67,6 +198,9 @@ class test(ThreeDScene):
         pycoord = np.matmul(np.linalg.inv(np.matmul(bmatrix.T,amatrix)), np.matmul(bmatrix.T,vcoords))[1]
         pcoords = pxcoord*xcoords + pycoord*ycoords
         
+        bpxcoord = np.matmul(np.linalg.inv(np.matmul(bmatrix.T,bmatrix)), np.matmul(bmatrix.T,vcoords))[0]
+        bpycoord = np.matmul(np.linalg.inv(np.matmul(bmatrix.T,bmatrix)), np.matmul(bmatrix.T,vcoords))[1]
+        bpcoords = bpxcoord*b1coords + bpycoord*b2coords
 
         # define diagram
         axes = ThreeDAxes(
@@ -84,16 +218,24 @@ class test(ThreeDScene):
         dy = DashedLine(axes @ pcoords, axes @ (pxcoord*xcoords), dash_length=0.15).set_opacity(0.4)
         dx = DashedLine(axes @ pcoords, axes @ (pycoord*ycoords), dash_length=0.15).set_opacity(0.4)
         r = Arrow(axes @ pcoords, axes @ vcoords, buff=0, color=RCOLOR).set_stroke(width=6)        
-        # ArrowGradient(r,[PCOLOR,VCOLOR])
+        ArrowGradient(r,[PCOLOR,VCOLOR])
+
+        b = Arrow(axes @ ORIGIN, axes @ b1coords, buff=0,color=BCOLOR.lighter()).set_stroke(width=6)
+        c = Arrow(axes @ ORIGIN, axes @ b2coords, buff=0,color=BCOLOR.lighter()).set_stroke(width=6)
 
         angle = Arc3d(p.get_center(),r.get_center(),p.get_end(),radius=0.4).set_stroke(opacity=0.4)
         vectors = VGroup(v,x,y,p,px,py,r)
+        b_vectors = VGroup(b,c)
         dashes = VGroup(dp,dy,dx)
 
-        plane =  Surface(lambda u,v:axes @ (u,v,0),u_range=[-0.25,1.25],v_range=[-0.25,1.25],stroke_width=0.1,resolution=10).set_opacity(0.6).set_color(ManimColor('#29ABCA'))
-        plane2 = Surface(lambda u,v:axes @ (u*b1coords+v*b2coords),u_range=[-0.25,1.25],v_range=[-0.25,1.25],stroke_width=0.1,resolution=10).set_opacity(0.6).set_color(BCOLOR)
+        plane =  Surface(lambda u,v:axes @ (u,v,0),u_range=[-0.25,1.25],v_range=[-0.25,1.25],stroke_width=0.1,resolution=(64,16)).set_opacity(0.4).set_color(ManimColor('#29ABCA'))
+        for mob in [*plane,*x,*y,*px,*py,*p,*b,*c]: mob.z_index_group=Dot()
         
-        diagram = Group(axes,plane,plane2,vectors,dashes, angle)
+        
+        plane2 = Surface(lambda u,v:axes @ (u*b1coords+v*b2coords),u_range=[-0.25,1.25],v_range=[-0.25,1.25],stroke_width=0.1,resolution=32).set_opacity(0.4).set_color(BCOLOR)
+        VGroup(plane,plane2).set_stroke(opacity=1)
+
+        diagram = Group(axes,plane,vectors,dashes, angle,plane2,b_vectors)
         diagram.rotate(-125*DEGREES).rotate(-70*DEGREES,RIGHT)        
         
         vl = MathTex(r"\mathbf{v}", color=VCOLOR, font_size=50).next_to(v.get_end(),buff=0.15)
@@ -110,18 +252,16 @@ class test(ThreeDScene):
         diagram.add(labels)                
         
         diagram.shift(-VGroup(v,p,r).get_center()).shift(UP*0.35+RIGHT*0.2)
-        """
         self.set_camera_orientation(frame_center=IN*11) # self.set_camera_orientation(zoom=2)
-        for vector in vectors: 
+        for vector in vectors+[b_vectors]: 
             ArrowStrokeFor3dScene(self,vector,family=True)
         face_camera(self,r)
         ArrowGradient(r,[PCOLOR,VCOLOR])
-        """
-        self.camera.scale(0.5)
 
         self.add(diagram)
         diagram.rotate(40*DEGREES, axis=(axes @ (vcoords - pcoords))-(axes @ ORIGIN), about_point=diagram.get_center())
         diagram.rotate(10*DEGREES,axis=(axes @ b2coords) - (axes @ ORIGIN),about_point=diagram.get_center())
+        self.remove(x,xl,px,pxl,p,pl,r,rl,y,yl,py,pyl,dx,dy,dp,plane,angle)
         self.interactive_embed()
 
 
@@ -132,6 +272,6 @@ class test(ThreeDScene):
 
 
 
-with tempconfig({"quality": "medium_quality", "preview": True}):
+with tempconfig({"quality": "medium_quality", "dry_run":True}):
     scene = test()
     scene.render()

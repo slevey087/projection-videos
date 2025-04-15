@@ -52,7 +52,11 @@ def color_tex_standard(equation):
         (r"\mathbf{u}", UCOLOR),
         (r"\hat{\mathbf{u}}", PUCOLOR),
         (r"\hat{\mathbf{v}}", PVCOLOR),
-        (r"\mathbf{b}",BCOLOR)
+        (r"\mathbf{b}",BCOLOR),
+        (r"\mathbf{x_1}", XCOLOR),
+        (r"\mathbf{x_2}", XCOLOR),
+        (r"p_1}", PCOLOR),
+        (r"p_2}", PCOLOR),
     )
 
 
@@ -583,21 +587,25 @@ class Oblique1D(MovingCameraScene):
 
 class Oblique2D(ThreeDScene):
     def construct(self):
-        xcoords = np.array([1,0,0])
-        ycoords = np.array([0,1,0])
+        low_plane_resolution = 10 # increase to like 32 or even 64 for higher quality render (but will take way longer)
+        high_plane_resolution = 10
+        Arrow.set_default(shade_in_3d=True)
+        
+        x1coords = np.array([1,0,0])
+        x2coords = np.array([0,1,0])
         b1coords = np.array([1,0,0.35])
         b2coords = np.array([0,1,0.15])
         vcoords = np.array([0.5,0.7,0.7])
-        amatrix = np.vstack([xcoords,ycoords]).T
+        amatrix = np.vstack([x1coords,x2coords]).T
         bmatrix = np.vstack([b1coords,b2coords]).T
         
-        pxcoord = np.matmul(np.linalg.inv(np.matmul(bmatrix.T,amatrix)), np.matmul(bmatrix.T,vcoords))[0]
-        pycoord = np.matmul(np.linalg.inv(np.matmul(bmatrix.T,amatrix)), np.matmul(bmatrix.T,vcoords))[1]
-        pcoords = pxcoord*xcoords + pycoord*ycoords
+        px1coord = np.matmul(np.linalg.inv(np.matmul(bmatrix.T,amatrix)), np.matmul(bmatrix.T,vcoords))[0]
+        px2coord = np.matmul(np.linalg.inv(np.matmul(bmatrix.T,amatrix)), np.matmul(bmatrix.T,vcoords))[1]
+        pcoords = px1coord*x1coords + px2coord*x2coords
         
-        bpxcoord = np.matmul(np.linalg.inv(np.matmul(bmatrix.T,bmatrix)), np.matmul(bmatrix.T,vcoords))[0]
-        bpycoord = np.matmul(np.linalg.inv(np.matmul(bmatrix.T,bmatrix)), np.matmul(bmatrix.T,vcoords))[1]
-        bpcoords = bpxcoord*b1coords + bpycoord*b2coords
+        bpx1coord = np.matmul(np.linalg.inv(np.matmul(bmatrix.T,bmatrix)), np.matmul(bmatrix.T,vcoords))[0]
+        bpx2coord = np.matmul(np.linalg.inv(np.matmul(bmatrix.T,bmatrix)), np.matmul(bmatrix.T,vcoords))[1]
+        bpcoords = bpx1coord*b1coords + bpx2coord*b2coords
 
         # define diagram
         axes = ThreeDAxes(
@@ -606,46 +614,55 @@ class Oblique2D(ThreeDScene):
             z_range=[0,0.5],z_length=2.5 / 2,
         ).set_opacity(0)        
         v = Arrow(axes @ ORIGIN, axes @ vcoords, buff=0, color=VCOLOR,shade_in_3d=True).set_stroke(width=6)        
-        x = Arrow(axes @ ORIGIN, axes @ xcoords, buff=0, color=XCOLOR).set_stroke(width=6)
-        y = Arrow(axes @ ORIGIN, axes @ ycoords, buff=0, color=YCOLOR).set_stroke(width=6)        
+        x1 = Arrow(axes @ ORIGIN, axes @ x1coords, buff=0, color=XCOLOR).set_stroke(width=6)
+        x2 = Arrow(axes @ ORIGIN, axes @ x2coords, buff=0, color=XCOLOR).set_stroke(width=6)        
         p = Arrow(axes @ ORIGIN, axes @ pcoords, buff=0, color=PCOLOR).set_stroke(width=6)        
-        px = Arrow(axes @ ORIGIN, axes @ (pxcoord*xcoords), buff=0,color=PCOLOR).set_stroke(width=6)
-        py = Arrow(axes @ ORIGIN, axes @ (pycoord*ycoords), buff=0,color=PCOLOR).set_stroke(width=6)
+        px1 = Arrow(axes @ ORIGIN, axes @ (px1coord*x1coords), buff=0,color=PCOLOR).set_stroke(width=6)
+        px2 = Arrow(axes @ ORIGIN, axes @ (px2coord*x2coords), buff=0,color=PCOLOR).set_stroke(width=6)
         dp = DashedLine(v.get_end(),p.get_end(),dash_length=0.15).set_opacity(0.4)
-        dy = DashedLine(axes @ pcoords, axes @ (pxcoord*xcoords), dash_length=0.15).set_opacity(0.4)
-        dx = DashedLine(axes @ pcoords, axes @ (pycoord*ycoords), dash_length=0.15).set_opacity(0.4)
+        dx1 = DashedLine(axes @ pcoords, axes @ (px1coord*x1coords), dash_length=0.15).set_opacity(0.4)
+        dx2 = DashedLine(axes @ pcoords, axes @ (px2coord*x2coords), dash_length=0.15).set_opacity(0.4)
         r = Arrow(axes @ pcoords, axes @ vcoords, buff=0, color=RCOLOR).set_stroke(width=6)        
         ArrowGradient(r,[PCOLOR,VCOLOR])
 
-        angle = Arc3d(p.get_center(),r.get_center(),p.get_end(),radius=0.4).set_stroke(opacity=0.4)
-        vectors = VGroup(v,x,y,p,px,py,r)
-        dashes = VGroup(dp,dy,dx)
+        b1 = Arrow(axes @ ORIGIN, axes @ b1coords, buff=0,color=BCOLOR.lighter()).set_stroke(width=6)
+        b2 = Arrow(axes @ ORIGIN, axes @ b2coords, buff=0,color=BCOLOR.lighter()).set_stroke(width=6)
 
-        plane =  Surface(lambda u,v:axes @ (u,v,0),u_range=[-0.25,1.25],v_range=[-0.25,1.25],stroke_width=0.1,resolution=10).set_opacity(0.6).set_color(ManimColor('#29ABCA'))
-        plane2 = Surface(lambda u,v:axes @ (u*b1coords+v*b2coords),u_range=[-0.25,1.25],v_range=[-0.25,1.25],stroke_width=0.1,resolution=10).set_opacity(0.6).set_color(BCOLOR)
+        angle = Arc3d(p.get_center(),r.get_center(),p.get_end(),radius=0.4).set_stroke(opacity=0.4)
+        vectors = VGroup(v,x1,x2,p,px1,px2,r)
+        b_vectors = VGroup(b1,b2)
+        dashes = VGroup(dp,dx1,dx2)
+
+        plane =  Surface(lambda u,v:axes @ (u,v,0),u_range=[-0.25,1.25],v_range=[-0.25,1.25],stroke_width=0.1,resolution=low_plane_resolution).set_opacity(0.5).set_color(ManimColor('#29ABCA'))
+        for mob in [*plane,*x1,*x2,*px1,*px2,*p,*b1,*b2]: mob.z_index_group=Dot()
         
-        diagram = Group(axes,plane,vectors,dashes, angle,plane2)
+        
+        plane2 = Surface(lambda u,v:axes @ (u*b1coords+v*b2coords),u_range=[-0.25,1.25],v_range=[-0.25,1.25],stroke_width=0.1,resolution=low_plane_resolution).set_opacity(0.4).set_color(BCOLOR)
+        VGroup(plane,plane2).set_stroke(opacity=1)
+
+        diagram = Group(axes,plane,vectors,dashes, angle,plane2,b_vectors)
         diagram.rotate(-125*DEGREES).rotate(-70*DEGREES,RIGHT)        
         
         vl = MathTex(r"\mathbf{v}", color=VCOLOR, font_size=50).next_to(v.get_end(),buff=0.15)
-        xl = MathTex(r"\mathbf{x}", color=XCOLOR, font_size=50).next_to(x.get_end(),LEFT,buff=0.15)
-        yl = MathTex(r"\mathbf{y}", color=YCOLOR, font_size=50).next_to(y.get_end(),RIGHT,buff=0.15)
+        x1l = MathTex(r"\mathbf{x_1}", color=XCOLOR, font_size=50).next_to(x1.get_end(),LEFT,buff=0.15)
+        x2l = MathTex(r"\mathbf{x_2}", color=XCOLOR, font_size=50).next_to(x2.get_end(),RIGHT,buff=0.15)
         pl = MathTex(r"\mathbf{p}", color=PCOLOR, font_size=50).next_to(p.get_end(),DR,buff=0.15)
-        pxl = MathTex(r"p_x \mathbf{x}", font_size=40).next_to(px.get_end(),UL,buff=0.15)
-        color_tex_standard(pxl)        
-        pyl = MathTex(r"p_y \mathbf{y}", font_size=40).next_to(py.get_end(),UP,buff=0.15)
-        color_tex_standard(pyl)        
+        px1l = MathTex(r"p_1 \mathbf{x_1}", font_size=40).next_to(px1.get_end(),UL,buff=0.15)
+        color_tex_standard(px1l)        
+        px2l = MathTex(r"p_2 \mathbf{x_2}", font_size=40).next_to(px2.get_end(),UP,buff=0.15)
+        color_tex_standard(px2l)        
         rl = MathTex(r"\mathbf{v-p}", font_size=50).next_to(r,RIGHT,buff=0.15).shift(UP*0.3)
         color_tex_standard(rl)
-        labels = VGroup(xl,vl,yl,pl,pxl,pyl,rl)
+        labels = VGroup(x1l,vl,x2l,pl,px1l,px2l,rl)
         diagram.add(labels)                
         
         diagram.shift(-VGroup(v,p,r).get_center()).shift(UP*0.35+RIGHT*0.2)
         self.set_camera_orientation(frame_center=IN*11) # self.set_camera_orientation(zoom=2)
-        for vector in vectors: 
+        for vector in vectors+[b_vectors]: 
             ArrowStrokeFor3dScene(self,vector,family=True)
         face_camera(self,r)
         ArrowGradient(r,[PCOLOR,VCOLOR])
+
 
         # setup plane, vectors
         self.play(Write(plane),run_time=2)
@@ -668,45 +685,45 @@ class Oblique2D(ThreeDScene):
         pxc3, pyc3 = 0.2,0.3
         pxc4, pyc4 = 1.1,0.2
         p.save_state()
-        ArrowStrokeFor3dScene(self,p.generate_target().put_start_and_end_on(axes @ ORIGIN, axes @ (pxc2*xcoords + pyc2*ycoords)))
+        ArrowStrokeFor3dScene(self,p.generate_target().put_start_and_end_on(axes @ ORIGIN, axes @ (pxc2*x1coords + pyc2*x2coords)))
         dpv = always_redraw(lambda: DashedLine(v.get_end(),p.get_end(),dash_length=0.15).set_opacity(0.4))
         self.remove(dp), self.add(dpv)
         anglev = always_redraw(lambda: Arc3d(p.get_center(),dpv.get_center(),p.get_end(),radius=0.4).set_stroke(opacity=0.4))
         self.remove(angle), self.add(anglev)
         self.play(MoveToTarget(p),run_time=1.5)
-        ArrowStrokeFor3dScene(self,p.generate_target().put_start_and_end_on(axes @ ORIGIN, axes @ (pxc3*xcoords + pyc3*ycoords)))
+        ArrowStrokeFor3dScene(self,p.generate_target().put_start_and_end_on(axes @ ORIGIN, axes @ (pxc3*x1coords + pyc3*x2coords)))
         self.play(MoveToTarget(p),run_time=1.5)
-        ArrowStrokeFor3dScene(self,p.generate_target().put_start_and_end_on(axes @ ORIGIN, axes @ (pxc4*xcoords + pyc4*ycoords)))
+        ArrowStrokeFor3dScene(self,p.generate_target().put_start_and_end_on(axes @ ORIGIN, axes @ (pxc4*x1coords + pyc4*x2coords)))
         self.play(MoveToTarget(p),run_time=1.5)
         self.play(Restore(p),run_time=1.5)
         self.remove(dpv,anglev), self.add(dp,angle)
         self.wait()
 
         # add x,y basis
-        self.play(GrowArrow(x))
-        self.play(Write(xl))
-        self.play(GrowArrow(y))
-        self.play(Write(yl))
+        self.play(GrowArrow(x1))
+        self.play(Write(x1l))
+        self.play(GrowArrow(x2))
+        self.play(Write(x2l))
         self.wait()
 
         # to px, py
         self.play(
-            TransformFromCopy(p,px),
-            Create(dy)
+            TransformFromCopy(p,px1),
+            Create(dx2)
         , run_time=1.75)
-        self.play(Write(pxl))
+        self.play(Write(px1l))
         self.play(
-            TransformFromCopy(p,py),
-            Create(dx)
+            TransformFromCopy(p,px2),
+            Create(dx1)
         , run_time=1.75)
-        self.play(Write(pyl))
+        self.play(Write(px2l))
         self.wait(w)
 
         # zoom out
-        pe = MathTex(r"\mathbf{p}","=",r"p_x \mathbf{x}","+",r"p_y \mathbf{y}", font_size=60).next_to(diagram,DOWN)
+        pe = MathTex(r"\mathbf{p}","=",r"p_1 \mathbf{x_1}","+",r"p_2 \mathbf{x_2}", font_size=60).next_to(diagram,DOWN)
         color_tex_standard(pe)
-        pe[0].set_color(PCOLOR), pe[2][-1].set_color(XCOLOR),pe[4][0:2].set_color(PCOLOR), pe[4][-1].set_color(YCOLOR)
-        for mob in [r,rl,plane2]:mob.set_opacity(0)
+        pe[0].set_color(PCOLOR)
+        for mob in [r,rl,plane2,b1,b2]:mob.set_opacity(0)
         self.move_camera(
             frame_center=9.5*IN, 
             added_anims=[
@@ -714,8 +731,8 @@ class Oblique2D(ThreeDScene):
             ],
             run_time=1.25
         )
-        self.remove(r,rl,plane2)
-        for mob in [r,rl,plane2]:mob.set_opacity(1)
+        self.remove(r,rl,plane2,b1,b2)
+        for mob in [r,rl,plane2,b1,b2]:mob.set_opacity(1)
         plane2.set_opacity(0.6)
         pe.next_to(diagram,DOWN,buff=0.3)
         
@@ -723,14 +740,14 @@ class Oblique2D(ThreeDScene):
         self.play(TransformFromCopy(pl[0],pe[0]),run_time=1.5)
         self.play(Write(pe[1]))
         self.play(
-            TransformFromCopy(pxl[0],pe[2]),
-            Indicate(pxl[0]),
+            TransformFromCopy(px1l[0],pe[2]),
+            Indicate(px1l[0]),
             run_time=1.5
         )
         self.play(Write(pe[3]))
         self.play(
-            TransformFromCopy(pyl[0],pe[4]),
-            Indicate(pyl[0]),
+            TransformFromCopy(px2l[0],pe[4]),
+            Indicate(px2l[0]),
             run_time=1.5
         )
         self.wait(w)
@@ -751,25 +768,27 @@ class Oblique2D(ThreeDScene):
         
         # un-mask and remove stuff
         self.play(
-            FadeOut(pe,pxl,pyl,dx,dy,px,py,r,rl),
+            FadeOut(x1,x1l,x2,x2l,pe,px1l,px2l,dx1,dx2,px1,px2,r,rl),
             FadeOut(mask),
+            FadeIn(dp),
             run_time=1.25
         )
         # add plane, zoom in
-        for mob in [x,y,p,v,dp]: mob.set_shade_in_3d(True)
+        for mob in [v,dp]: mob.set_shade_in_3d(True)
         self.play(
-            Write(plane2),
-            Write(dp)
+            Write(plane2)
         )
-        for mob in [pe,pxl,pyl,dx,dy,px,py,r,rl]:mob.set_opacity(0)
+        for mob in [x1,x2,x1l,x2l,pe,px1l,px2l,dx1,dx2,px1,px2,r,rl,b1,b2]:mob.set_opacity(0)
+        for mob in [p,v,dp]: mob.add_updater(ArrowStrokeCameraUpdater(self))
         self.move_camera(
             frame_center=IN*13,
             added_anims=[diagram.animate.rotate(40*DEGREES, axis=(axes @ (vcoords - pcoords))-(axes @ ORIGIN), about_point=diagram.get_center()).rotate(10*DEGREES,axis=(axes @ b2coords) - (axes @ ORIGIN),about_point=diagram.get_center()).shift(DOWN*0.15)],
             run_time=2
         )
-        self.remove(pe,pxl,pyl,dx,dy,px,py,r,rl)
-        for mob in [pe,pxl,pyl,px,py,r,rl]:mob.set_opacity(1)
-        for mob in [dx,dy]: mob.set_opacity(0.4)
+        for mob in [p,v,dp]: mob.clear_updaters()
+        self.remove(x1,x2,x1l,x2l,pe,px1l,px2l,dx1,dx2,px1,px2,r,rl,b1,b2)
+        for mob in [x1,x2,x1l,x2l,pe,px1l,px2l,px1,px2,r,rl,b1,b2]:mob.set_opacity(1)
+        for mob in [dx1,dx2]: mob.set_opacity(0.4)
 
         # add right angle
         ra = VGroup(
@@ -780,6 +799,10 @@ class Oblique2D(ThreeDScene):
         self.wait()
 
         # move the oblique plane around
+        # these value trackers will store the temporary basis vectors
+        b1v = [ValueTracker(b1coords[0]),ValueTracker(b1coords[1]),ValueTracker(b1coords[2])]
+        b2v = [ValueTracker(b2coords[0]),ValueTracker(b2coords[1]),ValueTracker(b2coords[2])]
+        # these functions calculate where things need to be dynamically
         def get_b_values(b1,b2):
             return (
                 np.array([b1[0].get_value(),b1[1].get_value(),b1[2].get_value()]),
@@ -795,7 +818,7 @@ class Oblique2D(ThreeDScene):
             py = np.matmul(np.linalg.inv(np.matmul(bm_calc(b1,b2).T,amatrix)), np.matmul(bm_calc(b1,b2).T,vcoords))[1]
             return py
         def p_calc(b1,b2):
-            p = px_calc(b1,b2)*xcoords + py_calc(b1,b2)*ycoords
+            p = px_calc(b1,b2)*x1coords + py_calc(b1,b2)*x2coords
             return p
         def bx_calc(b1,b2):
             bx = np.matmul(np.linalg.inv(np.matmul(bm_calc(b1,b2).T,bm_calc(b1,b2))), np.matmul(bm_calc(b1,b2).T,vcoords))[0]
@@ -806,43 +829,86 @@ class Oblique2D(ThreeDScene):
         def bp_calc(b1,b2):
             bp = b1*bx_calc(b1,b2) + b2 * by_calc(b1,b2)
             return bp
-        self.remove(pl,dp,ra,angle,plane,plane2)
-        b1 = [ValueTracker(b1coords[0]),ValueTracker(b1coords[1]),ValueTracker(b1coords[2])]
-        b2 = [ValueTracker(b2coords[0]),ValueTracker(b2coords[1]),ValueTracker(b2coords[2])]
-        b1c2 = np.array([1,0,0.4])
-        b2c2 = np.array([0,1,0])
-        # pv = always_redraw(lambda: Arrow(axes @ ORIGIN, axes @ (px_calc(*get_b_values(b1,b2))*xcoords + py_calc(*get_b_values(b1,b2))*ycoords), buff=0, color=PCOLOR).set_stroke(width=6)        )
-        p.add_updater(lambda mob: ArrowStrokeFor3dScene(self,mob.put_start_and_end_on(axes @ ORIGIN, axes @ (px_calc(*get_b_values(b1,b2))*xcoords + py_calc(*get_b_values(b1,b2))*ycoords))))
-        dpv = always_redraw(lambda: DashedLine(v.get_end(),p.get_end(),dash_length=0.15).set_opacity(0.4))
-        anglev = always_redraw(lambda: Arc3d(p.get_center(),dpv.get_start(),p.get_end(),radius=0.4).set_stroke(opacity=0.4))
-        plane2v = always_redraw(lambda: Surface(lambda u,v:axes @ (u*(get_b_values(b1,b2)[0])+v*(get_b_values(b1,b2)[1])),u_range=[-0.25,1.25],v_range=[-0.25,1.25],stroke_width=0.1,resolution=6).set_opacity(0.6).set_color(BCOLOR))
-        plane1v = always_redraw(lambda: Surface(lambda u,v:axes @ (u,v,0),u_range=[-0.25,1.25],v_range=[-0.25,1.25],stroke_width=0.1,resolution=10).set_opacity(0.6).set_color(ManimColor('#29ABCA')))
+        # remove things and replace them with copies that will update
+        self.remove(dp,ra,angle,plane,plane2)
+        p.add_updater(lambda mob: ArrowStrokeFor3dScene(self,mob.put_start_and_end_on(axes @ ORIGIN, axes @ (px_calc(*get_b_values(b1v,b2v))*x1coords + py_calc(*get_b_values(b1v,b2v))*x2coords))))
+        pl.add_updater(lambda mob: mob.next_to(p.get_end(),DR,buff=0.15))
+        dpv = always_redraw(lambda: ArrowStrokeFor3dScene(self,DashedLine(v.get_end(),p.get_end(),dash_length=0.15,shade_in_3d=True).set_opacity(0.4)))
+        anglev = always_redraw(lambda: Arc3d(p.get_center(),dpv.get_start(),p.get_end(),radius=0.4).set_stroke(opacity=0.4).set_shade_in_3d(True))
+        plane2v = always_redraw(lambda: Surface(lambda u,v:axes @ (u*(get_b_values(b1v,b2v)[0])+v*(get_b_values(b1v,b2v)[1])),u_range=[-0.25,1.25],v_range=[-0.25,1.25],stroke_width=0.1,resolution=high_plane_resolution).set_opacity(0.5).set_color(BCOLOR))
+        plane1v = always_redraw(lambda: Surface(lambda u,v:axes @ (u,v,0),u_range=[-0.25,1.25],v_range=[-0.25,1.25],stroke_width=0.1,resolution=high_plane_resolution).set_opacity(0.5).set_color(ManimColor('#29ABCA')).set_z_index_group(Dot()))
         rav = always_redraw(lambda: VGroup(
-            Line(axes @ (0.9*bp_calc(*get_b_values(b1,b2))),axes @ (0.9*bp_calc(*get_b_values(b1,b2)+0.1*(vcoords-p_calc(*get_b_values(b1,b2))))), stroke_width=2),
-            Line(axes @ (0.9*bp_calc(*get_b_values(b1,b2)+0.1*(vcoords-p_calc(*get_b_values(b1,b2))))),axes @ (1*bp_calc(*get_b_values(b1,b2)+0.1*(vcoords-p_calc(*get_b_values(b1,b2))))), stroke_width=2)
-        ).set_stroke(opacity=0.6))
-        self.add(dpv,anglev,rav,plane,plane2v)
+            Line(axes @ (0.9*bp_calc(*get_b_values(b1v,b2v))),axes @ (0.9*bp_calc(*get_b_values(b1v,b2v))+0.1*(vcoords-p_calc(*get_b_values(b1v,b2v)))), stroke_width=2),
+            Line(axes @ (0.9*bp_calc(*get_b_values(b1v,b2v))+0.1*(vcoords-p_calc(*get_b_values(b1v,b2v)))),axes @ (1*bp_calc(*get_b_values(b1v,b2v))+0.1*(vcoords-p_calc(*get_b_values(b1v,b2v)))), stroke_width=2)
+        ).set_stroke(opacity=0.6).set_shade_in_3d(True))
+        self.add(plane1v,anglev,dpv,plane2v,rav)
+        # these are the sets of coordinates for the basis vectors for the transformations
         b1c2 = np.array([1,0,0.4])
         b2c2 = np.array([0,1,0])
         b1c3 = np.array([1,0,0])
         b2c3 = np.array([0,1,0.4])
         self.play(
-            b1[0].animate.set_value(b1c2[0]),b1[1].animate.set_value(b1c2[1]),b1[2].animate.set_value(b1c2[2]),
-            b2[0].animate.set_value(b2c2[0]),b2[1].animate.set_value(b2c2[1]),b2[2].animate.set_value(b2c2[2]),
+            b1v[0].animate.set_value(b1c2[0]),b1v[1].animate.set_value(b1c2[1]),b1v[2].animate.set_value(b1c2[2]),
+            b2v[0].animate.set_value(b2c2[0]),b2v[1].animate.set_value(b2c2[1]),b2v[2].animate.set_value(b2c2[2]),
             run_time=2
         )
         self.play(
-            b1[0].animate.set_value(b1c3[0]),b1[1].animate.set_value(b1c3[1]),b1[2].animate.set_value(b1c3[2]),
-            b2[0].animate.set_value(b2c3[0]),b2[1].animate.set_value(b2c3[1]),b2[2].animate.set_value(b2c3[2]),
+            b1v[0].animate.set_value(b1c3[0]),b1v[1].animate.set_value(b1c3[1]),b1v[2].animate.set_value(b1c3[2]),
+            b2v[0].animate.set_value(b2c3[0]),b2v[1].animate.set_value(b2c3[1]),b2v[2].animate.set_value(b2c3[2]),
             run_time=2
         )
+        # go back home
+        self.play(
+            b1v[0].animate.set_value(b1coords[0]),b1v[1].animate.set_value(b1coords[1]),b1v[2].animate.set_value(b1coords[2]),
+            b2v[0].animate.set_value(b2coords[0]),b2v[1].animate.set_value(b2coords[1]),b2v[2].animate.set_value(b2coords[2]),
+            run_time=2
+        )
+        self.remove(plane1v,anglev,dpv,plane2v,rav)
+        self.add(dp,ra,angle,plane,plane2)
+        p.clear_updaters(), pl.clear_updaters()
         self.wait()
-        pcoords = pxcoord*xcoords + pycoord*ycoords
-        bpcoords = bpxcoord*b1coords + bpycoord*b2coords
 
-
+        # make plane 2 opaque, fade out the rest
+        o = Dot().shift(OUT*0.2)
+        self.move_camera(
+            frame_center=self.camera.frame_center+UP*0.75,
+            added_anims=
+            [mob.animate.set_z_index_group(o) for mob in plane2]
+            +[FadeOut(plane,p,pl,angle,dp[-3:])],
+            run_time=2
+        )
         
-config.from_animation_number = 39
+        # draw basis vectors
+        b1l = MathTex(r"\mathbf{b_1}",font_size=40,color=BCOLOR.lighter()).next_to(b1.get_end(),LEFT)
+        b2l = MathTex(r"\mathbf{b_2}",font_size=50,color=BCOLOR.lighter()).next_to(b2.get_end(),RIGHT)
+        diagram.add(b1l,b2l)
+        self.play(GrowArrow(b1))
+        self.play(Write(b1l))
+        self.play(GrowArrow(b2))
+        self.play(Write(b2l))
+        self.wait()
+
+        # back to both planes
+        off = VGroup(x1,x1l,x2,x2l,px1,px1l,px2,px2l,r,rl,dx1,dx2).set_opacity(0)
+        self.move_camera(
+            frame_center=self.camera.frame_center+DOWN*0.75+OUT*2,
+            added_anims=
+            [mob.animate.set_z_index_group(mob) for mob in plane2]
+            +[FadeIn(plane,p,pl,angle,dp[-3:]),
+              diagram.animate.shift(UP*0.15).rotate(-10*DEGREES,axis=(axes @ b2coords) - (axes @ ORIGIN),about_point=diagram.get_center()).rotate(-40*DEGREES, axis=(axes @ (vcoords - pcoords))-(axes @ ORIGIN), about_point=diagram.get_center()),
+              FadeOut(ra)],
+            run_time=2
+        )
+        self.play(
+            off.animate.set_opacity(1),
+            FadeOut(dp),
+            run_time=2)
+        self.wait()
+        
+
+
+config.from_animation_number = 45
+# config.upto_animation_number = 44
 
 
 
