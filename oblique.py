@@ -62,6 +62,74 @@ def color_tex_standard(equation):
 
 
 
+def alter_diagram(scene,animation_func,hidden_mobs=[],run_time=1,move_camera_dict=None,updater=None,updater_mobs=[],added_anims=[]):
+    """
+        Hacky workaround to deal with the fact that you can't animate groups without all the group items appearing on screen.
+
+        scene: the scene
+        animation_func: a function (like a lambda) that will return the animation you want to run. Needs to be this way because animation has to be created after other mobs are hidden.
+        hidden_mobs: list of mobs which should stay invisible, despite being technically in the animation
+        run_time
+        move_camera_dict: dictionary if you want to change 3d scene parameters (like frame_center, phi, etc.)
+        updater: attach an updater, optional
+        updater_mobs: which mobs to attach the updater to
+        added_anims: additional animations (should not contain the hidden mobs)
+    """
+    
+    def get_merged_array(mob,attr):
+        result = np.array([getattr(mob,attr)])
+        for submob in mob.submobjects:
+            result = np.append(result, get_merged_array(submob, attr), axis=0)
+        return result
+    
+    def set_merged_array(mob, attr, array):
+            setattr(mob, attr, array[0])
+            for submob in mob.submobjects:
+                set_merged_array(submob, attr, array[1:])
+
+
+    # record original opacities, then set them to zero
+    hidden_mobs = VGroup(*hidden_mobs)
+    strokes = get_merged_array(hidden_mobs,"stroke_opacity")
+    fills = get_merged_array(hidden_mobs,"fill_opacity")
+    for mob in hidden_mobs:
+        mob.set_opacity(0)
+        
+    # apply updater to any mobs needing it
+    for mob in updater_mobs:
+        mob.add_updater(updater)
+    
+    # perform animation!
+    animation = animation_func()
+    if move_camera_dict == None:
+        scene.play(animation,*added_anims,run_time=run_time)
+    else:
+        scene.move_camera(
+            **move_camera_dict, 
+            added_anims=[
+                animation,
+                *added_anims
+            ],
+            run_time=run_time
+        )
+
+    # remove updaters
+    for mob in updater_mobs:
+        mob.remove_updater(updater)
+    
+    for mob in hidden_mobs:
+        # remove hidden mobs that just got added to the scene because of the animation
+        scene.remove(mob)
+
+        # restore opacities
+    set_merged_array(hidden_mobs,"stroke_opacity",strokes)
+    set_merged_array(hidden_mobs,"fill_opacity",fills)
+
+
+
+
+
+
 class Oblique1D(MovingCameraScene):
     def construct(self):
         xcoords = np.array([2,0.7])
@@ -589,12 +657,11 @@ class Oblique2D(ThreeDScene):
     def construct(self):
         low_plane_resolution = 10 # increase to like 32 or even 64 for higher quality render (but will take way longer)
         high_plane_resolution = 10
-        Arrow.set_default(shade_in_3d=True)
         
         x1coords = np.array([1,0,0])
         x2coords = np.array([0,1,0])
         b1coords = np.array([1,0,0.35])
-        b2coords = np.array([0,1,0.15])
+        b2coords = np.array([0,1,0.25])
         vcoords = np.array([0.5,0.7,0.7])
         amatrix = np.vstack([x1coords,x2coords]).T
         bmatrix = np.vstack([b1coords,b2coords]).T
@@ -629,36 +696,36 @@ class Oblique2D(ThreeDScene):
         b2 = Arrow(axes @ ORIGIN, axes @ b2coords, buff=0,color=BCOLOR.lighter()).set_stroke(width=6)
 
         angle = Arc3d(p.get_center(),r.get_center(),p.get_end(),radius=0.4).set_stroke(opacity=0.4)
-        vectors = VGroup(v,x1,x2,p,px1,px2,r)
-        b_vectors = VGroup(b1,b2)
-        dashes = VGroup(dp,dx1,dx2)
+        vectors = VGroup(v,x1,x2,p,px1,px2,r).set_shade_in_3d()
+        b_vectors = VGroup(b1,b2).set_shade_in_3d()
+        dashes = VGroup(dp,dx1,dx2).set_shade_in_3d()
 
-        plane =  Surface(lambda u,v:axes @ (u,v,0),u_range=[-0.25,1.25],v_range=[-0.25,1.25],stroke_width=0.1,resolution=low_plane_resolution).set_opacity(0.5).set_color(ManimColor('#29ABCA'))
+        plane =  Surface(lambda u,v:axes @ (u,v,0),u_range=[-0.25,1.25],v_range=[-0.25,1.25],resolution=low_plane_resolution).set_stroke(width=0.06,opacity=0.5).set_opacity(0.5).set_color(ManimColor('#29ABCA'))
         for mob in [*plane,*x1,*x2,*px1,*px2,*p,*b1,*b2]: mob.z_index_group=Dot()
         
-        
-        plane2 = Surface(lambda u,v:axes @ (u*b1coords+v*b2coords),u_range=[-0.25,1.25],v_range=[-0.25,1.25],stroke_width=0.1,resolution=low_plane_resolution).set_opacity(0.4).set_color(BCOLOR)
-        VGroup(plane,plane2).set_stroke(opacity=1)
+        plane2 = Surface(lambda u,v:axes @ (u*b1coords+v*b2coords),u_range=[-0.25,1.25],v_range=[-0.25,1.25],stroke_width=0.06,resolution=low_plane_resolution).set_opacity(0.5).set_color(BCOLOR)
 
         diagram = Group(axes,plane,vectors,dashes, angle,plane2,b_vectors)
         diagram.rotate(-125*DEGREES).rotate(-70*DEGREES,RIGHT)        
         
         vl = MathTex(r"\mathbf{v}", color=VCOLOR, font_size=50).next_to(v.get_end(),buff=0.15)
-        x1l = MathTex(r"\mathbf{x_1}", color=XCOLOR, font_size=50).next_to(x1.get_end(),LEFT,buff=0.15)
-        x2l = MathTex(r"\mathbf{x_2}", color=XCOLOR, font_size=50).next_to(x2.get_end(),RIGHT,buff=0.15)
+        x1l = MathTex(r"\mathbf{x_1}", color=XCOLOR, font_size=50).next_to(x1.get_end(),DOWN,buff=0.1)
+        x2l = MathTex(r"\mathbf{x_2}", color=XCOLOR, font_size=50).next_to(x2.get_end(),DR,buff=0.1)
         pl = MathTex(r"\mathbf{p}", color=PCOLOR, font_size=50).next_to(p.get_end(),DR,buff=0.15)
-        px1l = MathTex(r"p_1 \mathbf{x_1}", font_size=40).next_to(px1.get_end(),UL,buff=0.15)
+        px1l = MathTex(r"p_1 \mathbf{x_1}", font_size=40).next_to(px1.get_end(),LEFT,buff=0.15).shift(UP*0.15)
         color_tex_standard(px1l)        
         px2l = MathTex(r"p_2 \mathbf{x_2}", font_size=40).next_to(px2.get_end(),UP,buff=0.15)
         color_tex_standard(px2l)        
-        rl = MathTex(r"\mathbf{v-p}", font_size=50).next_to(r,RIGHT,buff=0.15).shift(UP*0.3)
+        rl = MathTex(r"\mathbf{v-p}", font_size=50).next_to(r,RIGHT,buff=0.15).shift(UP*0.5)
         color_tex_standard(rl)
-        labels = VGroup(x1l,vl,x2l,pl,px1l,px2l,rl)
+        b1l = MathTex(r"\mathbf{b_1}",font_size=40,color=BCOLOR.lighter()).next_to(b1.get_end(),LEFT)
+        b2l = MathTex(r"\mathbf{b_2}",font_size=50,color=BCOLOR.lighter()).next_to(b2.get_end(),RIGHT)
+        labels = VGroup(x1l,vl,x2l,pl,px1l,px2l,rl,b1l,b2l)
         diagram.add(labels)                
         
         diagram.shift(-VGroup(v,p,r).get_center()).shift(UP*0.35+RIGHT*0.2)
         self.set_camera_orientation(frame_center=IN*11) # self.set_camera_orientation(zoom=2)
-        for vector in vectors+[b_vectors]: 
+        for vector in vectors+b_vectors: 
             ArrowStrokeFor3dScene(self,vector,family=True)
         face_camera(self,r)
         ArrowGradient(r,[PCOLOR,VCOLOR])
@@ -709,34 +776,31 @@ class Oblique2D(ThreeDScene):
         # to px, py
         self.play(
             TransformFromCopy(p,px1),
-            Create(dx2)
+            Create(dx1)
         , run_time=1.75)
         self.play(Write(px1l))
         self.play(
             TransformFromCopy(p,px2),
-            Create(dx1)
+            Create(dx2)
         , run_time=1.75)
         self.play(Write(px2l))
         self.wait(w)
 
         # zoom out
-        pe = MathTex(r"\mathbf{p}","=",r"p_1 \mathbf{x_1}","+",r"p_2 \mathbf{x_2}", font_size=60).next_to(diagram,DOWN)
+        alter_diagram(
+            self,
+            animation_func=lambda:diagram.animate.shift(UP*0.3),
+            hidden_mobs=[plane2,b1,b2,b1l,b2l,r,rl],
+            run_time=1.25,
+            move_camera_dict={"frame_center":9.5*IN},
+            updater=ArrowStrokeCameraUpdater(self),
+            updater_mobs=vectors+b_vectors+dashes,
+        )
+
+        # write equation for p
+        pe = MathTex(r"\mathbf{p}","=",r"p_1 \mathbf{x_1}","+",r"p_2 \mathbf{x_2}", font_size=60).next_to(diagram,DOWN,buff=0.3)
         color_tex_standard(pe)
         pe[0].set_color(PCOLOR)
-        for mob in [r,rl,plane2,b1,b2]:mob.set_opacity(0)
-        self.move_camera(
-            frame_center=9.5*IN, 
-            added_anims=[
-                diagram.animate.shift(UP*0.3)
-            ],
-            run_time=1.25
-        )
-        self.remove(r,rl,plane2,b1,b2)
-        for mob in [r,rl,plane2,b1,b2]:mob.set_opacity(1)
-        plane2.set_opacity(0.6)
-        pe.next_to(diagram,DOWN,buff=0.3)
-        
-        # write equation for p
         self.play(TransformFromCopy(pl[0],pe[0]),run_time=1.5)
         self.play(Write(pe[1]))
         self.play(
@@ -773,22 +837,24 @@ class Oblique2D(ThreeDScene):
             FadeIn(dp),
             run_time=1.25
         )
+
         # add plane, zoom in
-        for mob in [v,dp]: mob.set_shade_in_3d(True)
         self.play(
             Write(plane2)
         )
-        for mob in [x1,x2,x1l,x2l,pe,px1l,px2l,dx1,dx2,px1,px2,r,rl,b1,b2]:mob.set_opacity(0)
-        for mob in [p,v,dp]: mob.add_updater(ArrowStrokeCameraUpdater(self))
-        self.move_camera(
-            frame_center=IN*13,
-            added_anims=[diagram.animate.rotate(40*DEGREES, axis=(axes @ (vcoords - pcoords))-(axes @ ORIGIN), about_point=diagram.get_center()).rotate(10*DEGREES,axis=(axes @ b2coords) - (axes @ ORIGIN),about_point=diagram.get_center()).shift(DOWN*0.15)],
-            run_time=2
+
+
+
+        alter_diagram(
+            self,
+            lambda: diagram.animate.rotate(40*DEGREES, axis=(axes @ (vcoords - pcoords))-(axes @ ORIGIN), about_point=diagram.get_center()).rotate(10*DEGREES,axis=(axes @ b2coords) - (axes @ ORIGIN),about_point=diagram.get_center()).shift(DOWN*0.15),
+            hidden_mobs=[x1,x2,x1l,x2l,pe,px1l,px2l,dx1,dx2,px1,px2,r,rl,b1,b2,b1l,b2l],
+            run_time=2,
+            move_camera_dict={"frame_center":IN*13},
+            updater=ArrowStrokeCameraUpdater(self),
+            updater_mobs=vectors+b_vectors+dashes,
         )
-        for mob in [p,v,dp]: mob.clear_updaters()
-        self.remove(x1,x2,x1l,x2l,pe,px1l,px2l,dx1,dx2,px1,px2,r,rl,b1,b2)
-        for mob in [x1,x2,x1l,x2l,pe,px1l,px2l,px1,px2,r,rl,b1,b2]:mob.set_opacity(1)
-        for mob in [dx1,dx2]: mob.set_opacity(0.4)
+                
 
         # add right angle
         ra = VGroup(
@@ -835,8 +901,8 @@ class Oblique2D(ThreeDScene):
         pl.add_updater(lambda mob: mob.next_to(p.get_end(),DR,buff=0.15))
         dpv = always_redraw(lambda: ArrowStrokeFor3dScene(self,DashedLine(v.get_end(),p.get_end(),dash_length=0.15,shade_in_3d=True).set_opacity(0.4)))
         anglev = always_redraw(lambda: Arc3d(p.get_center(),dpv.get_start(),p.get_end(),radius=0.4).set_stroke(opacity=0.4).set_shade_in_3d(True))
-        plane2v = always_redraw(lambda: Surface(lambda u,v:axes @ (u*(get_b_values(b1v,b2v)[0])+v*(get_b_values(b1v,b2v)[1])),u_range=[-0.25,1.25],v_range=[-0.25,1.25],stroke_width=0.1,resolution=high_plane_resolution).set_opacity(0.5).set_color(BCOLOR))
-        plane1v = always_redraw(lambda: Surface(lambda u,v:axes @ (u,v,0),u_range=[-0.25,1.25],v_range=[-0.25,1.25],stroke_width=0.1,resolution=high_plane_resolution).set_opacity(0.5).set_color(ManimColor('#29ABCA')).set_z_index_group(Dot()))
+        plane2v = always_redraw(lambda: Surface(lambda u,v:axes @ (u*(get_b_values(b1v,b2v)[0])+v*(get_b_values(b1v,b2v)[1])),u_range=[-0.25,1.25],v_range=[-0.25,1.25],stroke_width=0.06,resolution=high_plane_resolution).set_opacity(0.5).set_color(BCOLOR))
+        plane1v = always_redraw(lambda: Surface(lambda u,v:axes @ (u,v,0),u_range=[-0.25,1.25],v_range=[-0.25,1.25],stroke_width=0.06,resolution=high_plane_resolution).set_opacity(0.5).set_color(ManimColor('#29ABCA')).set_z_index_group(Dot()))
         rav = always_redraw(lambda: VGroup(
             Line(axes @ (0.9*bp_calc(*get_b_values(b1v,b2v))),axes @ (0.9*bp_calc(*get_b_values(b1v,b2v))+0.1*(vcoords-p_calc(*get_b_values(b1v,b2v)))), stroke_width=2),
             Line(axes @ (0.9*bp_calc(*get_b_values(b1v,b2v))+0.1*(vcoords-p_calc(*get_b_values(b1v,b2v)))),axes @ (1*bp_calc(*get_b_values(b1v,b2v))+0.1*(vcoords-p_calc(*get_b_values(b1v,b2v)))), stroke_width=2)
@@ -868,20 +934,17 @@ class Oblique2D(ThreeDScene):
         p.clear_updaters(), pl.clear_updaters()
         self.wait()
 
-        # make plane 2 opaque, fade out the rest
+        # pan to plane 2, fade the rest out
         o = Dot().shift(OUT*0.2)
         self.move_camera(
             frame_center=self.camera.frame_center+UP*0.75,
             added_anims=
             [mob.animate.set_z_index_group(o) for mob in plane2]
-            +[FadeOut(plane,p,pl,angle,dp[-3:])],
+            +[FadeOut(plane,p,pl,angle,dp[-4:])],
             run_time=2
         )
         
-        # draw basis vectors
-        b1l = MathTex(r"\mathbf{b_1}",font_size=40,color=BCOLOR.lighter()).next_to(b1.get_end(),LEFT)
-        b2l = MathTex(r"\mathbf{b_2}",font_size=50,color=BCOLOR.lighter()).next_to(b2.get_end(),RIGHT)
-        diagram.add(b1l,b2l)
+        # draw basis vectors for plane 2
         self.play(GrowArrow(b1))
         self.play(Write(b1l))
         self.play(GrowArrow(b2))
@@ -907,8 +970,18 @@ class Oblique2D(ThreeDScene):
         
 
 
+
 config.from_animation_number = 45
-# config.upto_animation_number = 44
+# config.upto_animation_number = 
+
+
+
+with tempconfig({
+        "quality": "medium_quality",
+        "from_animation_number":45
+    }):
+    scene = Oblique2D()
+    scene.render()
 
 
 

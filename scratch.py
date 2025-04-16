@@ -160,47 +160,30 @@ class FlatArrow(OpenGLGroup):
 
 
 
-class test1(ThreeDScene):
-    def construct(self):
-        self.set_camera_orientation(zoom=1.5)
 
-        plane = Surface(lambda u,v: (u,v,0),u_range=[-2,2],v_range=[-2,2],resolution=8).set_opacity(0.6)
-        v1 = Arrow(2*LEFT,2*RIGHT,buff=0, color=YELLOW)
-        v2 = Arrow(2*LEFT,RIGHT+UP,buff=0,color=RED)
-
-        plane2 = Surface(lambda u,v: (u,v,0),u_range=[-2,2],v_range=[-2,2],resolution=8,color=GREEN).set_opacity(0.6).shift(IN*0.5)
-        
-        diagram = VGroup(plane,v1,v2).set_shade_in_3d(True,True)
-        diagram.add(plane2)
-        self.add(diagram)
-
-        self.wait()
-        self.play(diagram.animate.rotate(-125*DEGREES).rotate(-70*DEGREES,RIGHT),run_time=2) 
-        self.wait()
-        plane2.add_updater(lambda p: p.set_shade_in_3d(True))
-        self.play(plane2.animate.shift(2*(plane.get_center()-plane2.get_center())),run_time=2)
-        self.wait()
 
 
 class test(ThreeDScene):
     def construct(self):
-        Arrow.set_default(shade_in_3d=True)
+        low_plane_resolution = 16 # increase to like 32 or even 64 for higher quality render (but will take way longer)
+        high_plane_resolution = 10
+        # Arrow.set_default(shade_in_3d=True)
         
-        xcoords = np.array([1,0,0])
-        ycoords = np.array([0,1,0])
-        b1coords = normalize(np.array([1,0,0.35]))
-        b2coords = normalize(np.array([0,1,0.15]))
+        x1coords = np.array([1,0,0])
+        x2coords = np.array([0,1,0])
+        b1coords = np.array([1,0,0.35])
+        b2coords = np.array([0,1,0.25])
         vcoords = np.array([0.5,0.7,0.7])
-        amatrix = np.vstack([xcoords,ycoords]).T
+        amatrix = np.vstack([x1coords,x2coords]).T
         bmatrix = np.vstack([b1coords,b2coords]).T
         
-        pxcoord = np.matmul(np.linalg.inv(np.matmul(bmatrix.T,amatrix)), np.matmul(bmatrix.T,vcoords))[0]
-        pycoord = np.matmul(np.linalg.inv(np.matmul(bmatrix.T,amatrix)), np.matmul(bmatrix.T,vcoords))[1]
-        pcoords = pxcoord*xcoords + pycoord*ycoords
+        px1coord = np.matmul(np.linalg.inv(np.matmul(bmatrix.T,amatrix)), np.matmul(bmatrix.T,vcoords))[0]
+        px2coord = np.matmul(np.linalg.inv(np.matmul(bmatrix.T,amatrix)), np.matmul(bmatrix.T,vcoords))[1]
+        pcoords = px1coord*x1coords + px2coord*x2coords
         
-        bpxcoord = np.matmul(np.linalg.inv(np.matmul(bmatrix.T,bmatrix)), np.matmul(bmatrix.T,vcoords))[0]
-        bpycoord = np.matmul(np.linalg.inv(np.matmul(bmatrix.T,bmatrix)), np.matmul(bmatrix.T,vcoords))[1]
-        bpcoords = bpxcoord*b1coords + bpycoord*b2coords
+        bpx1coord = np.matmul(np.linalg.inv(np.matmul(bmatrix.T,bmatrix)), np.matmul(bmatrix.T,vcoords))[0]
+        bpx2coord = np.matmul(np.linalg.inv(np.matmul(bmatrix.T,bmatrix)), np.matmul(bmatrix.T,vcoords))[1]
+        bpcoords = bpx1coord*b1coords + bpx2coord*b2coords
 
         # define diagram
         axes = ThreeDAxes(
@@ -209,47 +192,52 @@ class test(ThreeDScene):
             z_range=[0,0.5],z_length=2.5 / 2,
         ).set_opacity(0)        
         v = Arrow(axes @ ORIGIN, axes @ vcoords, buff=0, color=VCOLOR,shade_in_3d=True).set_stroke(width=6)        
-        x = Arrow(axes @ ORIGIN, axes @ xcoords, buff=0, color=XCOLOR).set_stroke(width=6)
-        y = Arrow(axes @ ORIGIN, axes @ ycoords, buff=0, color=YCOLOR).set_stroke(width=6)        
+        x1 = Arrow(axes @ ORIGIN, axes @ x1coords, buff=0, color=XCOLOR).set_stroke(width=6)
+        x2 = Arrow(axes @ ORIGIN, axes @ x2coords, buff=0, color=XCOLOR).set_stroke(width=6)        
         p = Arrow(axes @ ORIGIN, axes @ pcoords, buff=0, color=PCOLOR).set_stroke(width=6)        
-        px = Arrow(axes @ ORIGIN, axes @ (pxcoord*xcoords), buff=0,color=PCOLOR).set_stroke(width=6)
-        py = Arrow(axes @ ORIGIN, axes @ (pycoord*ycoords), buff=0,color=PCOLOR).set_stroke(width=6)
+        px1 = Arrow(axes @ ORIGIN, axes @ (px1coord*x1coords), buff=0,color=PCOLOR).set_stroke(width=6)
+        px2 = Arrow(axes @ ORIGIN, axes @ (px2coord*x2coords), buff=0,color=PCOLOR).set_stroke(width=6)
         dp = DashedLine(v.get_end(),p.get_end(),dash_length=0.15).set_opacity(0.4)
-        dy = DashedLine(axes @ pcoords, axes @ (pxcoord*xcoords), dash_length=0.15).set_opacity(0.4)
-        dx = DashedLine(axes @ pcoords, axes @ (pycoord*ycoords), dash_length=0.15).set_opacity(0.4)
+        dx1 = DashedLine(axes @ pcoords, axes @ (px1coord*x1coords), dash_length=0.15).set_opacity(0.4)
+        dx2 = DashedLine(axes @ pcoords, axes @ (px2coord*x2coords), dash_length=0.15).set_opacity(0.4)
         r = Arrow(axes @ pcoords, axes @ vcoords, buff=0, color=RCOLOR).set_stroke(width=6)        
         ArrowGradient(r,[PCOLOR,VCOLOR])
 
-        b = Arrow(axes @ ORIGIN, axes @ b1coords, buff=0,color=BCOLOR.lighter()).set_stroke(width=6)
-        c = Arrow(axes @ ORIGIN, axes @ b2coords, buff=0,color=BCOLOR.lighter()).set_stroke(width=6)
+        b1 = Arrow(axes @ ORIGIN, axes @ b1coords, buff=0,color=BCOLOR.lighter()).set_stroke(width=6)
+        b2 = Arrow(axes @ ORIGIN, axes @ b2coords, buff=0,color=BCOLOR.lighter()).set_stroke(width=6)
 
         angle = Arc3d(p.get_center(),r.get_center(),p.get_end(),radius=0.4).set_stroke(opacity=0.4)
-        vectors = VGroup(v,x,y,p,px,py,r)
-        b_vectors = VGroup(b,c)
-        dashes = VGroup(dp,dy,dx)
+        vectors = VGroup(v,x1,x2,p,px1,px2,r).set_shade_in_3d()
+        b_vectors = VGroup(b1,b2).set_shade_in_3d()
+        dashes = VGroup(dp,dx1,dx2)
 
-        plane =  Surface(lambda u,v:axes @ (u,v,0),u_range=[-0.25,1.25],v_range=[-0.25,1.25],stroke_width=0.1,resolution=(64,16)).set_opacity(0.4).set_color(ManimColor('#29ABCA'))
-        for mob in [*plane,*x,*y,*px,*py,*p,*b,*c]: mob.z_index_group=Dot()
+        plane =  Surface(lambda u,v:axes @ (u,v,0),u_range=[-0.25,1.25],v_range=[-0.25,1.25],resolution=low_plane_resolution).set_stroke(width=0.06,opacity=0.5).set_opacity(0.5).set_color(ManimColor('#29ABCA'))
+        
+        reference_dot=Dot().move_to(axes @ ORIGIN).set_opacity(0)
+        for mob in [*plane,*x1,*x2,*px1,*px2,*p,*b1,*b2]: mob.z_index_group=reference_dot
         
         
-        plane2 = Surface(lambda u,v:axes @ (u*b1coords+v*b2coords),u_range=[-0.25,1.25],v_range=[-0.25,1.25],stroke_width=0.1,resolution=32).set_opacity(0.4).set_color(BCOLOR)
-        VGroup(plane,plane2).set_stroke(opacity=1)
+        plane2 = Surface(lambda u,v:axes @ (u*b1coords+v*b2coords),u_range=[-0.25,1.25],v_range=[-0.25,1.25],stroke_width=0.039,resolution=low_plane_resolution).set_opacity(0.5).set_color(BCOLOR)
+        
 
-        diagram = Group(axes,plane,vectors,dashes, angle,plane2,b_vectors)
+        diagram = Group(reference_dot,axes,plane,vectors,dashes, angle,plane2,b_vectors)
         diagram.rotate(-125*DEGREES).rotate(-70*DEGREES,RIGHT)        
         
         vl = MathTex(r"\mathbf{v}", color=VCOLOR, font_size=50).next_to(v.get_end(),buff=0.15)
-        xl = MathTex(r"\mathbf{x}", color=XCOLOR, font_size=50).next_to(x.get_end(),LEFT,buff=0.15)
-        yl = MathTex(r"\mathbf{y}", color=YCOLOR, font_size=50).next_to(y.get_end(),RIGHT,buff=0.15)
+        x1l = MathTex(r"\mathbf{x_1}", color=XCOLOR, font_size=50).next_to(x1.get_end(),DOWN,buff=0.1)
+        x2l = MathTex(r"\mathbf{x_2}", color=XCOLOR, font_size=50).next_to(x2.get_end(),DR,buff=0.1)
         pl = MathTex(r"\mathbf{p}", color=PCOLOR, font_size=50).next_to(p.get_end(),DR,buff=0.15)
-        pxl = MathTex(r"p_x \mathbf{x}", font_size=40).next_to(px.get_end(),UL,buff=0.15)
-        color_tex_standard(pxl)        
-        pyl = MathTex(r"p_y \mathbf{y}", font_size=40).next_to(py.get_end(),UP,buff=0.15)
-        color_tex_standard(pyl)        
-        rl = MathTex(r"\mathbf{v-p}", font_size=50).next_to(r,RIGHT,buff=0.15).shift(UP*0.3)
+        px1l = MathTex(r"p_1 \mathbf{x_1}", font_size=40).next_to(px1.get_end(),LEFT,buff=0.15).shift(UP*0.15)
+        color_tex_standard(px1l)        
+        px2l = MathTex(r"p_2 \mathbf{x_2}", font_size=40).next_to(px2.get_end(),UP,buff=0.15)
+        color_tex_standard(px2l)        
+        rl = MathTex(r"\mathbf{v-p}", font_size=50).next_to(r,RIGHT,buff=0.15).shift(UP*0.5)
         color_tex_standard(rl)
-        labels = VGroup(xl,vl,yl,pl,pxl,pyl,rl)
-        diagram.add(labels)                
+        b1l = MathTex(r"\mathbf{b_1}",font_size=40,color=BCOLOR.lighter()).next_to(b1.get_end(),LEFT)
+        b2l = MathTex(r"\mathbf{b_2}",font_size=50,color=BCOLOR.lighter()).next_to(b2.get_end(),RIGHT)
+        labels = VGroup(x1l,vl,x2l,pl,px1l,px2l,rl,b1l,b2l)
+        diagram.add(labels) 
+  
         
         diagram.shift(-VGroup(v,p,r).get_center()).shift(UP*0.35+RIGHT*0.2)
         self.set_camera_orientation(frame_center=IN*11) # self.set_camera_orientation(zoom=2)
@@ -259,10 +247,8 @@ class test(ThreeDScene):
         ArrowGradient(r,[PCOLOR,VCOLOR])
 
         self.add(diagram)
-        diagram.rotate(40*DEGREES, axis=(axes @ (vcoords - pcoords))-(axes @ ORIGIN), about_point=diagram.get_center())
-        diagram.rotate(10*DEGREES,axis=(axes @ b2coords) - (axes @ ORIGIN),about_point=diagram.get_center())
-        self.remove(x,xl,px,pxl,p,pl,r,rl,y,yl,py,pyl,dx,dy,dp,plane,angle)
-        self.interactive_embed()
+        
+        
 
 
 # config.from_animation_number = 2
@@ -272,6 +258,6 @@ class test(ThreeDScene):
 
 
 
-with tempconfig({"quality": "medium_quality", "dry_run":True}):
+with tempconfig({"quality": "medium_quality"}):
     scene = test()
     scene.render()
