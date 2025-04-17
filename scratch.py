@@ -165,9 +165,8 @@ class FlatArrow(OpenGLGroup):
 
 class test(ThreeDScene):
     def construct(self):
-        low_plane_resolution = 16 # increase to like 32 or even 64 for higher quality render (but will take way longer)
+        low_plane_resolution = 10 # increase to like 32 or even 64 for higher quality render (but will take way longer)
         high_plane_resolution = 10
-        # Arrow.set_default(shade_in_3d=True)
         
         x1coords = np.array([1,0,0])
         x2coords = np.array([0,1,0])
@@ -209,18 +208,14 @@ class test(ThreeDScene):
         angle = Arc3d(p.get_center(),r.get_center(),p.get_end(),radius=0.4).set_stroke(opacity=0.4)
         vectors = VGroup(v,x1,x2,p,px1,px2,r).set_shade_in_3d()
         b_vectors = VGroup(b1,b2).set_shade_in_3d()
-        dashes = VGroup(dp,dx1,dx2)
+        dashes = VGroup(dp,dx1,dx2).set_shade_in_3d().set_stroke(width=2)
 
         plane =  Surface(lambda u,v:axes @ (u,v,0),u_range=[-0.25,1.25],v_range=[-0.25,1.25],resolution=low_plane_resolution).set_stroke(width=0.06,opacity=0.5).set_opacity(0.5).set_color(ManimColor('#29ABCA'))
+        for mob in [*plane,*x1,*x2,*px1,*px2,*p,*b1,*b2]: mob.z_index_group=Dot()
         
-        reference_dot=Dot().move_to(axes @ ORIGIN).set_opacity(0)
-        for mob in [*plane,*x1,*x2,*px1,*px2,*p,*b1,*b2]: mob.z_index_group=reference_dot
-        
-        
-        plane2 = Surface(lambda u,v:axes @ (u*b1coords+v*b2coords),u_range=[-0.25,1.25],v_range=[-0.25,1.25],stroke_width=0.039,resolution=low_plane_resolution).set_opacity(0.5).set_color(BCOLOR)
-        
+        plane2 = Surface(lambda u,v:axes @ (u*b1coords+v*b2coords),u_range=[-0.25,1.25],v_range=[-0.25,1.25],stroke_width=0.06,resolution=low_plane_resolution).set_opacity(0.5).set_color(BCOLOR)
 
-        diagram = Group(reference_dot,axes,plane,vectors,dashes, angle,plane2,b_vectors)
+        diagram = Group(axes,plane,vectors,dashes, angle,plane2,b_vectors)
         diagram.rotate(-125*DEGREES).rotate(-70*DEGREES,RIGHT)        
         
         vl = MathTex(r"\mathbf{v}", color=VCOLOR, font_size=50).next_to(v.get_end(),buff=0.15)
@@ -236,12 +231,11 @@ class test(ThreeDScene):
         b1l = MathTex(r"\mathbf{b_1}",font_size=40,color=BCOLOR.lighter()).next_to(b1.get_end(),LEFT)
         b2l = MathTex(r"\mathbf{b_2}",font_size=50,color=BCOLOR.lighter()).next_to(b2.get_end(),RIGHT)
         labels = VGroup(x1l,vl,x2l,pl,px1l,px2l,rl,b1l,b2l)
-        diagram.add(labels) 
-  
+        diagram.add(labels)                
         
         diagram.shift(-VGroup(v,p,r).get_center()).shift(UP*0.35+RIGHT*0.2)
         self.set_camera_orientation(frame_center=IN*11) # self.set_camera_orientation(zoom=2)
-        for vector in vectors+[b_vectors]: 
+        for vector in vectors+b_vectors+dashes: 
             ArrowStrokeFor3dScene(self,vector,family=True)
         face_camera(self,r)
         ArrowGradient(r,[PCOLOR,VCOLOR])

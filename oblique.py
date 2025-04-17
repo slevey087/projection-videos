@@ -53,6 +53,8 @@ def color_tex_standard(equation):
         (r"\hat{\mathbf{u}}", PUCOLOR),
         (r"\hat{\mathbf{v}}", PVCOLOR),
         (r"\mathbf{b}",BCOLOR),
+        (r"\mathbf{b_1}",BCOLOR),
+        (r"\mathbf{b_2}",BCOLOR),
         (r"\mathbf{x_1}", XCOLOR),
         (r"\mathbf{x_2}", XCOLOR),
         (r"p_1}", PCOLOR),
@@ -62,7 +64,7 @@ def color_tex_standard(equation):
 
 
 
-def alter_diagram(scene,animation_func,hidden_mobs=[],run_time=1,move_camera_dict=None,updater=None,updater_mobs=[],added_anims=[]):
+def alter_diagram(scene,animation_func,hidden_mobs=[],run_time=1,move_camera_dict=None,updater=None,updater_mobs=[],added_anims=[],opacities={}):
     """
         Hacky workaround to deal with the fact that you can't animate groups without all the group items appearing on screen.
 
@@ -74,18 +76,21 @@ def alter_diagram(scene,animation_func,hidden_mobs=[],run_time=1,move_camera_dic
         updater: attach an updater, optional
         updater_mobs: which mobs to attach the updater to
         added_anims: additional animations (should not contain the hidden mobs)
+        opacities: dict for if there are mobjects to give an opacity besides one to. Keys are the mobs, values are the opacities (for set_opacity)
     """
     
     def get_merged_array(mob,attr):
         result = np.array([getattr(mob,attr)])
         for submob in mob.submobjects:
-            result = np.append(result, get_merged_array(submob, attr), axis=0)
+            result = np.append(result, get_merged_array(submob, attr))
         return result
     
     def set_merged_array(mob, attr, array):
             setattr(mob, attr, array[0])
+            array = array[1:]
             for submob in mob.submobjects:
-                set_merged_array(submob, attr, array[1:])
+                array = set_merged_array(submob, attr, array)
+            return array
 
 
     # record original opacities, then set them to zero
@@ -122,8 +127,12 @@ def alter_diagram(scene,animation_func,hidden_mobs=[],run_time=1,move_camera_dic
         scene.remove(mob)
 
         # restore opacities
-    set_merged_array(hidden_mobs,"stroke_opacity",strokes)
-    set_merged_array(hidden_mobs,"fill_opacity",fills)
+        if mob in opacities:
+            mob.set_opacity(opacities[mob])
+        else:
+            mob.set_opacity(1)
+    # set_merged_array(hidden_mobs,"stroke_opacity",strokes)
+    # set_merged_array(hidden_mobs,"fill_opacity",fills)
 
 
 
@@ -686,9 +695,9 @@ class Oblique2D(ThreeDScene):
         p = Arrow(axes @ ORIGIN, axes @ pcoords, buff=0, color=PCOLOR).set_stroke(width=6)        
         px1 = Arrow(axes @ ORIGIN, axes @ (px1coord*x1coords), buff=0,color=PCOLOR).set_stroke(width=6)
         px2 = Arrow(axes @ ORIGIN, axes @ (px2coord*x2coords), buff=0,color=PCOLOR).set_stroke(width=6)
-        dp = DashedLine(v.get_end(),p.get_end(),dash_length=0.15).set_opacity(0.4)
-        dx1 = DashedLine(axes @ pcoords, axes @ (px1coord*x1coords), dash_length=0.15).set_opacity(0.4)
-        dx2 = DashedLine(axes @ pcoords, axes @ (px2coord*x2coords), dash_length=0.15).set_opacity(0.4)
+        dp = DashedLine(v.get_end(),p.get_end(),dash_length=0.15).set_stroke(width=2).set_opacity(0.4)
+        dx1 = DashedLine(axes @ pcoords, axes @ (px1coord*x1coords), dash_length=0.15).set_stroke(width=2).set_opacity(0.4)
+        dx2 = DashedLine(axes @ pcoords, axes @ (px2coord*x2coords), dash_length=0.15).set_stroke(width=2).set_opacity(0.4)
         r = Arrow(axes @ pcoords, axes @ vcoords, buff=0, color=RCOLOR).set_stroke(width=6)        
         ArrowGradient(r,[PCOLOR,VCOLOR])
 
@@ -725,7 +734,7 @@ class Oblique2D(ThreeDScene):
         
         diagram.shift(-VGroup(v,p,r).get_center()).shift(UP*0.35+RIGHT*0.2)
         self.set_camera_orientation(frame_center=IN*11) # self.set_camera_orientation(zoom=2)
-        for vector in vectors+b_vectors: 
+        for vector in vectors+b_vectors+dashes: 
             ArrowStrokeFor3dScene(self,vector,family=True)
         face_camera(self,r)
         ArrowGradient(r,[PCOLOR,VCOLOR])
@@ -753,7 +762,7 @@ class Oblique2D(ThreeDScene):
         pxc4, pyc4 = 1.1,0.2
         p.save_state()
         ArrowStrokeFor3dScene(self,p.generate_target().put_start_and_end_on(axes @ ORIGIN, axes @ (pxc2*x1coords + pyc2*x2coords)))
-        dpv = always_redraw(lambda: DashedLine(v.get_end(),p.get_end(),dash_length=0.15).set_opacity(0.4))
+        dpv = always_redraw(lambda: ArrowStrokeFor3dScene(self,DashedLine(v.get_end(),p.get_end(),dash_length=0.15).set_stroke(width=2).set_opacity(0.4)))
         self.remove(dp), self.add(dpv)
         anglev = always_redraw(lambda: Arc3d(p.get_center(),dpv.get_center(),p.get_end(),radius=0.4).set_stroke(opacity=0.4))
         self.remove(angle), self.add(anglev)
@@ -791,6 +800,7 @@ class Oblique2D(ThreeDScene):
             self,
             animation_func=lambda:diagram.animate.shift(UP*0.3),
             hidden_mobs=[plane2,b1,b2,b1l,b2l,r,rl],
+            opacities={plane2:0.5},
             run_time=1.25,
             move_camera_dict={"frame_center":9.5*IN},
             updater=ArrowStrokeCameraUpdater(self),
@@ -849,6 +859,7 @@ class Oblique2D(ThreeDScene):
             self,
             lambda: diagram.animate.rotate(40*DEGREES, axis=(axes @ (vcoords - pcoords))-(axes @ ORIGIN), about_point=diagram.get_center()).rotate(10*DEGREES,axis=(axes @ b2coords) - (axes @ ORIGIN),about_point=diagram.get_center()).shift(DOWN*0.15),
             hidden_mobs=[x1,x2,x1l,x2l,pe,px1l,px2l,dx1,dx2,px1,px2,r,rl,b1,b2,b1l,b2l],
+            opacities={dx1:0.4,dx2:0.4},
             run_time=2,
             move_camera_dict={"frame_center":IN*13},
             updater=ArrowStrokeCameraUpdater(self),
@@ -899,7 +910,7 @@ class Oblique2D(ThreeDScene):
         self.remove(dp,ra,angle,plane,plane2)
         p.add_updater(lambda mob: ArrowStrokeFor3dScene(self,mob.put_start_and_end_on(axes @ ORIGIN, axes @ (px_calc(*get_b_values(b1v,b2v))*x1coords + py_calc(*get_b_values(b1v,b2v))*x2coords))))
         pl.add_updater(lambda mob: mob.next_to(p.get_end(),DR,buff=0.15))
-        dpv = always_redraw(lambda: ArrowStrokeFor3dScene(self,DashedLine(v.get_end(),p.get_end(),dash_length=0.15,shade_in_3d=True).set_opacity(0.4)))
+        dpv = always_redraw(lambda: ArrowStrokeFor3dScene(self,DashedLine(v.get_end(),p.get_end(),dash_length=0.15,shade_in_3d=True).set_stroke(width=2).set_opacity(0.4)))
         anglev = always_redraw(lambda: Arc3d(p.get_center(),dpv.get_start(),p.get_end(),radius=0.4).set_stroke(opacity=0.4).set_shade_in_3d(True))
         plane2v = always_redraw(lambda: Surface(lambda u,v:axes @ (u*(get_b_values(b1v,b2v)[0])+v*(get_b_values(b1v,b2v)[1])),u_range=[-0.25,1.25],v_range=[-0.25,1.25],stroke_width=0.06,resolution=high_plane_resolution).set_opacity(0.5).set_color(BCOLOR))
         plane1v = always_redraw(lambda: Surface(lambda u,v:axes @ (u,v,0),u_range=[-0.25,1.25],v_range=[-0.25,1.25],stroke_width=0.06,resolution=high_plane_resolution).set_opacity(0.5).set_color(ManimColor('#29ABCA')).set_z_index_group(Dot()))
@@ -952,38 +963,225 @@ class Oblique2D(ThreeDScene):
         self.wait()
 
         # back to both planes
-        off = VGroup(x1,x1l,x2,x2l,px1,px1l,px2,px2l,r,rl,dx1,dx2).set_opacity(0)
+        off = VGroup(x1,x1l,x2,x2l,px1,px1l,px2,px2l,r,rl).set_opacity(0)
+        VGroup(dx1,dx2).set_opacity(0)
+        for mob in vectors+b_vectors+dashes: mob.add_updater(ArrowStrokeCameraUpdater(self))
         self.move_camera(
-            frame_center=self.camera.frame_center+DOWN*0.75+OUT*2,
+            frame_center=self.camera.frame_center+DOWN*0.75+OUT*3.5,
             added_anims=
             [mob.animate.set_z_index_group(mob) for mob in plane2]
-            +[FadeIn(plane,p,pl,angle,dp[-3:]),
+            +[FadeIn(plane,p,pl,angle,dp[-3:],pe),
               diagram.animate.shift(UP*0.15).rotate(-10*DEGREES,axis=(axes @ b2coords) - (axes @ ORIGIN),about_point=diagram.get_center()).rotate(-40*DEGREES, axis=(axes @ (vcoords - pcoords))-(axes @ ORIGIN), about_point=diagram.get_center()),
               FadeOut(ra)],
             run_time=2
         )
+        for mob in vectors+b_vectors+dashes: mob.clear_updaters()
         self.play(
             off.animate.set_opacity(1),
+            VGroup(dx1,dx2).animate.set_opacity(0.4),
             FadeOut(dp),
             run_time=2)
         self.wait()
         
+        # zoom out
+        alter_diagram(
+            self,
+            lambda: diagram.animate.to_corner(UR),
+            hidden_mobs=[dp],
+            run_time=2,
+            move_camera_dict={"frame_center":ORIGIN},
+            updater=ArrowStrokeCameraUpdater(self),
+            updater_mobs=list(vectors) + list(b_vectors) + list(dashes),
+            added_anims=[pe.animate.next_to(diagram.copy().to_corner(UR),DOWN)],
+            opacities={dp:0.4}
+        )
+        self.wait()
+
+        # the code below is copied from formulas, just lightly updated
+        # to normal equations
+        nex = MathTex(r"(\mathbf{v}-\mathbf{p})\cdot \mathbf{b_1} =0", font_size=65).shift(3*LEFT+UP*1.5)
+        color_tex_standard(nex)
+        ney = MathTex(r"(\mathbf{v}-\mathbf{p})\cdot \mathbf{b_2} =0", font_size=65).shift(3*LEFT+DOWN*1.5)
+        color_tex_standard(ney)
+        self.play(
+            Write(nex[0][0]), Write(nex[0][4]), Write(ney[0][0]), Write(ney[0][4]), # parentheses
+            ReplacementTransform(rl[0].copy(),nex[0][1:4]), ReplacementTransform(rl[0].copy(),ney[0][1:4]) # v-p
+        , run_time=2)
+        self.play(Write(nex[0][5]), Write(ney[0][5])) # dot
+        self.play(ReplacementTransform(b1l[0].copy(),nex[0][6:8]), ReplacementTransform(b2l[0].copy(),ney[0][6:8]), run_time=2) # b1,b2
+        self.play(Write(nex[0][-2:]), Write(ney[0][-2:]),run_time=1.5) # =0        
+        self.wait(w)
+
+        # rearrange normal equations
+        nex1 = MathTex(r"\mathbf{b_1} \cdot \mathbf{p}","=",r"\mathbf{b_1} \cdot \mathbf{v}", font_size=65).move_to(nex)
+        AlignBaseline(nex1,nex)
+        color_tex_standard(nex1)
+        ney1 = MathTex(r"\mathbf{b_2} \cdot \mathbf{p}","=",r"\mathbf{b_2} \cdot \mathbf{v}", font_size=65).move_to(ney)
+        AlignBaseline(ney1,ney)
+        color_tex_standard(ney1)
+        self.play(*TransformBuilder(
+            nex,nex1,
+            [
+                ([0,[0,4]],None), # ()
+                ([0,1],[-1,-1],None,{"path_arc":120*DEGREES}), # v
+                ([0,2],None), # -
+                ([0,3],[0,3]), # p
+                ([0,5],[0,2],None,{"path_arc":120*DEGREES}), # dot
+                ([0,5],[2,2], TransformFromCopy,{"path_arc":-120*DEGREES}), #dot
+                ([0,[6,7]],[0,[0,1]],None,{"path_arc":120*DEGREES}), # b1
+                ([0,[6,7]],[2,[0,1]],TransformFromCopy), # b1
+                ([0,8],[1,0]), # =
+                ([0,-1],None) # 0
+            ]
+        ), run_time=2.5)
+        self.play(*TransformBuilder(
+            ney,ney1,
+            [
+                ([0,[0,4]],None), # ()
+                ([0,1],[-1,-1],None,{"path_arc":120*DEGREES}), # v
+                ([0,2],None), # -
+                ([0,3],[0,3]), # p
+                ([0,5],[0,2],None,{"path_arc":120*DEGREES}), # dot
+                ([0,5],[2,2], TransformFromCopy,{"path_arc":-120*DEGREES}), #dot
+                ([0,[6,7]],[0,[0,1]],None,{"path_arc":120*DEGREES}), # b2
+                ([0,[6,7]],[2,[0,1]],TransformFromCopy), # b2
+                ([0,8],[1,0]), # =
+                ([0,-1],None) # 0
+            ]
+        ), run_time=2.5)
+        self.wait(w)
+
+        # substitute p
+        nex2 = MathTex(r"\mathbf{b_1} \cdot (p_x \mathbf{x} + p_y \mathbf{y})","=",r"\mathbf{b_1} \cdot \mathbf{v}", font_size=65).move_to(nex1)        
+        color_tex_standard(nex2)
+        AlignBaseline(nex2,nex1)
+        ney2 = MathTex(r"\mathbf{b_2} \cdot (p_x \mathbf{x} + p_y \mathbf{y})","=",r"\mathbf{b_2} \cdot \mathbf{v}", font_size=65).move_to(ney1)        
+        color_tex_standard(ney2)
+        AlignBaseline(ney2,ney1)
+        self.play(
+            ReplacementTransform(nex1[0][0:2], nex2[0][0:2]), # b1
+            ReplacementTransform(nex1[0][2], nex2[0][2]), # dot
+            FadeIn(nex2[0][3]), FadeIn(nex2[0][-1]), # ()
+            FadeOut(nex1[0][3]), # p
+            TransformFromCopy(pe[2][:],nex2[0][4:7],path_arc=60*DEGREES), # px x
+            TransformFromCopy(pe[3][0], nex2[0][7],path_arc=60*DEGREES), # +
+            TransformFromCopy(pe[4][:],nex2[0][8:11],path_arc=60*DEGREES), # py y
+            ReplacementTransform(nex1[1], nex2[1]), # =
+            ReplacementTransform(nex1[2], nex2[2]), # rhs
+            ReplacementTransform(ney1[0][0:2], ney2[0][0:2]), # b2
+            ReplacementTransform(ney1[0][2], ney2[0][2]), # dot
+            FadeIn(ney2[0][3]), FadeIn(ney2[0][-1]), # ()
+            FadeOut(ney1[0][3]), # p
+            TransformFromCopy(pe[2][:],ney2[0][4:7],path_arc=-60*DEGREES), # px x
+            TransformFromCopy(pe[3][0], ney2[0][7],path_arc=-60*DEGREES), # +
+            TransformFromCopy(pe[4][:],ney2[0][8:11],path_arc=-60*DEGREES), # py y
+            ReplacementTransform(ney1[1], ney2[1]), # =
+            ReplacementTransform(ney1[2], ney2[2]) # rhs            
+        , run_time=3)
+        self.wait()   
+
+        # distribute dot products
+        nex3 = MathTex(r"p_x \mathbf{b_1} \cdot \mathbf{x} + p_y \mathbf{b_1} \cdot \mathbf{y}","=",r"\mathbf{b_1} \cdot \mathbf{v}", font_size=65).move_to(nex1).shift(RIGHT*0.2)       
+        color_tex_standard(nex3)
+        AlignBaseline(nex3,nex1)
+        ney3 = MathTex(r"p_x \mathbf{b_2} \cdot \mathbf{x} + p_y \mathbf{b_2} \cdot \mathbf{y}","=",r"\mathbf{b_2} \cdot \mathbf{v}", font_size=65).move_to(ney1).shift(RIGHT*0.2)    
+        color_tex_standard(ney3)
+        AlignBaseline(ney3,ney1)
+        self.play(*TransformBuilder(
+            nex2,nex3,
+            [
+                ([0,[0,1]],[0,[2,3]],None,{"path_arc":-280*DEGREES}), # b1
+                ([0,[0,1]],[0,[9,10]],TransformFromCopy,{"path_arc":120*DEGREES}), # b1
+                ([0,2],[0,4],None,{"path_arc":-280*DEGREES}), # dot
+                ([0,2],[0,11],TransformFromCopy,{"path_arc":120*DEGREES}), # dot
+                ([0,3],None), ([0,-1],None), # ()
+                ([0,[4,5]], [0,[0,1]]), # px
+                ([0,6],[0,5]), # x
+                ([0,7],[0,6]), # +
+                ([0,[8,9]],[0,[7,8]]), #py
+                ([0,10],[0,12]), # y
+                (1,1), (2,2) # = rhs
+            ]
+        )
+        ,run_time=2)
+        self.play(*TransformBuilder(
+            ney2,ney3,
+            [
+                ([0,[0,1]],[0,[2,3]],None,{"path_arc":-280*DEGREES}), # b2
+                ([0,[0,1]],[0,[9,10]],TransformFromCopy,{"path_arc":120*DEGREES}), # b2
+                ([0,2],[0,4],None,{"path_arc":-280*DEGREES}), # dot
+                ([0,2],[0,11],TransformFromCopy,{"path_arc":120*DEGREES}), # dot
+                ([0,3],None), ([0,-1],None), # ()
+                ([0,[4,5]], [0,[0,1]]), # px
+                ([0,6],[0,5]), # x
+                ([0,7],[0,6]), # +
+                ([0,[8,9]],[0,[7,8]]), #py
+                ([0,10],[0,12]), # y
+                (1,1), (2,2) # = rhs
+            ]
+        )
+        ,run_time=2)
+        self.wait(w)
+
+        # to matrix equations
+        gram = Matrix([
+            [r"\mathbf{b_1} \cdot \mathbf{x}",r"\mathbf{b_1} \cdot \mathbf{y}"],
+            [r"\mathbf{b_2} \cdot \mathbf{x}",r"\mathbf{b_2} \cdot \mathbf{y}"],
+        ],element_alignment_corner=UL, h_buff=1.5)
+        color_tex_standard(gram)
+        comps = Matrix([
+            ["p_x"],
+            ["p_y"]
+        ],v_buff=1.1,element_to_mobject_config={"font_size":65}).next_to(gram)
+        color_tex_standard(comps)
+        eq = MathTex("=").next_to(comps)
+        dots = Matrix([
+            [r"\mathbf{b_1} \cdot \mathbf{v}"],
+            [r"\mathbf{b_2} \cdot \mathbf{v}"]
+        ],v_buff=1.1,element_to_mobject_config={"font_size":65}).next_to(eq)
+        color_tex_standard(dots)
+        VGroup(gram,comps,eq,dots).arrange().next_to(pe,LEFT).shift(DR)
+        self.play(
+            Merge([nex3[0][0:2],ney3[0][0:2]], comps.get_entries()[0][0][:]), # px
+            Merge([nex3[0][7:9],ney3[0][7:9]], comps.get_entries()[1][0][:]), # py
+            ReplacementTransform(nex3[0][2:6],gram.get_rows()[0][0][0][:]), # b1.x
+            ReplacementTransform(nex3[0][9:13],gram.get_rows()[0][1][0][:]), # b1.y
+            ReplacementTransform(ney3[0][2:6],gram.get_rows()[1][0][0][:]), # b2.x
+            ReplacementTransform(ney3[0][9:13],gram.get_rows()[1][1][0][:]), # b2.y
+            ReplacementTransform(nex3[2],dots.get_entries()[0][0]), # b1.v
+            ReplacementTransform(ney3[2],dots.get_entries()[1][0]), # b2.v            
+            FadeIn(gram.get_brackets(),comps.get_brackets(),dots.get_brackets()), # brackets
+            Merge([nex3[1],ney3[1]],eq[0]), # =
+            FadeOut(nex3[0][6],shift=DOWN),
+            FadeOut(ney3[0][6],pe),
+            run_time=3
+        )
+        self.wait()
+     
+        
 
 
 
-config.from_animation_number = 45
-# config.upto_animation_number = 
 
 
 
+
+
+
+config.from_animation_number = 63
+# config.upto_animation_number = 35
+
+
+"""
 with tempconfig({
         "quality": "medium_quality",
-        "from_animation_number":45
+        "from_animation_number":config.from_animation_number,
+        "upto_animation_number":config.upto_animation_number
     }):
     scene = Oblique2D()
     scene.render()
 
 
 
-
+"""
 
