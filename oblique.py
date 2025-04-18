@@ -999,9 +999,9 @@ class Oblique2D(ThreeDScene):
 
         # the code below is copied from formulas, just lightly updated
         # to normal equations
-        nex = MathTex(r"(\mathbf{v}-\mathbf{p})\cdot \mathbf{b_1} =0", font_size=65).shift(3*LEFT+UP*1.5)
+        nex = AlignBaseline(MathTex(r"(\mathbf{v}-\mathbf{p})\cdot \mathbf{b_1} =0", font_size=65).shift(2*LEFT),pe)
         color_tex_standard(nex)
-        ney = MathTex(r"(\mathbf{v}-\mathbf{p})\cdot \mathbf{b_2} =0", font_size=65).shift(3*LEFT+DOWN*1.5)
+        ney = MathTex(r"(\mathbf{v}-\mathbf{p})\cdot \mathbf{b_2} =0", font_size=65).next_to(nex,DOWN).shift(DOWN)
         color_tex_standard(ney)
         self.play(
             Write(nex[0][0]), Write(nex[0][4]), Write(ney[0][0]), Write(ney[0][4]), # parentheses
@@ -1052,10 +1052,10 @@ class Oblique2D(ThreeDScene):
         self.wait(w)
 
         # substitute p
-        nex2 = MathTex(r"\mathbf{b_1} \cdot (p_x \mathbf{x} + p_y \mathbf{y})","=",r"\mathbf{b_1} \cdot \mathbf{v}", font_size=65).move_to(nex1)        
+        nex2 = MathTex(r"\mathbf{b_1} \cdot (p_1 \mathbf{x_1} + p_2 \mathbf{x_2})","=",r"\mathbf{b_1} \cdot \mathbf{v}", font_size=65).move_to(nex1)        
         color_tex_standard(nex2)
         AlignBaseline(nex2,nex1)
-        ney2 = MathTex(r"\mathbf{b_2} \cdot (p_x \mathbf{x} + p_y \mathbf{y})","=",r"\mathbf{b_2} \cdot \mathbf{v}", font_size=65).move_to(ney1)        
+        ney2 = MathTex(r"\mathbf{b_2} \cdot (p_1 \mathbf{x_1} + p_2 \mathbf{x_2})","=",r"\mathbf{b_2} \cdot \mathbf{v}", font_size=65).move_to(ney1)        
         color_tex_standard(ney2)
         AlignBaseline(ney2,ney1)
         self.play(
@@ -1063,43 +1063,46 @@ class Oblique2D(ThreeDScene):
             ReplacementTransform(nex1[0][2], nex2[0][2]), # dot
             FadeIn(nex2[0][3]), FadeIn(nex2[0][-1]), # ()
             FadeOut(nex1[0][3]), # p
-            TransformFromCopy(pe[2][:],nex2[0][4:7],path_arc=60*DEGREES), # px x
-            TransformFromCopy(pe[3][0], nex2[0][7],path_arc=60*DEGREES), # +
-            TransformFromCopy(pe[4][:],nex2[0][8:11],path_arc=60*DEGREES), # py y
+            TransformFromCopy(pe[2][:],nex2[0][4:8]), # px x
+            TransformFromCopy(pe[3][0], nex2[0][8]), # +
+            TransformFromCopy(pe[4][:],nex2[0][9:13]), # py y
             ReplacementTransform(nex1[1], nex2[1]), # =
             ReplacementTransform(nex1[2], nex2[2]), # rhs
             ReplacementTransform(ney1[0][0:2], ney2[0][0:2]), # b2
             ReplacementTransform(ney1[0][2], ney2[0][2]), # dot
             FadeIn(ney2[0][3]), FadeIn(ney2[0][-1]), # ()
             FadeOut(ney1[0][3]), # p
-            TransformFromCopy(pe[2][:],ney2[0][4:7],path_arc=-60*DEGREES), # px x
-            TransformFromCopy(pe[3][0], ney2[0][7],path_arc=-60*DEGREES), # +
-            TransformFromCopy(pe[4][:],ney2[0][8:11],path_arc=-60*DEGREES), # py y
+            ReplacementTransform(pe[2][:],ney2[0][4:8]), # px x
+            ReplacementTransform(pe[3][0], ney2[0][8]), # +
+            ReplacementTransform(pe[4][:],ney2[0][9:13]), # py y
             ReplacementTransform(ney1[1], ney2[1]), # =
-            ReplacementTransform(ney1[2], ney2[2]) # rhs            
-        , run_time=3)
+            ReplacementTransform(ney1[2], ney2[2]), # rhs            
+            FadeOut(pe[:2]),
+            run_time=3
+        )
+        self.remove(pe)
         self.wait()   
 
         # distribute dot products
-        nex3 = MathTex(r"p_x \mathbf{b_1} \cdot \mathbf{x} + p_y \mathbf{b_1} \cdot \mathbf{y}","=",r"\mathbf{b_1} \cdot \mathbf{v}", font_size=65).move_to(nex1).shift(RIGHT*0.2)       
+        nex3 = MathTex(r"p_1 \mathbf{b_1} \cdot \mathbf{x_1} + p_2 \mathbf{b_1} \cdot \mathbf{x_2}","=",r"\mathbf{b_1} \cdot \mathbf{v}", font_size=65).move_to(nex1).shift(RIGHT*0.2)       
         color_tex_standard(nex3)
         AlignBaseline(nex3,nex1)
-        ney3 = MathTex(r"p_x \mathbf{b_2} \cdot \mathbf{x} + p_y \mathbf{b_2} \cdot \mathbf{y}","=",r"\mathbf{b_2} \cdot \mathbf{v}", font_size=65).move_to(ney1).shift(RIGHT*0.2)    
+        ney3 = MathTex(r"p_1 \mathbf{b_2} \cdot \mathbf{x_1} + p_2 \mathbf{b_2} \cdot \mathbf{x_2}","=",r"\mathbf{b_2} \cdot \mathbf{v}", font_size=65).move_to(ney1).shift(RIGHT*0.2)    
         color_tex_standard(ney3)
         AlignBaseline(ney3,ney1)
         self.play(*TransformBuilder(
             nex2,nex3,
             [
                 ([0,[0,1]],[0,[2,3]],None,{"path_arc":-280*DEGREES}), # b1
-                ([0,[0,1]],[0,[9,10]],TransformFromCopy,{"path_arc":120*DEGREES}), # b1
+                ([0,[0,1]],[0,[10,11]],TransformFromCopy,{"path_arc":120*DEGREES}), # b1
                 ([0,2],[0,4],None,{"path_arc":-280*DEGREES}), # dot
-                ([0,2],[0,11],TransformFromCopy,{"path_arc":120*DEGREES}), # dot
+                ([0,2],[0,12],TransformFromCopy,{"path_arc":120*DEGREES}), # dot
                 ([0,3],None), ([0,-1],None), # ()
                 ([0,[4,5]], [0,[0,1]]), # px
-                ([0,6],[0,5]), # x
-                ([0,7],[0,6]), # +
-                ([0,[8,9]],[0,[7,8]]), #py
-                ([0,10],[0,12]), # y
+                ([0,[6,7]],[0,[5,6]]), # x
+                ([0,8],[0,7]), # +
+                ([0,[9,10]],[0,[8,9]]), #py
+                ([0,[11,12]],[0,[13,14]]), # y
                 (1,1), (2,2) # = rhs
             ]
         )
@@ -1108,30 +1111,31 @@ class Oblique2D(ThreeDScene):
             ney2,ney3,
             [
                 ([0,[0,1]],[0,[2,3]],None,{"path_arc":-280*DEGREES}), # b2
-                ([0,[0,1]],[0,[9,10]],TransformFromCopy,{"path_arc":120*DEGREES}), # b2
+                ([0,[0,1]],[0,[10,11]],TransformFromCopy,{"path_arc":120*DEGREES}), # b2
                 ([0,2],[0,4],None,{"path_arc":-280*DEGREES}), # dot
-                ([0,2],[0,11],TransformFromCopy,{"path_arc":120*DEGREES}), # dot
+                ([0,2],[0,12],TransformFromCopy,{"path_arc":120*DEGREES}), # dot
                 ([0,3],None), ([0,-1],None), # ()
                 ([0,[4,5]], [0,[0,1]]), # px
-                ([0,6],[0,5]), # x
-                ([0,7],[0,6]), # +
-                ([0,[8,9]],[0,[7,8]]), #py
-                ([0,10],[0,12]), # y
+                ([0,[6,7]],[0,[5,6]]), # x
+                ([0,8],[0,7]), # +
+                ([0,[9,10]],[0,[8,9]]), #py
+                ([0,[11,12]],[0,[13,14]]), # y
                 (1,1), (2,2) # = rhs
             ]
         )
         ,run_time=2)
         self.wait(w)
 
+
         # to matrix equations
         gram = Matrix([
-            [r"\mathbf{b_1} \cdot \mathbf{x}",r"\mathbf{b_1} \cdot \mathbf{y}"],
-            [r"\mathbf{b_2} \cdot \mathbf{x}",r"\mathbf{b_2} \cdot \mathbf{y}"],
-        ],element_alignment_corner=UL, h_buff=1.5)
+            [r"\mathbf{b_1} \cdot \mathbf{x_1}",r"\mathbf{b_1} \cdot \mathbf{x_2}"],
+            [r"\mathbf{b_2} \cdot \mathbf{x_1}",r"\mathbf{b_2} \cdot \mathbf{x_2}"],
+        ],element_alignment_corner=UL, h_buff=2)
         color_tex_standard(gram)
         comps = Matrix([
-            ["p_x"],
-            ["p_y"]
+            ["p_1"],
+            ["p_2"]
         ],v_buff=1.1,element_to_mobject_config={"font_size":65}).next_to(gram)
         color_tex_standard(comps)
         eq = MathTex("=").next_to(comps)
@@ -1140,36 +1144,204 @@ class Oblique2D(ThreeDScene):
             [r"\mathbf{b_2} \cdot \mathbf{v}"]
         ],v_buff=1.1,element_to_mobject_config={"font_size":65}).next_to(eq)
         color_tex_standard(dots)
-        VGroup(gram,comps,eq,dots).arrange().next_to(pe,LEFT).shift(DR)
+        VGroup(gram,comps,eq,dots).arrange().shift(DOWN*1)
         self.play(
             Merge([nex3[0][0:2],ney3[0][0:2]], comps.get_entries()[0][0][:]), # px
-            Merge([nex3[0][7:9],ney3[0][7:9]], comps.get_entries()[1][0][:]), # py
-            ReplacementTransform(nex3[0][2:6],gram.get_rows()[0][0][0][:]), # b1.x
-            ReplacementTransform(nex3[0][9:13],gram.get_rows()[0][1][0][:]), # b1.y
-            ReplacementTransform(ney3[0][2:6],gram.get_rows()[1][0][0][:]), # b2.x
-            ReplacementTransform(ney3[0][9:13],gram.get_rows()[1][1][0][:]), # b2.y
+            Merge([nex3[0][8:10],ney3[0][8:10]], comps.get_entries()[1][0][:]), # py
+            ReplacementTransform(nex3[0][2:7],gram.get_rows()[0][0][0][:]), # b1.x
+            ReplacementTransform(nex3[0][10:15],gram.get_rows()[0][1][0][:]), # b1.y
+            ReplacementTransform(ney3[0][2:7],gram.get_rows()[1][0][0][:]), # b2.x
+            ReplacementTransform(ney3[0][10:15],gram.get_rows()[1][1][0][:]), # b2.y
             ReplacementTransform(nex3[2],dots.get_entries()[0][0]), # b1.v
             ReplacementTransform(ney3[2],dots.get_entries()[1][0]), # b2.v            
             FadeIn(gram.get_brackets(),comps.get_brackets(),dots.get_brackets()), # brackets
             Merge([nex3[1],ney3[1]],eq[0]), # =
-            FadeOut(nex3[0][6],shift=DOWN),
-            FadeOut(ney3[0][6],pe),
+            FadeOut(nex3[0][7],shift=DOWN),
+            FadeOut(ney3[0][7]),
             run_time=3
         )
         self.wait()
+
+        # from dots to transpose
+        gramt = Matrix([
+            [r"\mathbf{b_1}^T \mathbf{x_1}",r"\mathbf{b_1}^T \mathbf{x_2}"],
+            [r"\mathbf{b_2}^T \mathbf{x_1}",r"\mathbf{b_2}^T \mathbf{x_2}"],
+        ],element_alignment_corner=UL,h_buff=2).move_to(gram)
+        color_tex_standard(gramt)
+        dotst = Matrix([
+            [r"\mathbf{b_1}^T \mathbf{v}"],
+            [r"\mathbf{b_2}^T \mathbf{v}"]
+        ],v_buff=1.1,element_to_mobject_config={"font_size":65}).move_to(dots)
+        color_tex_standard(dotst)
+        self.play(
+            ReplacementTransform(gram,gramt),
+            ReplacementTransform(dots,dotst)
+        ,run_time=1.75)
+        self.wait(w)
+
+        # factor
+        xtyt = Matrix([
+            [r"\mathbf{b_1}^T"],
+            [r"\mathbf{b_2}^T"]
+        ])
+        color_tex_standard(xtyt)
+        xy = Matrix([[r"\mathbf{x_1}",r"\mathbf{x_2}"]], element_alignment_corner=UL)
+        color_tex_standard(xy)        
+        xtyt4v = Matrix([
+            [r"\mathbf{b_1}^T"],
+            [r"\mathbf{b_2}^T"]
+        ])
+        color_tex_standard(xtyt4v)
+        veq = MathTex(r"\mathbf{v}",font_size=75)
+        color_tex_standard(veq)        
+        VGroup(xtyt,xy,comps.generate_target(),eq.generate_target(),xtyt4v,veq).arrange().shift(DOWN)
+        VGroup(xtyt,xy).next_to(comps,LEFT)
+        self.play(
+            ReplacementTransform(gramt.get_brackets()[0], xtyt.get_brackets()[0]), # left [
+            FadeIn(xtyt.get_brackets()[1]), # left ]
+            FadeIn(xy.get_brackets()[0]), # right [
+            ReplacementTransform(gramt.get_brackets()[1], xy.get_brackets()[1]), # right ]
+            *[Merge([entry[0][i] for entry in gramt.get_rows()[0]], xtyt.get_entries()[0][0][i]) for i in [0,1,2]], # xt
+            *[Merge([entry[0][i] for entry in gramt.get_rows()[1]], xtyt.get_entries()[1][0][i]) for i in [0,1,2]], # yt
+            Merge([entry[0][3:5] for entry in gramt.get_columns()[0]], xy.get_entries()[0]), # x
+            Merge([entry[0][3:5] for entry in gramt.get_columns()[1]], xy.get_entries()[1]) # y            
+        ,run_time=3.5)
+        self.play(            
+            VGroup(xtyt,xy).animate.next_to(comps.target,LEFT),
+            MoveToTarget(comps),
+            MoveToTarget(eq),
+            ReplacementTransform(dotst.get_brackets(),xtyt4v.get_brackets()), 
+            *[ReplacementTransform(entry1[0][:3], entry2[0][:3]) for entry1,entry2 in zip(dotst.get_entries(), xtyt4v.get_entries())],
+            Merge([entry[0][3] for entry in dotst.get_entries()], veq[0][0]) # v
+        ,run_time=2.5)
+        self.wait(w)
+
+        # write A at bottom, and replace xy matrix with A
+        aeq = MathTex("A","=")
+        xyadef = xy.copy().next_to(aeq)
+        xyadef.shift(UP*(GetBaseline(aeq) - GetBaseline(xyadef.get_entries()[0])))
+        VGroup(aeq,xyadef).next_to(VGroup(xtyt,xy,comps,eq,xtyt4v,veq),DOWN*2)
+        self.play(Write(aeq[0]))
+        self.play(Write(aeq[1]))
+        A = MathTex("A", font_size=75).move_to(xy)
+        self.play(
+            ReplacementTransform(xy,xyadef),
+            TransformFromCopy(aeq[0],A[0],path_arc=180*DEGREES)
+        , run_time=2)
+
+        # to b matrix
+        beq = MathTex("B","=")
+        bdef = Matrix([[r"\mathbf{b_1}",r"\mathbf{b_2}"]], element_alignment_corner=UL)
+        color_tex_standard(bdef)    
+        VGroup(VGroup(beq,bdef).arrange(),VGroup(aeq.generate_target(),xyadef.generate_target())).arrange(buff=1).move_to(VGroup(aeq,xyadef))    
+        AlignBaseline(beq,aeq)
+        bdef.shift(UP*(GetBaseline(beq) - GetBaseline(bdef.get_entries()[0])))
+        # xyadef.target.shift(UP*(GetBaseline(aeq.target) - GetBaseline(xyadef.target.get_entries()[0])))
+        Bt =  MathTex("B^T", font_size=75).move_to(xtyt)
+        self.play(
+            MoveToTarget(aeq),
+            MoveToTarget(xyadef),
+            run_time=1.5
+        )
+        self.play(Write(beq[0]))
+        self.play(Write(beq[1]))        
+        self.play(
+            TransformFromCopy(beq[0][0],Bt[0][0],path_arc=120*DEGREES), # B
+            Merge([entry[0][2] for entry in xtyt.get_entries()], Bt[0][1]), # ^T
+            ReplacementTransform(xtyt.get_brackets(),bdef.get_brackets()), # brackets
+            *[ReplacementTransform(entry1[0][:2], entry2[0][:2]) for entry1, entry2 in zip(xtyt.get_entries(), bdef.get_entries())], #b1, b2
+            run_time=2.25
+        )
+        Bt4v = MathTex("B^T", font_size=75).move_to(xtyt4v)
+        AlignBaseline(Bt4v,A)
+        self.play(ReplacementTransform(xtyt4v,Bt4v), run_time=2)
+        
+        # collect equation
+        VGroup(Bt.generate_target(),A.generate_target(),comps.generate_target(),eq.generate_target(),Bt4v.generate_target(),veq.generate_target()).arrange(buff=0.15).shift(DOWN)
+        for mob in [Bt,eq,Bt4v,veq]: AlignBaseline(mob.target,A.target)
+        self.play(
+            *[MoveToTarget(mob) for mob in [Bt,A,comps,eq,Bt4v,veq]]
+        ,run_time=2)
+        self.wait(w)
+
+        # invert Bta
+        compform = MathTex("=",r"\left(B^T A \right)^{-1}","B^T",r"\mathbf{v}", font_size=75)
+        color_tex_standard(compform)
+        VGroup(comps.generate_target(),compform).arrange().shift(DOWN)
+        self.play(
+            MoveToTarget(comps),
+            ReplacementTransform(eq[0],compform[0]), #=            
+            FadeIn(compform[1][0]), FadeIn(compform[1][-3:]), # ()-1
+            ReplacementTransform(Bt[0][:],compform[1][1:3],path_arc=-230*DEGREES), # Bt
+            ReplacementTransform(A[0][0],compform[1][3],path_arc=-230*DEGREES), # A
+            ReplacementTransform(Bt4v[0],compform[2]), # Bt
+            ReplacementTransform(veq[0],compform[-1]) # v            
+        , run_time=2.5)
+        self.wait(w)
+
+        # move components
+        compsfull = VGroup(comps,compform)
+        self.play(compsfull.animate.move_to(LEFT*3+UP*2),run_time=1.75)
+
+        # write p formula
+        pe = MathTex(r"\mathbf{p}","=",r"p_1 \mathbf{x_1}","+",r"p_2 \mathbf{x_2}", font_size=80)
+        color_tex_standard(pe).shift(DOWN*0.5)
+        self.play(FadeIn(pe,shift=RIGHT),run_time=1.25)
+        self.wait(w)
+
+        # factor p
+        peq = MathTex(r"\mathbf{p}","=", font_size=80)
+        color_tex_standard(peq)
+        xy = Matrix([[r"\mathbf{x_1}",r"\mathbf{x_2}"]], element_alignment_corner=UL)
+        color_tex_standard(xy)
+        compsp = Matrix([
+            ["p_1"],
+            ["p_2"]
+        ],v_buff=1.1,element_to_mobject_config={"font_size":65})
+        color_tex_standard(compsp)
+        VGroup(peq,xy,compsp).arrange().shift(DOWN*0.5)
+        self.play(
+            ReplacementTransform(pe[0],peq[0]), # p
+            ReplacementTransform(pe[1],peq[1]), # =
+            FadeIn(xy.get_brackets()[0],compsp.get_brackets()[1]),
+            ReplacementTransform(pe[2][0:2],compsp.get_entries()[0][0][:]), # px
+            ReplacementTransform(pe[4][0:2],compsp.get_entries()[1][0][:]), # py
+            ReplacementTransform(pe[2][2:4], xy.get_entries()[0][0][0:2]), # x1
+            ReplacementTransform(pe[4][2:4], xy.get_entries()[1][0][0:2]), # x2
+            ReplacementTransform(pe[3],VGroup(xy.get_brackets()[1],compsp.get_brackets()[0])) # +
+        ,run_time=3)
+        self.wait(w)
+
+        # first term to A
+        A = MathTex("A", font_size=80).move_to(xy)
+        AlignBaseline(A,peq)
+        self.play(
+            FadeOut(xy),
+            TransformFromCopy(aeq[0],A)
+        , run_time=1.75)
+        self.wait(w)
+
+        # substitute in components
+        pe2 = MathTex(r"\mathbf{p}","=","A",r"\left(B^T A \right)^{-1}","B^T",r"\mathbf{v}",font_size=80)
+        color_tex_standard(pe2).shift(DOWN*0.5)
+        self.play(
+            ReplacementTransform(peq[0],pe2[0]), # p
+            ReplacementTransform(peq[1],pe2[1]), # =
+            ReplacementTransform(A[0],pe2[2]), # A
+            FadeOut(compsp), # vector components
+            TransformFromCopy(compform[1:], pe2[3:]) # ata-1atv
+        ,run_time=2.5)
+        self.wait(w)
+
+
+
+
      
         
 
 
-
-
-
-
-
-
-
-config.from_animation_number = 63
-# config.upto_animation_number = 35
+# config.from_animation_number = 80
+# config.upto_animation_number = 71
 
 
 """
@@ -1180,8 +1352,5 @@ with tempconfig({
     }):
     scene = Oblique2D()
     scene.render()
-
-
-
 """
 
