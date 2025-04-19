@@ -215,7 +215,7 @@ class Oblique1D(MovingCameraScene):
         self.wait(w)
 
         # equation for p
-        pe = MathTex(r"\mathbf{p}","=",r"p_x \mathbf{x}","=",r"\mathbf{P}\mathbf{v}", font_size=60)        
+        pe = MathTex(r"\mathbf{p}","=",r"p_x \mathbf{x}","=",r"\mathbf{O}\mathbf{v}", font_size=60)        
         color_tex_standard(pe)
         pe.shift(pl[0].get_center()-pe[0].get_center())
         self.play(Write(pe[1]))
@@ -1335,8 +1335,121 @@ class Oblique2D(ThreeDScene):
 
 
 
+class BackTo1d(MovingCameraScene):
+    def construct(self):
+        xcoords = np.array([2,0.7])
+        vcoords = np.array([1,2.2])
+        k = 0.55 # parameter to control degree of oblique projection. At 1, it's the orthogonal projection; at 0, it's 0.
+        pcoords = xcoords * np.dot(xcoords,vcoords) / np.dot(xcoords,xcoords) * k
+        bcoords = 2 * np.array([1,-((vcoords - pcoords)[0]) / ((vcoords - pcoords)[1])])  # formula here is based on tha the dot product with r must be 0
+        zcoords = bcoords * np.dot(vcoords, bcoords) / np.dot(bcoords,bcoords) 
+        
+        # initial frame stuff
+        frame = self.camera.frame
+        frame.save_state()
 
-     
+        # draw vectors and labels
+        axes = Axes(x_range=[0,2], x_length=2,y_range=[0,2],y_length=2).set_opacity(0)
+
+        x = Arrow(axes.c2p(0,0), axes.c2p(*xcoords), buff=0, color=XCOLOR)
+        v = Arrow(axes.c2p(0,0), axes.c2p(*vcoords), buff=0, color=VCOLOR)
+        p = Arrow(axes.c2p(0,0), axes.c2p(*pcoords), buff=0, color=PCOLOR)
+        vectors = VGroup(x,v,p)     
+
+        dx = DashedLine(v.get_end(),p.get_end(),dash_length=0.1).set_opacity(0.6)
+        angle = Angle(p,dx,radius=0.35,quadrant=(-1,-1),other_angle=True) 
+
+
+        xl = MathTex(r"\mathbf{x}", font_size=60, color=XCOLOR).next_to(x.get_tip(), RIGHT)
+        vl = MathTex(r"\mathbf{v}", font_size=60, color=VCOLOR).next_to(v.get_tip(), UP)        
+        pl = MathTex(r"\mathbf{p}", font_size=60, color=PCOLOR).next_to(p.get_tip(), DR,buff=0.03)        
+        labels = VGroup(xl, vl, pl)
+        
+        diagram = VGroup(axes, vectors, labels,angle,dx)
+        
+        frame.scale(0.5)
+
+        self.add(diagram)
+        
+        # blur in, in post
+
+        self.wait()
+
+        # write projector equation
+        self.play(diagram.animate.shift(LEFT*0.75))
+        ppv = MathTex(r"\mathbf{p}","=",r"\mathbf{O}",r"\mathbf{v}",font_size=60).shift(UP*1+RIGHT*1.5)
+        color_tex_standard(ppv)
+        self.play(TransformFromCopy(pl[0],ppv[0]),run_time=1.5)
+        self.play(Write(ppv[1]),run_time=1.25)
+        self.play(
+            FadeIn(ppv[2],shift=LEFT),
+            TransformFromCopy(vl[0],ppv[3]),
+            run_time=2
+        )
+        self.wait()
+
+        # projector equation splits into 2 underlines
+        ppv2 = AlignBaseline(MathTex(r"\mathbf{p}","=",r"\underline{\hspace{0.2cm}} \, \underline{\hspace{0.2cm}}",r"\mathbf{v}",font_size=60).move_to(ppv),ppv)
+        color_tex_standard(ppv2)
+        self.play(ReplacementTransform(ppv,ppv2),run_time=1.5)
+        self.wait()
+
+        from PIL import Image
+        img =  ImageMobject(Image.fromarray(self.renderer.camera.pixel_array)).scale_to_fit_width(config.frame_width).scale(0.5)
+        self.add(img)
+        self.play(ImageBlur(img))
+        self.wait()
+
+        shear = Tex("Shear",font_size=80)
+        self.play(DrawBorderThenFill(shear))
+        self.wait()
+
+        # self.play(FadeOut(*self.mobjects))
+        
+
+    
+class ShearIntro(LinearTransformationScene):
+    def __init__(self, **kwargs):
+        LinearTransformationScene.__init__(
+            self,
+            show_coordinates=False,
+            leave_ghost_vectors=False,
+            **kwargs
+        )
+
+    def construct(self):
+        self.wait()
+        
+        # indicate horizontal axis
+        tr = VMobject().add_points_as_corners(
+            [[7,0,0],[-7,0,0]]
+        ).set_color(YELLOW)
+        self.play(ShowPassingFlash(tr),run_time=2)
+        self.wait()
+
+        # first shear example
+        matrix = [[1, -1], [0, 1]]
+        self.apply_matrix(matrix)
+        self.wait()
+
+        # undo shear
+        self.apply_inverse(matrix)
+
+        # vertical passing flash
+        tr = VMobject().add_points_as_corners(
+            [[0,-4,0],[0,4,0]]
+        ).set_color(YELLOW)
+        self.play(ShowPassingFlash(tr),run_time=2)
+        self.remove(tr)
+
+        # vertical shear
+        print(self.mobjects)
+        matrix = [[1,0],[1,1]]
+        self.apply_matrix(matrix)
+        self.wait()
+
+        # diagonal shear
+
         
 
 

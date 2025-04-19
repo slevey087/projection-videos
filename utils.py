@@ -741,6 +741,7 @@ class ImageBlur(Animation):
         submobject.pixel_array = np.array(img)
         return self
 
+
 def capture_current_frame(self) -> ImageMobject:
     # add this to scene class
     self.wait(0) # Force render current objects
