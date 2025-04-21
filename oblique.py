@@ -1436,19 +1436,241 @@ class ShearIntro(LinearTransformationScene):
         self.apply_inverse(matrix)
 
         # vertical passing flash
-        tr = VMobject().add_points_as_corners(
+        tr1 = VMobject().add_points_as_corners(
             [[0,-4,0],[0,4,0]]
         ).set_color(YELLOW)
-        self.play(ShowPassingFlash(tr),run_time=2)
-        self.remove(tr)
+        self.play(ShowPassingFlash(tr1),run_time=2)
+        self.remove(tr1.set_z_index(-1).set_opacity(0))
 
         # vertical shear
-        print(self.mobjects)
         matrix = [[1,0],[1,1]]
         self.apply_matrix(matrix)
         self.wait()
 
+        # undo
+        self.apply_inverse(matrix)
+        self.wait()
+
+        # diagonal line
+        diag = Line(self.plane @ (-4.5,-4.5), self.plane @ (4.5,4.5),color=YELLOW)
+        self.play(Create(diag))
+        # self.play(diag.animate.set_color(WHITE))
+        self.wait()
+
         # diagonal shear
+        matrix_s = [[0.5,0.5],[-0.5,1.5]]
+        matrix_r = [[np.sqrt(2)/2,-np.sqrt(2)/2],[np.sqrt(2)/2,np.sqrt(2)/2]]
+        self.apply_matrix(matrix_r)
+        self.moving_mobjects = []
+        self.apply_matrix(matrix_s)
+        self.wait()
+        
+
+
+
+class ObliqueAsShear(Scene):
+    def construct(self):
+        # oblique
+        ob = Tex(r"Oblique\\ Projection",font_size=70)
+        self.play(Write(ob))
+        self.wait()
+
+        # shift over
+        ort = Tex(r"Orthogonal\\ Projection",font_size=70)
+        arr = MathTex(r"\Rightarrow",font_size=80)
+        VGroup(ort,arr, ob.generate_target()).arrange()
+        self.play(MoveToTarget(ob))
+        self.play(Write(ort))
+        self.play(FadeIn(arr,shift=DOWN))
+        self.wait()
+
+        # add shear
+        sh = Tex("Shear",font_size=70)
+        pl = MathTex("+",font_size=70)
+        VGroup(sh,pl,ort.generate_target(),arr.generate_target(),ob.generate_target()).arrange()
+        self.play(*[MoveToTarget(mob) for mob in [ort,arr,ob]])
+        self.play(
+            FadeIn(sh,shift=DR),
+            FadeIn(pl,shift=UR),
+            run_time=1.5
+        )
+        self.wait()
+
+        # to black
+        self.play(FadeOut(*self.mobjects))
+
+
+
+class ObliqueShearDemo(MovingCameraScene):
+    def construct(self):
+        rot = np.array([
+            [0.94385,0.33037],
+            [-0.33037,0.94385]
+        ])
+        xcoords = np.matmul(rot, np.array([2,0.7]))
+        vcoords = np.matmul(rot, np.array([1,2.2]))
+        k = 0.55 # parameter to control degree of oblique projection. At 1, it's the orthogonal projection; at 0, it's 0.
+        pcoords = xcoords * np.dot(xcoords,vcoords) / np.dot(xcoords,xcoords) * k
+        bcoords = 2 * np.array([1,-((vcoords - pcoords)[0]) / ((vcoords - pcoords)[1])])  # formula here is based on tha the dot product with r must be 0
+        zcoords = bcoords * np.dot(vcoords, bcoords) / np.dot(bcoords,bcoords) 
+        sdif = pcoords*(1/k) - pcoords
+        scoords = vcoords - sdif
+        
+        # initial frame stuff
+        frame = self.camera.frame
+        frame.save_state()
+
+        # draw vectors and labels
+        axes = NumberPlane().set_opacity(1)
+        axes.shift(-(axes @ ORIGIN))
+        backgrid = NumberPlane(
+            **{
+                "color": GREY,
+                "axis_config": {
+                    "color": GREY,
+                },
+                "background_line_style": {
+                    "stroke_color": GREY,
+                    "stroke_width": 1,
+                },
+            }
+        )
+        mask = Rectangle(BLACK,height=8,width=20).set_fill(BLACK,opacity=1).move_to(axes)
+
+        x = Arrow(axes.c2p(0,0), axes.c2p(*xcoords), buff=0, color=XCOLOR)
+        v = Arrow(axes.c2p(0,0), axes.c2p(*vcoords), buff=0, color=VCOLOR)
+        p = Arrow(axes.c2p(0,0), axes.c2p(*pcoords), buff=0, color=PCOLOR)
+        vectors = VGroup(x,v,p)     
+
+        dx = DashedLine(v.get_end(),p.get_end(),dash_length=0.1).set_opacity(0.6)
+        # angle = Angle(p,dx,radius=0.35,quadrant=(-1,-1),other_angle=True) 
+
+
+        xl = MathTex(r"\mathbf{x}", font_size=60, color=XCOLOR).next_to(x.get_tip(), RIGHT)
+        vl = MathTex(r"\mathbf{v}", font_size=60, color=VCOLOR).next_to(v.get_tip(), UP)        
+        pl = MathTex(r"\mathbf{p}", font_size=60, color=PCOLOR).next_to(p.get_tip(), DR,buff=0.03)        
+        labels = VGroup(xl, vl, pl)
+        
+        diagram = VGroup(backgrid,axes,mask, vectors, labels,dx)
+        
+        frame.scale(0.5).move_to(VGroup(vectors,labels,dx))
+
+        # add diagram by rotating
+        diagram_sans_mask = VGroup(vectors, labels,dx)
+        self.add(backgrid,axes,mask)
+        self.play(ReplacementTransform(diagram_sans_mask.copy().rotate(20*DEGREES,about_point=axes @ ORIGIN).set_opacity(0).scale(0.75,about_point=axes @ ORIGIN),diagram_sans_mask),run_time=1.75)
+        self.wait()
+
+        # shear
+        vs = Arrow(axes.c2p(0,0), axes.c2p(*scoords), buff=0, color=VCOLOR.interpolate(PCOLOR,0.5))
+        ds = DashedLine(v.get_end(),vs.get_end(),dash_length=0.1).set_opacity(0.4)
+        self.play(
+            TransformFromCopy(v,vs),
+            Write(ds),
+            v.animate.set_opacity(0.15),
+            dx.animate.set_opacity(0.15),
+            mask.animate(rate_func=there_and_back).set_opacity(0.8),
+            axes.animate.apply_matrix([[1,-sdif[0]],[0,1]]),
+            run_time=2
+        )
+        axes.apply_matrix(np.linalg.inv([[1,-sdif[0]],[0,1]]))
+        self.wait()
+
+        # orthogonal projection
+        dp = DashedLine(vs.get_end(),p.get_end(),dash_length=0.1).set_opacity(0.4)
+        ra = RightAngle(dp, p,length=0.2,quadrant=(-1,-1)).set_stroke(opacity=0.6)
+        self.play(
+            Merge([p,vs.copy()],p),
+            Write(dp),
+            run_time=1.75
+        )
+        self.play(Write(ra))
+        self.wait()
+
+        # change which parts are dim
+        self.play(
+            VGroup(ds,dp).animate.set_opacity(0.15),
+            ra.animate.set_stroke(opacity=0.15),
+            vs.animate.set_opacity(0.25),
+            v.animate.set_opacity(1),
+            dx.animate.set_opacity(0.4),
+            run_time=1.25
+        )
+        self.wait()
+
+        # shift diagram to the left to do equations
+        self.play(
+            frame.animate.shift(RIGHT))
+        self.wait()
+
+        # write equation
+        ops = MathTex(r"O","=",r"P",r"S",font_size=70).move_to(axes @ (4.15,1))
+        self.play(Write(ops[0]))
+        self.play(Write(ops[1]))
+        self.play(TransformFromCopy(ops[0],ops[3],path_arc=120*DEGREES),run_time=1.5)
+        self.wait()
+        self.play(TransformFromCopy(ops[0],ops[2],path_arc=-120*DEGREES),run_time=1.5)
+        self.wait()
+
+        # zoom to the shear part
+        self.play(
+            frame.animate.scale(0.3).move_to(ds),
+            # FadeOut(vl),
+            run_time=2
+        )
+
+        # shear rejection
+        sr = Arrow(axes @ scoords, axes @ vcoords, buff=0, color=COLOR_V3P)
+        self.play(
+            FadeOut(ds),
+            GrowArrow(sr),
+            run_time=1.25
+        )
+        self.wait()
+
+        # write equation
+        is1 = MathTex(r"\mathbf{v} - S \mathbf{v}").next_to(sr,UP)
+        color_tex_standard(is1)
+        self.play(frame.animate.scale(1.2).shift(UP*0.25))
+        self.play(ReplacementTransform(vl[0][0],is1[0][0]))
+        self.play(Write(is1[0][1]))
+        self.play(
+            Write(is1[0][2]),
+            TransformFromCopy(is1[0][0],is1[0][3])
+        )
+        self.wait()
+
+        # factor the v
+        is2 = AlignBaseline(MathTex(r"(I - S) \mathbf{v}").move_to(is1),is1)
+        color_tex_standard(is2)
+        self.play(
+            Merge([is1[0][0],is1[0][-1]],is2[0][5],animargs={"path_arc":90*DEGREES}), # v
+            FadeIn(is2[0][0],is2[0][4]), # ()
+            TransformFromCopy(is1[0][0],is2[0][1]), # v to I
+            ReplacementTransform(is1[0][1], is2[0][2]), # -
+            ReplacementTransform(is1[0][2], is2[0][3]), # S
+            run_time=1.5
+        )
+        self.wait()
+
+        # drop the v
+        is3 = AlignBaseline(MathTex(r"I - S").next_to(sr,UP),is1)
+        color_tex_standard(is3)
+        self.play(*TransformBuilder(
+            is2[0],is3[0],
+            [
+                (0,None), (4,None), # ()
+                (1,0), # I
+                (2,1), # -
+                (3,2), # S
+                (5,None), # v
+            ]
+        ))
+        self.wait()
+
+
+        
+        
 
         
 
