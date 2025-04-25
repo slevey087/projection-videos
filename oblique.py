@@ -1515,6 +1515,7 @@ class ObliqueShearDemo(MovingCameraScene):
         zcoords = bcoords * np.dot(vcoords, bcoords) / np.dot(bcoords,bcoords) 
         sdif = pcoords*(1/k) - pcoords
         scoords = vcoords - sdif
+        ppcoords = xcoords * np.dot(xcoords,vcoords) / np.dot(xcoords,xcoords)
         
         # initial frame stuff
         frame = self.camera.frame
@@ -1546,10 +1547,11 @@ class ObliqueShearDemo(MovingCameraScene):
         # angle = Angle(p,dx,radius=0.35,quadrant=(-1,-1),other_angle=True) 
 
 
-        xl = MathTex(r"\mathbf{x}", font_size=60, color=XCOLOR).next_to(x.get_tip(), RIGHT)
+        # xl = MathTex(r"\mathbf{x}", font_size=60, color=XCOLOR).next_to(x.get_tip(), RIGHT)
         vl = MathTex(r"\mathbf{v}", font_size=60, color=VCOLOR).next_to(v.get_tip(), UP)        
-        pl = MathTex(r"\mathbf{p}", font_size=60, color=PCOLOR).next_to(p.get_tip(), DR,buff=0.03)        
-        labels = VGroup(xl, vl, pl)
+        pl = MathTex(r"O\mathbf{v}", font_size=60).next_to(p, DOWN,buff=0.03)        
+        color_tex_standard(pl)
+        labels = VGroup(vl, pl)
         
         diagram = VGroup(backgrid,axes,mask, vectors, labels,dx)
         
@@ -1592,37 +1594,18 @@ class ObliqueShearDemo(MovingCameraScene):
             run_time=1.75
         )
         self.play(Write(ra))
-        psv = MathTex(r"PS\mathbf{v}", font_size=60).next_to(p, DOWN,buff=0.1)
-        color_tex_standard(psv)
-        self.play(
-            FadeOut(pl),
-            TransformFromCopy(vsl[0][:],psv[0][1:]), #sv
-            FadeIn(psv[0][0],shift=UP),
-            run_time=1.5
-        )
-        self.wait()
-
-        # = ov
-        psveov = MathTex(r"PS\mathbf{v}",r"=O\mathbf{v}", font_size=60)
-        psveov.shift(psv[0].get_center()-psveov[0].get_center())
+        
+        # psv = ov
+        psveov = MathTex(r"PS\mathbf{v}","=",r"O\mathbf{v}", font_size=50).move_to(pl)
         color_tex_standard(psveov)
         self.play(
-            FadeIn(psveov[1],shift=LEFT), # ov
-            ReplacementTransform(psv[0],psveov[0]), # psv
-            run_time=1.5)
+            ReplacementTransform(pl[0],psveov[2]),
+            FadeIn(psveov[1],shift=UP),
+            TransformFromCopy(vsl[0][:],psveov[0][1:]),
+            FadeIn(psveov[0][0],shift=UR),
+            run_time=2)
         self.wait()
 
-        # remove v
-        pso = MathTex(r"PS",r"=O", font_size=60)
-        pso.shift(psveov[0][0].get_center()-pso[0][0].get_center())
-        color_tex_standard(pso)
-        self.play(
-            FadeOut(psveov[0][-1],psveov[1][-1],shift=DOWN),
-            ReplacementTransform(psveov[0][:2],pso[0][:]), # ps
-            ReplacementTransform(psveov[1][:2],pso[1][:2]), #=0
-            run_time=1.25
-        )
-        self.wait()
 
         """
         # change which parts are dim
@@ -1668,7 +1651,7 @@ class ObliqueShearDemo(MovingCameraScene):
         self.wait()
 
         # write equation
-        is1 = MathTex(r"\mathbf{v} - S \mathbf{v}").next_to(sr,UP)
+        is1 = MathTex(r"\mathbf{v} - S \mathbf{v}",font_size=40).next_to(sr,UP)
         color_tex_standard(is1)
         self.play(frame.animate.scale(1.6).shift(UP*0.25),run_time=1.25)
         self.play(
@@ -1678,12 +1661,13 @@ class ObliqueShearDemo(MovingCameraScene):
         )
         self.play(Write(is1[0][1]))
         self.play(
-            TransformFromCopy(vsl[0][:],is1[0][2:])
+            TransformFromCopy(vsl[0][:],is1[0][2:]),
+            run_time=1.5
         )
         self.wait()
 
         # factor the v
-        is2 = AlignBaseline(MathTex(r"(I - S) \mathbf{v}").move_to(is1),is1)
+        is2 = AlignBaseline(MathTex(r"(I - S) \mathbf{v}",font_size=40).move_to(is1),is1)
         color_tex_standard(is2)
         self.play(
             Merge([is1[0][0],is1[0][-1]],is2[0][5],animargs={"path_arc":90*DEGREES}), # v
@@ -1695,23 +1679,10 @@ class ObliqueShearDemo(MovingCameraScene):
         )
         self.wait()
 
-        # drop the v
-        is3 = AlignBaseline(MathTex(r"I - S").next_to(sr,UP),is1)
-        color_tex_standard(is3)
-        self.play(*TransformBuilder(
-            is2[0],is3[0],
-            [
-                (0,None), (4,None), # ()
-                (1,0), # I
-                (2,1), # -
-                (3,2), # S
-                (5,None), # v
-            ]
-        ))
-        self.wait()
+
 
         # shear rejection
-        srl = Tex("(Shear Rejection)",font_size=10).next_to(sr,UP,buff=0.05)
+        srl = Tex("(Shear Rejection)",font_size=10).next_to(sr,UP,buff=0.02)
         self.play(DrawBorderThenFill(srl))
         self.wait()
 
@@ -1719,27 +1690,158 @@ class ObliqueShearDemo(MovingCameraScene):
         self.play(DrawBorderThenFill(srl, reverse_rate_function=True))
         self.wait()
 
-        # zoom back out
+        """# zoom back out
         self.play(Restore(frame), run_time=2)
         self.wait()
-
+        """
         # move shear rejection to show that it's parallel to x
         sr_copy = sr.copy()
-        self.play(sr_copy.animate.move_to(p),run_time=1.5)
-        self.play(sr_copy.animate.move_to(x.get_end()),run_time=1.5)
-        self.play(Merge([sr,sr_copy],sr),run_time=1.5)
+        self.play(
+            sr_copy.animate.move_to(p),
+            frame.animate.move_to(p),
+            run_time=1.5)
+        self.play(
+            sr_copy.animate.move_to(x.get_end()),
+            frame.animate.move_to(x.get_end()),
+            run_time=1.5)
+        self.play(
+            Merge([sr,sr_copy],sr),
+            frame.animate.move_to(is2),
+            run_time=1.75)
         self.wait()
 
         # i-s=p(i-s)
-        is4 = AlignBaseline(MathTex(r"P(I - S)","=","I-S").next_to(sr,UP),is3)
-        is4.shift(is3[0][1].get_center()-is4[0][3].get_center())
-        color_tex_standard(is4)
+        is3 = MathTex(r"P(I - S)\mathbf{v}","=",r"(I-S)\mathbf{v}",font_size=40).next_to(sr,UP)
+        is3.shift(is2[0][2].get_center()-is3[0][3].get_center())
+        color_tex_standard(is3)
         self.play(
-            ReplacementTransform(is3[0][:3],is4[0][2:5]),
-            ReplacementTransform(is4[0][0].copy().scale(5).center().to_edge(LEFT).set_opacity(0),is4[0][0],run_time=2),
-            FadeIn(is4[0][1],is4[0][5])
+            ReplacementTransform(is2[0][:],is3[0][1:]),
+            ReplacementTransform(is3[0][0].copy().scale(5).center().to_edge(LEFT).set_opacity(0),is3[0][0],run_time=2),
+            VGroup(vsl,vs,vl,dp,p,x,psveov).animate.set_opacity(0.2),
+            ra.animate.set_stroke(opacity=0.2),
+        )
+        self.play(Write(is3[1]))
+        self.play(
+            TransformFromCopy(is3[0][1:],is3[2][:],path_arc=90*DEGREES),
+            frame.animate.move_to(is3).scale(1.5),
+            run_time=1.75)
+        self.wait()
+
+        # drop the v
+        is4 = AlignBaseline(MathTex(r"P(I - S)","=",r"I-S",font_size=40).move_to(is3),is3)
+        color_tex_standard(is4)
+        self.play(*TransformBuilder(
+            is3,is4,
+            [
+                ([0,slice(None,6)],[0,slice(None,None)]), # P(I-S)
+                ([0,6],None,FadeOut,{"shift":UR}), # v
+                (1,1), # =
+                ([2,0],None), ([2,-2],None), # ()
+                ([2,slice(1,4)],[2,slice(None,None)]), # I-S
+                ([2,5],None,FadeOut,{"shift":UR}), # v
+            ]
+        ), run_time=1.5)
+        self.wait()
+
+        # distribute p
+        is5 = AlignBaseline(MathTex(r"PI - PS","=",r"I-S",font_size=40).move_to(is4),is4)
+        color_tex_standard(is5)
+        self.play(*TransformBuilder(
+            is4,is5,
+            [
+                ([0,0],[0,0]), # P
+                ([0,0],[0,3],TransformFromCopy,{"path_arc":160*DEGREES}), # P
+                ([0,1],None), ([0,5],None), # ()
+                ([0,2],[0,1]), # I
+                ([0,3],[0,2]), # -
+                ([0,4],[0,4]), # S
+                (1,1), (2,2), # = I-S
+            ]
+        ),run_time=2)
+        self.wait()
+
+        # drop the I
+        is6 = AlignBaseline(MathTex(r"P - PS","=",r"I-S",font_size=40).move_to(is5),is5)
+        color_tex_standard(is6)
+        self.play(
+            Merge([is5[0][0],is5[0][1]],is6[0][0],animargs={"path_arc":-180*DEGREES}),
+            *TransformBuilder(
+                is5,is6,
+                [
+                    ([0,slice(2,None)],[0,slice(1,None)]), # -PS
+                    (1,1),(2,2), # =I-S
+                ]
+            ),
+            run_time=1.25
         )
         self.wait()
+
+        # zoom out, undim psveov
+        self.play(
+            Restore(frame),
+            run_time=2
+        )
+        self.play(psveov.animate.set_opacity(1))
+        self.wait()
+
+        # drop the v
+        pso = MathTex(r"PS","=",r"O", font_size=50).move_to(psveov)
+        color_tex_standard(pso)
+        self.play(
+            ReplacementTransform(psveov[0][:2],pso[0][:]), # ps
+            FadeOut(psveov[0][-1],shift=DR), # v
+            ReplacementTransform(psveov[1],pso[1]), # =
+            ReplacementTransform(psveov[2][0],pso[2][0]), # o
+            FadeOut(psveov[2][-1],shift=DR), # v
+            run_time=1.75
+        )
+        self.wait()
+
+        # substitue o into top equation
+        is7 = AlignBaseline(MathTex(r"P - O","=",r"I-S",font_size=40).move_to(is6),is5)
+        color_tex_standard(is7)
+        self.play(
+            TransformFromCopy(pso[2][0],is7[0][2],path_arc=-120*DEGREES), # o
+            FadeOut(is6[0][2:]), # PS
+            ReplacementTransform(is6[0][:2],is7[0][:2]), # p-
+            ReplacementTransform(is6[1:],is7[1:]), # =I-S
+            run_time=2
+        )
+        self.wait()
+
+        # zoom back in
+        self.play(frame.animate.move_to(is7).scale(0.6),run_time=2)
+        self.wait()
+
+        # indicate i-s and shear residual
+        self.play(
+            Indicate(is7[2]),
+            Indicate(sr,scale_factor=1.4),
+            run_time=2.5
+        )
+        self.wait()
+
+        # zoom back out, undim v
+        pso.set_opacity(0.2)
+        self.play(
+            Restore(frame),
+            VGroup(v,vl,x).animate.set_opacity(1),
+            run_time=2
+        )
+        self.wait()
+
+        # orthogonal projection
+        pp = Arrow(axes.c2p(0,0), axes.c2p(*ppcoords), buff=0, color=COLOR_V2P)
+        dpp = DashedLine() # add this in to animation
+        self.play(
+            TransformFromCopy(v,pp),
+            run_time=1.5
+        )
+        self.wait()
+
+
+
+        
 
         
 
