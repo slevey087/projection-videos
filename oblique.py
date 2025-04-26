@@ -1832,12 +1832,145 @@ class ObliqueShearDemo(MovingCameraScene):
 
         # orthogonal projection
         pp = Arrow(axes.c2p(0,0), axes.c2p(*ppcoords), buff=0, color=COLOR_V2P)
-        dpp = DashedLine() # add this in to animation
+        dpp = DashedLine(v.get_end(),pp.get_end(),dash_length=0.1).set_opacity(0.6) # add this in to animation
+        ppl = MathTex(r"P\mathbf{v}").next_to(pp.get_end(),DOWN)
+        color_tex_standard(ppl)
+        self.play(pso.animate.shift(DOWN*0.5))
         self.play(
             TransformFromCopy(v,pp),
+            Write(dpp),
+            run_time=1.5
+        )
+        self.play(
+            TransformFromCopy(vl[0][0],ppl[0][1]), # v
+            TransformFromCopy(pso[0][0],ppl[0][0]), # p
+            run_time=1.75
+        )
+        self.wait()
+
+        # put ov back
+        self.play(TransformFromCopy(v,p.set_opacity(1).set_z_index(1)),run_time=1.75)
+        plo = MathTex(r"O\mathbf{v}").next_to(p.get_center(),DOWN)
+        color_tex_standard(plo)
+        self.play(
+            TransformFromCopy(vl[0][0],plo[0][1]), # v
+            TransformFromCopy(pso[2][0],plo[0][0]), # o
+            run_time=1.75
+        )
+        self.wait()
+
+        # zoom to difference between orthogonal and oblique
+        op = Arrow(p.get_end(), pp.get_end(), buff=0, color=COLOR_V3P)
+        self.play(
+            frame.animate.move_to(op).scale(0.35),
+            VGroup(v,vl,dpp).animate.set_opacity(0.2),
+            run_time=2
+        )
+        self.play(GrowArrow(op),run_time=1.5)
+        self.wait()
+
+        # zoom back out
+        self.play(
+            frame.animate.move_to(VGroup(sr,op)).scale(1.5),
+            *[vec.animate.set_opacity(0.2) for vec in [x,p,pp]],
+            run_time=2
+        )
+        self.wait()
+
+        # demonstrate equality
+        self.play(
+            Merge([op,sr.copy()],op),
+            run_time=1.5
+        )
+        self.play(
+            Merge([sr,op.copy()],sr),
+            run_time=1.5
+        )
+
+        # p-o=i-s, move to center
+        self.play(
+            is7.animate.move_to(VGroup(sr,op).get_center()),
+            VGroup(v,vs,dx,dp,dpp).animate.set_opacity(0.1),
             run_time=1.5
         )
         self.wait()
+
+        # split p-o=i-s
+        self.play(
+            is7[0].animate.next_to(sr,DOWN,buff=0.05),
+            is7[2].animate.next_to(op,UP,buff=0.05),
+            run_time=1.5
+        )
+        self.wait()
+
+        # to black
+        self.remove(axes,backgrid)
+        self.play(FadeOut(*self.mobjects))
+
+
+
+
+
+class ShearMatrices(LinearTransformationScene):
+    def construct(self):
+        # add grid and basis
+        basis = self.basis_vectors
+        self.remove(basis)
+        self.play(FadeIn(self.plane,self.background_plane))
+        self.play(GrowArrow(basis[0]))
+        self.play(GrowArrow(basis[1]))
+        self.wait()
+
+        # do a shear
+        hshear = [[1, 1], [0, 1]]
+        self.apply_matrix(hshear)
+        self.wait()
+
+        # undo the shear
+        self.moving_mobjects = []
+        self.apply_inverse(hshear)
+        self.wait()
+
+        # add basis vector labels
+        il0 = Matrix([[1],[0]]).add_background_rectangle().next_to(basis[0],DR)
+        jl0 = Matrix([[0],[1]]).add_background_rectangle().next_to(basis[1].get_end(),UR)
+        self.play(Write(il0))
+        self.play(Write(jl0))
+        self.wait()
+        
+        # shear
+        jl1 = Matrix([[1],[1]]).add_background_rectangle().next_to(basis[1].get_end(),UR).shift(RIGHT*self.plane.get_x_unit_size())
+        self.moving_mobjects=[]
+        self.apply_matrix(hshear,added_anims=[ReplacementTransform(jl0,jl1)])
+        self.wait()
+
+        # collect colums to matrix
+        shearM = Matrix(
+            [
+                [1,1],
+                [0,1]
+            ]
+        ).to_corner(UR).add_background_rectangle()
+        self.play(
+            Write(VGroup(shearM.background_rectangle,shearM.get_brackets())),
+        )
+        self.play(
+            TransformFromCopy(il0.get_entries()[0], shearM.get_entries()[0]),
+            TransformFromCopy(il0.get_entries()[1], shearM.get_entries()[2]),
+            run_time=1.5
+        )
+        self.play(
+            TransformFromCopy(jl1.get_entries()[0], shearM.get_entries()[1]),
+            TransformFromCopy(jl1.get_entries()[1], shearM.get_entries()[3]),
+            run_time=1.5
+        )
+        self.wait()
+
+    
+
+
+        
+
 
 
 
