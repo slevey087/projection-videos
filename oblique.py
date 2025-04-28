@@ -1966,6 +1966,134 @@ class ShearMatrices(LinearTransformationScene):
         )
         self.wait()
 
+        # indicate top right of matrix
+        self.play(
+            Indicate(shearM.get_entries()[1]),
+            Indicate(jl1.get_entries()[0])
+        )
+        self.wait()
+
+        # replace matrices with one with 1.0
+        k = ValueTracker(1)
+        jlrd = always_redraw(lambda: Matrix([[f"{k.get_value():.2f}"],[1]]).add_background_rectangle().next_to(basis[1].get_end(),UR))
+        shearMrd = always_redraw(lambda: Matrix(
+            [
+                [1,f"{k.get_value():.2f}"],
+                [0,1]
+            ],h_buff=1.5
+        ).to_corner(UR).add_background_rectangle())
+        self.play(
+            ReplacementTransform(jl1,jlrd),
+            ReplacementTransform(shearM,shearMrd)
+        )
+
+        # do value tracking and back to flat
+        self.moving_mobjects = []
+        self.apply_matrix([[1,-3],[0,1]],
+            added_anims=[k.animate.set_value(-2)]
+        )
+        self.moving_mobjects = []
+        self.apply_matrix([[1,2],[0,1]],
+            added_anims=[k.animate.set_value(0)]
+        )
+        self.wait()
+
+        # fade matrices
+        jl2 = Matrix([[0],[1]]).add_background_rectangle().next_to(basis[1].get_end(),UL)
+        self.play(
+            FadeOut(shearMrd),
+            ReplacementTransform(jlrd,jl2),
+            run_time=1.5
+        )
+        self.wait()
+
+        # vertical shear
+        il1 = Matrix([[1],[1]]).add_background_rectangle().next_to(basis[0].get_end(),UR).shift(UP*self.plane.get_y_unit_size())
+        self.moving_mobjects=[]
+        vshear = [[1,0],[1,1]]
+        self.apply_matrix(vshear,added_anims=[ReplacementTransform(il0,il1)])
+        self.wait()
+
+        # pull matrix from basis labels
+        # collect colums to matrix
+        shearM = Matrix(
+            [
+                [1,0],
+                [1,1]
+            ]
+        ).to_corner(UR).add_background_rectangle()
+        self.play(
+            Write(VGroup(shearM.background_rectangle,shearM.get_brackets())),
+        )
+        self.play(
+            TransformFromCopy(il1.get_entries()[0], shearM.get_entries()[0]),
+            TransformFromCopy(il1.get_entries()[1], shearM.get_entries()[2]),
+            run_time=1.5
+        )
+        self.play(
+            TransformFromCopy(jl2.get_entries()[0], shearM.get_entries()[1]),
+            TransformFromCopy(jl2.get_entries()[1], shearM.get_entries()[3]),
+            run_time=1.5
+        )
+        self.wait()
+
+        # indicate bottom left of matrix
+        self.play(
+            Indicate(shearM.get_entries()[2]),
+            Indicate(il1.get_entries()[1])
+        )
+        self.wait()
+
+        # replace matrices with one with 1.0
+        k = ValueTracker(1)
+        ilrd = always_redraw(lambda: Matrix([[1],[f"{k.get_value():.2f}"]]).add_background_rectangle().next_to(basis[0].get_end(),UR))
+        shearMrd = always_redraw(lambda: Matrix(
+            [
+                [1,0],
+                [f"{k.get_value():.2f}",1]
+            ],h_buff=1.5
+        ).to_corner(UR).add_background_rectangle())
+        self.play(
+            ReplacementTransform(il1,ilrd),
+            ReplacementTransform(shearM,shearMrd)
+        )
+
+        # do value tracking and back to flat
+        self.moving_mobjects = []
+        self.apply_matrix([[1,0],[-3,1]],
+            added_anims=[k.animate.set_value(-2)]
+        )
+        self.moving_mobjects = []
+        self.apply_matrix([[1,0],[2,1]],
+            added_anims=[k.animate.set_value(0)]
+        )
+        self.wait()
+
+        # fade to just the grid, draw diagonal
+        self.play(
+            FadeOut(ilrd,jl2,shearMrd,basis),run_time=1.5
+        )
+        diag = Line(self.plane @ (-4.5,-4.5), self.plane @ (4.5,4.5),color=YELLOW)
+        self.play(Create(diag))
+        self.play(diag.animate.set_color(WHITE))
+        self.wait()
+
+        # vector along line
+        b = Vector([2,2], color=COLOR_V3P)
+        self.play(GrowArrow(b),run_time=1.5)
+        self.wait()
+
+
+
+class Shear3d(ThreeDScene):
+    def construct(self):
+        pass
+
+
+
+
+
+
     
 
 
